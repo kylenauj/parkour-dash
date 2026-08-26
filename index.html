@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Skyline — Rooftop Parkour</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Teko:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="game-root">
+      <canvas id="game" width="1280" height="720" aria-label="Skyline parkour game"></canvas>
+
+      <div id="hud" class="overlay hidden" aria-live="polite">
+        <div class="hud-left">
+          <div class="hud-stat">
+            <span class="hud-label">Time</span>
+            <span id="hud-time">0:00.00</span>
+          </div>
+          <div class="hud-stat">
+            <span class="hud-label">Orbs</span>
+            <span id="hud-orbs">0 / 10</span>
+          </div>
+          <div class="hud-stat">
+            <span class="hud-label">Falls</span>
+            <span id="hud-deaths">0</span>
+          </div>
+        </div>
+        <div id="hud-hint" class="hud-hint"></div>
+        <div class="hud-right">
+          <span class="dash-label">Dash</span>
+          <div id="dash-pip" class="dash-pip ready"></div>
+        </div>
+      </div>
+
+      <div id="title-screen" class="overlay panel-screen">
+        <div class="panel">
+          <p class="eyebrow">Rooftop parkour</p>
+          <h1>SKYLINE</h1>
+          <p class="lede">
+            Race the dusk across neon ledges. Jump, wall-kick, slide, and dash your way to the last antenna.
+          </p>
+          <button id="btn-play" type="button" class="primary">Start run</button>
+          <ul class="controls">
+            <li><kbd>A</kbd><kbd>D</kbd> or arrows — move</li>
+            <li><kbd>Space</kbd> / <kbd>W</kbd> / <kbd>↑</kbd> — jump · wall jump</li>
+            <li><kbd>Shift</kbd> / <kbd>J</kbd> — dash</li>
+            <li><kbd>S</kbd> / <kbd>↓</kbd> — slide · drop through</li>
+            <li><kbd>Esc</kbd> / <kbd>P</kbd> — pause · <kbd>R</kbd> — last checkpoint</li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="pause-screen" class="overlay panel-screen hidden">
+        <div class="panel">
+          <p class="eyebrow">Paused</p>
+          <h2>Take a breath</h2>
+          <p class="lede">The city can wait. Resume, retry this checkpoint, or start the whole run over.</p>
+          <div class="btn-row">
+            <button id="btn-resume" type="button" class="primary">Resume</button>
+            <button id="btn-retry" type="button" class="ghost">Checkpoint</button>
+            <button id="btn-quit" type="button" class="ghost">Title</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="win-screen" class="overlay panel-screen hidden">
+        <div class="panel">
+          <p class="eyebrow">Antenna reached</p>
+          <h2>Run complete</h2>
+          <p id="win-copy" class="lede"></p>
+          <div id="win-stats" class="win-stats"></div>
+          <div class="btn-row">
+            <button id="btn-again" type="button" class="primary">Run it back</button>
+            <button id="btn-title" type="button" class="ghost">Title</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="touch" class="touch hidden">
+        <div class="touch-move">
+          <button type="button" data-touch="left" aria-label="Move left">◀</button>
+          <button type="button" data-touch="right" aria-label="Move right">▶</button>
+        </div>
+        <div class="touch-actions">
+          <button type="button" data-touch="slide" aria-label="Slide">SLIDE</button>
+          <button type="button" data-touch="dash" aria-label="Dash">DASH</button>
+          <button type="button" data-touch="jump" class="jump" aria-label="Jump">JUMP</button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

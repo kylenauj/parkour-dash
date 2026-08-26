@@ -1,0 +1,336 @@
+import {
+  ACCEL_AIR,
+  ACCEL_GROUND,
+  COYOTE,
+  CORNER,
+  DASH_END_KEEP,
+  DASH_SPEED,
+  DASH_TIME,
+  FAST_FALL,
+  FRICTION,
+  GRAVITY,
+  JUMP_BUFFER,
+  JUMP_CUT_GRAVITY,
+  JUMP_VEL,
+  MAX_FALL,
+  PLAYER_H,
+  PLAYER_SLIDE_H,
+  PLAYER_W,
+  RUN_SPEED,
+  SLIDE_FRICTION,
+  WALL_JUMP_X,
+  WALL_JUMP_Y,
+  WALL_LOCK,
+  WALL_SLIDE_SPEED,
+} from './const'
+import type { Input } from './input'
+import type { Platform, World } from './world'
+import { aabb } from './world'
+
+export type Ghost = { x: number; y: number; h: number; life: number }
+
+export class Player {
+  x = 0
+  y = 0
+  vx = 0
+  vy = 0
+  w = PLAYER_W
+  h = PLAYER_H
+  facing = 1
+  onGround = false
+  onWall = 0
+  sliding = false
+  dashing = false
+  canDash = true
+  squish = 1
+  coyote = 0
+  jumpBuf = 0
+  dashT = 0
+  wallLock = 0
+  dropT = 0
+  ghosts: Ghost[] = []
+  scarf: { x: number; y: number }[] = []
+  riding: Platform | null = null
+  justLanded = false
+  landSpeed = 0
+  justJumped = false
+  jumpedFromWall = false
+  justDashed = false
+  dead = false
+  spawnX = 0
+  spawnY = 0
+
+  spawnAt(x: number, y: number) {
+    this.setSpawn(x, y)
+    this.resetToSpawn()
+  }
+
+  setSpawn(x: number, y: number) {
+    this.spawnX = x
+    this.spawnY = y
+  }
+
+  resetToSpawn() {
+    this.x = this.spawnX
+    this.y = this.spawnY
+    this.vx = 0
+    this.vy = 0
+    this.h = PLAYER_H
+    this.sliding = false
+    this.dashing = false
+    this.canDash = true
+    this.onGround = false
+    this.onWall = 0
+    this.dashT = 0
+    this.coyote = 0
+    this.jumpBuf = 0
+    this.dead = false
+    this.ghosts = []
+    this.scarf = []
+  }
+
+  get cx() {
+    return this.x + this.w / 2
+  }
+
+  get cy() {
+    return this.y + this.h / 2
+  }
+
+  get bottom() {
+    return this.y + this.h
+  }
+
+  update(dt: number, input: Input, world: World) {
+    this.justLanded = false
+    this.justJumped = false
+    this.jumpedFromWall = false
+    this.justDashed = false
+    this.wallLock = Math.max(0, this.wallLock - dt)
+    this.dropT = Math.max(0, this.dropT - dt)
+    this.squish += (1 - this.squish) * Math.min(1, dt * 12)
+
+    if (input.jumpPressed) this.jumpBuf = JUMP_BUFFER
+    else this.jumpBuf = Math.max(0, this.jumpBuf - dt)
+
+    this.handleDash(input)
+    this.handleSlide(input, world)
+
+    if (!this.dashing) this.accelerate(input, dt)
+
+    if (this.dashing) {
+      this.dashT -= dt
+      if (this.dashT <= 0) {
+        this.dashing = false
+        this.vx *= DASH_END_KEEP
+        this.vy *= DASH_END_KEEP
+      }
+    } else {
+      this.applyGravity(input, dt)
+    }
+
+    this.tryJump(input)
+
+    if (this.riding && this.onGround) this.x += this.riding.vx * dt
+
+    this.move(world, this.vx * dt, this.vy * dt)
+
+    if (this.onGround) {
+      this.coyote = COYOTE
+      this.canDash = true
+    } else {
+      this.coyote = Math.max(0, this.coyote - dt)
+    }
+
+    if (this.dashing) {
+      this.ghosts.push({ x: this.x, y: this.y, h: this.h, life: 0.16 })
+    }
+    for (const g of this.ghosts) g.life -= dt
+    this.ghosts = this.ghosts.filter((g) => g.life > 0)
+
+    this.scarf.unshift({ x: this.cx - this.facing * 8, y: this.y + 10 })
+    if (this.scarf.length > 10) this.scarf.pop()
+  }
+
+  private handleDash(input: Input) {
+    if (!input.dashPressed || !this.canDash || this.dashing) return
+    let dx = input.x
+    let dy = input.up ? -1 : input.down ? 1 : 0
+    if (dx === 0 && dy === 0) dx = this.facing
+    const mag = Math.hypot(dx, dy) || 1
+    this.vx = (dx / mag) * DASH_SPEED
+    this.vy = (dy / mag) * DASH_SPEED
+    this.dashing = true
+    this.canDash = false
+    this.dashT = DASH_TIME
+    this.justDashed = true
+    this.sliding = false
+    this.setHeight(PLAYER_H)
+    if (dx !== 0) this.facing = dx > 0 ? 1 : -1
+  }
+
+  private handleSlide(input: Input, world: World) {
+    const want = this.onGround && input.down && Math.abs(this.vx) > 70 && !this.dashing
+    if (want && !this.sliding) {
+      this.sliding = true
+      this.setHeight(PLAYER_SLIDE_H)
+    }
+    if (this.sliding && (!input.down || !this.onGround || Math.abs(this.vx) < 40)) {
+      if (this.canStand(world)) {
+        this.sliding = false
+        this.setHeight(PLAYER_H)
+      }
+    }
+  }
+
+  private accelerate(input: Input, dt: number) {
+    const target = input.x * RUN_SPEED
+    if (input.x !== 0) this.facing = input.x > 0 ? 1 : -1
+    const accel = this.onGround ? ACCEL_GROUND : ACCEL_AIR
+    if (input.x !== 0) {
+      this.vx = approach(this.vx, target, accel * dt)
+    } else if (this.onGround) {
+      const fric = this.sliding ? SLIDE_FRICTION : FRICTION
+      this.vx = approach(this.vx, 0, fric * dt)
+    }
+  }
+
+  private applyGravity(input: Input, dt: number) {
+    const clinging = this.onWall !== 0 && this.vy > 0 && input.x === this.onWall && this.wallLock <= 0
+    if (clinging) {
+      this.vy = Math.min(this.vy + GRAVITY * 0.25 * dt, WALL_SLIDE_SPEED)
+      return
+    }
+    let g = GRAVITY
+    if (this.vy < 0 && !input.jumpHeld) g *= JUMP_CUT_GRAVITY
+    if (input.down && this.vy > 80) g *= FAST_FALL
+    this.vy = Math.min(this.vy + g * dt, MAX_FALL)
+  }
+
+  private tryJump(input: Input) {
+    if (this.jumpBuf <= 0 || this.dashing) return
+
+    if (this.onGround && input.down) {
+      const ridingOneWay = this.riding?.type === 'oneway'
+      if (ridingOneWay) {
+        this.dropT = 0.18
+        this.y += 4
+        this.onGround = false
+        this.jumpBuf = 0
+        this.coyote = 0
+        return
+      }
+    }
+
+    if (this.onWall !== 0 && !this.onGround && this.wallLock <= 0) {
+      this.vx = -this.onWall * WALL_JUMP_X
+      this.vy = WALL_JUMP_Y
+      this.facing = -this.onWall as 1 | -1
+      this.jumpBuf = 0
+      this.coyote = 0
+      this.wallLock = WALL_LOCK
+      this.justJumped = true
+      this.jumpedFromWall = true
+      this.sliding = false
+      this.setHeight(PLAYER_H)
+      this.squish = 1.25
+      return
+    }
+
+    if (this.onGround || this.coyote > 0) {
+      this.vy = JUMP_VEL
+      this.jumpBuf = 0
+      this.coyote = 0
+      this.onGround = false
+      this.justJumped = true
+      this.sliding = false
+      this.setHeight(PLAYER_H)
+      this.squish = 1.22
+    }
+  }
+
+  private setHeight(h: number) {
+    const feet = this.bottom
+    this.h = h
+    this.y = feet - this.h
+  }
+
+  private canStand(world: World) {
+    const feet = this.bottom
+    const test = { x: this.x, y: feet - PLAYER_H, w: this.w, h: PLAYER_H }
+    for (const p of world.platforms) {
+      if (p.type === 'oneway') continue
+      if (aabb(test, p)) return false
+    }
+    return true
+  }
+
+  private move(world: World, dx: number, dy: number) {
+    this.onWall = 0
+    this.riding = null
+    this.onGround = false
+    this.moveAxis(world, dx, 0)
+    this.moveAxis(world, 0, dy)
+  }
+
+  private moveAxis(world: World, dx: number, dy: number) {
+    const prevBottom = this.bottom
+    this.x += dx
+    this.y += dy
+
+    for (const p of world.platforms) {
+      if (!aabb(this, p)) continue
+      const oneWay = p.type === 'oneway'
+      if (oneWay) {
+        if (dx !== 0 || dy <= 0 || this.dropT > 0) continue
+        if (prevBottom > p.y + 6) continue
+      }
+
+      if (dx > 0) {
+        this.x = p.x - this.w
+        this.vx = Math.min(this.vx, 0)
+        if (!this.onGround) this.onWall = 1
+      } else if (dx < 0) {
+        this.x = p.x + p.w
+        this.vx = Math.max(this.vx, 0)
+        if (!this.onGround) this.onWall = -1
+      } else if (dy > 0) {
+        this.y = p.y - this.h
+        this.landSpeed = this.vy
+        if (!this.onGround && this.vy > 280) this.justLanded = true
+        this.vy = 0
+        this.onGround = true
+        this.riding = p
+        this.squish = Math.min(this.squish, 0.78)
+      } else if (dy < 0) {
+        const shifted = this.cornerCorrect(world, p)
+        if (!shifted) {
+          this.y = p.y + p.h
+          this.vy = 0
+        }
+      }
+    }
+  }
+
+  private cornerCorrect(world: World, blocked: Platform) {
+    for (const dir of [1, -1]) {
+      for (let i = 1; i <= CORNER; i++) {
+        const test = { x: this.x + dir * i, y: this.y, w: this.w, h: this.h }
+        if (!aabb(test, blocked) && !this.solidAt(world, test)) {
+          this.x += dir * i
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  private solidAt(world: World, r: { x: number; y: number; w: number; h: number }) {
+    return world.platforms.some((p) => p.type !== 'oneway' && aabb(r, p))
+  }
+}
+
+function approach(v: number, target: number, delta: number) {
+  if (v < target) return Math.min(v + delta, target)
+  return Math.max(v - delta, target)
+}
