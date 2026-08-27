@@ -20,7 +20,7 @@
         <div class="hud-left">
           <div class="hud-stat">
             <span class="hud-label">Pipe</span>
-            <span id="hud-level">1 / 3</span>
+            <span id="hud-level">1 / 5</span>
           </div>
           <div class="hud-stat">
             <span class="hud-label">Time</span>
@@ -48,40 +48,63 @@
       </div>
 
       <div id="title-screen" class="overlay panel-screen">
-        <div class="panel">
-          <p class="eyebrow">Pixel sewer parkour</p>
-          <h1>PIPE ROACH</h1>
-          <p class="lede">
-            Three pipes. A roach-man with a cigarette. Smoke the gutters, time the filter presses, ride the overflow home.
-          </p>
-          <button id="btn-play" type="button" class="primary">Full crawl</button>
-          <div class="level-picks" id="level-picks">
-            <button type="button" class="level-btn" data-level="0">
-              <span class="num">01</span>
-              <span class="name">The Gutters</span>
-              <span class="sub">Learn the crawl</span>
-            </button>
-            <button type="button" class="level-btn" data-level="1">
-              <span class="num">02</span>
-              <span class="name">The Filter</span>
-              <span class="sub">Do not linger</span>
-            </button>
-            <button type="button" class="level-btn" data-level="2">
-              <span class="num">03</span>
-              <span class="name">The Overflow</span>
-              <span class="sub">Ride the flood</span>
-            </button>
+        <div class="panel title-panel">
+          <div class="title-grid">
+            <div class="hero-col">
+              <canvas id="hero-art" width="220" height="280" aria-hidden="true"></canvas>
+              <p class="hero-tag">Pipe Roach</p>
+              <p class="hero-sub">One cig. Five pipes.</p>
+            </div>
+            <div class="copy-col">
+              <p class="eyebrow">Sewer parkour</p>
+              <h1>PIPE ROACH</h1>
+              <p class="lede">
+                Kick the walls, slide-dash the flues, crawl to the street. He smokes. You drive.
+              </p>
+              <button id="btn-play" type="button" class="primary">Full crawl</button>
+              <div class="level-picks" id="level-picks">
+                <button type="button" class="level-btn" data-level="0">
+                  <span class="num">01</span>
+                  <span class="name">The Gutters</span>
+                  <span class="sub">Learn the crawl</span>
+                </button>
+                <button type="button" class="level-btn" data-level="1">
+                  <span class="num">02</span>
+                  <span class="name">The Filter</span>
+                  <span class="sub">Do not linger</span>
+                </button>
+                <button type="button" class="level-btn" data-level="2">
+                  <span class="num">03</span>
+                  <span class="name">The Overflow</span>
+                  <span class="sub">Ride the flood</span>
+                </button>
+                <button type="button" class="level-btn" data-level="3">
+                  <span class="num">04</span>
+                  <span class="name">The Flues</span>
+                  <span class="sub">Stay low</span>
+                </button>
+                <button type="button" class="level-btn" data-level="4">
+                  <span class="num">05</span>
+                  <span class="name">The Grate</span>
+                  <span class="sub">One last kick</span>
+                </button>
+              </div>
+              <details class="how-to">
+                <summary>How to crawl</summary>
+                <ul class="controls">
+                  <li><kbd>A</kbd><kbd>D</kbd> move</li>
+                  <li><kbd>Space</kbd> jump · wall kick</li>
+                  <li><kbd>Shift</kbd> dash</li>
+                  <li><kbd>↓</kbd> + <kbd>Shift</kbd> slide-dash</li>
+                  <li><kbd>S</kbd> slide · drop</li>
+                  <li><kbd>E</kbd> talk</li>
+                  <li><kbd>Esc</kbd> pause · <kbd>R</kbd> valve</li>
+                </ul>
+              </details>
+              <p class="eyebrow looks-label">Looks</p>
+              <div id="title-looks" class="looks"></div>
+            </div>
           </div>
-          <ul class="controls">
-            <li><kbd>A</kbd><kbd>D</kbd> or arrows — move</li>
-            <li><kbd>Space</kbd> / <kbd>W</kbd> / <kbd>↑</kbd> — jump · wall jump</li>
-            <li><kbd>Shift</kbd> / <kbd>J</kbd> — dash (wings out)</li>
-            <li><kbd>S</kbd> / <kbd>↓</kbd> — slide · drop through</li>
-            <li><kbd>E</kbd> — talk to a smoking roach</li>
-            <li><kbd>Esc</kbd> / <kbd>P</kbd> — pause · <kbd>R</kbd> — last valve</li>
-          </ul>
-          <p class="eyebrow looks-label">Looks</p>
-          <div id="title-looks" class="looks"></div>
         </div>
       </div>
 

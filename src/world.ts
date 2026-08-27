@@ -1,8 +1,8 @@
 import type { CosmeticId } from './cosmetics'
 
 export type PlatType = 'solid' | 'oneway' | 'moving' | 'crumble'
-export type Theme = 'gutter' | 'filter' | 'overflow'
-export type LevelId = 0 | 1 | 2
+export type Theme = 'gutter' | 'filter' | 'overflow' | 'flue' | 'street'
+export type LevelId = 0 | 1 | 2 | 3 | 4
 
 export type Platform = {
   x: number
@@ -132,6 +132,8 @@ export const LEVELS: { id: LevelId; name: string; subtitle: string }[] = [
   { id: 0, name: 'The Gutters', subtitle: 'Learn the crawl' },
   { id: 1, name: 'The Filter', subtitle: 'Do not linger' },
   { id: 2, name: 'The Overflow', subtitle: 'Ride the flood' },
+  { id: 3, name: 'The Flues', subtitle: 'Stay low' },
+  { id: 4, name: 'The Grate', subtitle: 'One last kick' },
 ]
 
 export function solid(x: number, y: number, w: number, h: number): Platform {

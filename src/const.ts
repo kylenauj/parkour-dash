@@ -17,8 +17,6 @@ export const JUMP_CUT_GRAVITY = 3.1
 export const FAST_FALL = 1.35
 
 export const JUMP_VEL = -820
-export const WALL_JUMP_X = 560
-export const WALL_JUMP_Y = -700
 export const WALL_SLIDE_SPEED = 110
 export const COYOTE = 0.09
 export const JUMP_BUFFER = 0.12
@@ -29,5 +27,10 @@ export const WALL_CONTROL_LOCK = 0.14
 export const DASH_SPEED = 860
 export const DASH_TIME = 0.16
 export const DASH_END_KEEP = 0.45
+export const SLIDE_DASH_SPEED = 980
+export const SLIDE_DASH_TIME = 0.22
+
+export const WALL_JUMP_X = 540
+export const WALL_JUMP_Y = -760
 
 export const CORNER = 10

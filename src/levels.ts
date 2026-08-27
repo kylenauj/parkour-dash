@@ -23,7 +23,31 @@ import {
 export function createWorld(id: LevelId = 0): World {
   if (id === 1) return filterBeds()
   if (id === 2) return overflow()
+  if (id === 3) return flues()
+  if (id === 4) return grate()
   return gutters()
+}
+
+/** Two pipes, a jump-through grate on top, a side ledge to walk off. */
+function shaft(
+  b: ReturnType<typeof kit>,
+  left: number,
+  grateY: number,
+  pipeH: number,
+  exit: 'right' | 'left' = 'right',
+  exitW = 260,
+) {
+  const gap = 110
+  const pw = 28
+  const right = left + pw + gap
+  const span = pw * 2 + gap
+  b.s(left, grateY + 16, pw, pipeH)
+  b.s(right, grateY + 16, pw, pipeH + 40)
+  b.k(left + pw, grateY + 16 + pipeH + 2, gap)
+  b.s(left, grateY + 16 + pipeH + 20, span, 48)
+  b.o(left, grateY, span)
+  if (exit === 'right') b.s(right + pw, grateY + 6, exitW, 28)
+  else b.s(left - exitW, grateY + 6, exitW, 28)
 }
 
 function kit() {
@@ -117,7 +141,7 @@ function gutters(): World {
   b.s(20, 520, 120, 24)
   b.s(8, 430, 110, 24)
   b.r(40, 390)
-  b.n(24, 390, 'Someone stashed a crumb up here')
+  b.n(24, 390, 'Look up left of spawn — extra crumb on the ledges')
 
   b.s(1800, 500, 160, 40)
   b.s(2040, 430, 160, 40)
@@ -130,16 +154,12 @@ function gutters(): World {
   b.p('web', 2284, 360)
 
   b.s(2680, 640, 240, 48)
-  b.s(2920, 180, 28, 400)
-  b.s(3058, 168, 28, 500)
-  b.k(2948, 782, 110)
-  b.s(2920, 800, 166, 70)
-  b.s(3038, 168, 360, 32)
-  b.n(2688, 580, 'Touch a pipe, then jump. No need to hold in.')
+  shaft(b, 2920, 168, 620, 'right', 320)
+  b.n(2688, 580, 'Touch a pipe, then jump. Kick up. The grate lets you through.')
   b.r(3000, 480)
   b.r(3000, 300)
-  b.p('chain', 2920, 180)
-  b.p('lamp', 3180, 168)
+  b.p('chain', 2920, 184)
+  b.p('lamp', 3180, 174)
 
   b.o(3400, 280, 120)
   b.o(3590, 220, 120)
@@ -179,12 +199,13 @@ function gutters(): World {
   b.o(6780, 240, 110)
   b.s(6960, 180, 32, 360)
   b.s(7100, 120, 32, 420)
-  b.s(6960, 80, 172, 28)
   b.k(6992, 548, 108)
   b.s(6960, 566, 172, 40)
-  b.n(6460, 360, 'Ride, then kick up the stack')
+  b.o(6960, 80, 172)
+  b.s(7132, 86, 240, 28)
+  b.n(6460, 360, 'Ride, then kick up. Jump through the grate.')
   b.r(6830, 200)
-  b.r(7060, 40)
+  b.r(7220, 48)
 
   b.s(7400, 220, 180, 40)
   b.c(7640, 300, 100)
@@ -291,16 +312,12 @@ function filterBeds(): World {
 
   b.s(3000, 560, 180, 40)
   b.s(3260, 470, 140, 40)
-  b.s(3480, 160, 28, 430)
-  b.s(3628, 140, 28, 500)
-  b.k(3508, 762, 120)
-  b.s(3480, 780, 176, 50)
-  b.s(3480, 120, 176, 28)
-  b.n(3008, 500, 'Kick the rust stack')
+  shaft(b, 3480, 120, 640, 'right', 240)
+  b.n(3008, 500, 'Kick the rust. Jump through the grate at the top.')
   b.r(3568, 420)
   b.r(3568, 240)
-  b.v(3520, 64)
-  b.p('antenna', 3580, 120)
+  b.v(3688, 70)
+  b.p('antenna', 3720, 126)
 
   b.m(3820, 280, 140, 26, 'x', 220, 1.05)
   b.m(4220, 360, 140, 26, 'y', 90, 1.15, 0.4)
@@ -412,14 +429,14 @@ function overflow(): World {
   b.s(2320, 900, 280, 48)
   b.s(2320, 80, 28, 820)
   b.s(2572, 80, 28, 820)
-  b.s(2320, 52, 280, 28)
+  b.o(2320, 52, 280)
   b.f(2350, 160, 220, 720, 0, -2520)
   b.s(2600, 200, 180, 28)
-  b.n(2330, 840, 'Ride the updraft. Jump if you stall.')
+  b.n(2330, 840, 'Ride the updraft. Jump through the grate.')
   b.r(2440, 500)
   b.r(2440, 260)
   b.v(2660, 144)
-  b.p('antenna', 2480, 52)
+  b.p('antenna', 2480, 58)
   b.p('lamp', 2680, 200)
   b.npc(
     npc(
@@ -456,14 +473,15 @@ function overflow(): World {
   b.s(4280, 140, 28, 420)
   b.s(4430, 120, 28, 480)
   b.s(4580, 100, 28, 540)
-  b.s(4280, 80, 328, 28)
+  b.o(4280, 80, 328)
+  b.s(4608, 86, 220, 28)
   b.k(4308, 702, 272)
   b.s(4280, 720, 328, 40)
-  b.n(4010, 360, 'Three stacks. Keep kicking.')
+  b.n(4010, 360, 'Three stacks. Kick through the grate.')
   b.r(4370, 360)
   b.r(4520, 280)
   b.r(4370, 160)
-  b.v(4320, 24)
+  b.v(4660, 30)
   b.p('chain', 4280, 80)
   b.p('chain', 4580, 80)
 
@@ -512,6 +530,227 @@ function overflow(): World {
     1080,
     { x: 80, y: 680 },
     { x: 7960, y: 60, w: 70, h: 120 },
+    b,
+  )
+}
+
+function lowPipe(b: ReturnType<typeof kit>, x: number, floorY: number, w: number) {
+  b.s(x, floorY, w, 320)
+  b.s(x, floorY - 230, w, 202)
+}
+
+function flues(): World {
+  const b = kit()
+
+  b.s(0, 640, 420, 360)
+  b.n(70, 560, 'Hold down + dash. Slide-dash stays low.')
+  b.r(280, 580)
+  b.p('vent', 36, 640)
+  b.p('barrel', 180, 640)
+  b.p('barrelTip', 260, 640)
+  b.p('web', 16, 640)
+  b.npc(
+    npc(
+      'cinder',
+      340,
+      640,
+      -1,
+      'Cinder',
+      [
+        'Tall bugs eat ceiling. You are not tall if you do not want to be.',
+        'Down, then dash. Keep the cig off the grate.',
+      ],
+      'ash',
+    ),
+  )
+
+  lowPipe(b, 420, 640, 520)
+  b.r(680, 604)
+  b.n(430, 390, 'Stay low. Standing eats the flue.')
+
+  b.s(940, 640, 180, 360)
+  b.v(980, 584)
+  b.p('lamp', 1040, 640)
+
+  b.k(1120, 780, 300)
+  b.s(1120, 798, 300, 40)
+  b.s(1420, 640, 180, 360)
+  b.n(950, 560, 'Wings out over the pit, then drop low again.')
+  b.r(1240, 560)
+
+  lowPipe(b, 1600, 640, 560)
+  b.r(1860, 604)
+  b.r(2040, 604)
+  b.n(1610, 390, 'Chain slide-dashes. The flue is longer than one burst.')
+
+  b.s(2160, 640, 200, 360)
+  b.v(2200, 584)
+
+  b.s(2360, 640, 220, 48)
+  shaft(b, 2580, 160, 480, 'right', 280)
+  b.n(2370, 580, 'Kick up. Jump through the grate.')
+  b.r(2660, 420)
+  b.r(2660, 240)
+  b.p('chain', 2580, 176)
+
+  b.s(3020, 166, 160, 28)
+  lowPipe(b, 3180, 166, 520)
+  b.r(3420, 130)
+  b.n(3190, -80, 'High flue. Same trick.')
+  b.v(3380, 110)
+
+  b.s(3700, 166, 160, 28)
+  b.s(3920, 300, 180, 40)
+  b.s(4180, 420, 200, 40)
+  b.x(4440, 120, 96, 40, 260, 0.82, 0.1)
+  b.s(4400, 440, 200, 40)
+  lowPipe(b, 4600, 440, 480)
+  b.n(3930, 240, 'Slide-dash under the press.')
+  b.r(4520, 380)
+  b.r(4840, 404)
+  b.v(4700, 384)
+  b.p('grate', 4420, 440)
+
+  b.s(5080, 440, 160, 40)
+  b.m(5280, 360, 140, 26, 'x', 180, 1.2)
+  b.s(5640, 300, 160, 40)
+  b.c(5860, 260, 110)
+  b.s(6040, 220, 180, 40)
+  b.n(5090, 380, 'Ride, plate, last hop.')
+  b.r(5340, 310)
+  b.r(6100, 170)
+
+  b.s(6280, 180, 520, 80)
+  b.p('antenna', 6600, 180)
+  b.p('barrel', 6400, 180)
+  b.p('lamp', 6700, 180)
+  b.p('web', 6284, 180)
+  b.n(6320, 120, 'Grate’s next. Keep the ash.')
+  b.v(6360, 124)
+
+  return makeWorld(
+    3,
+    'The Flues',
+    'Stay low',
+    'flue',
+    6960,
+    1100,
+    980,
+    { x: 80, y: 560 },
+    { x: 6620, y: 60, w: 70, h: 120 },
+    b,
+  )
+}
+
+function grate(): World {
+  const b = kit()
+
+  b.s(0, 680, 480, 400)
+  b.n(70, 600, 'Last pipe. Everything you learned, in order.')
+  b.r(320, 620)
+  b.p('lamp', 40, 680)
+  b.p('barrel', 180, 680)
+  b.p('nest', 260, 680)
+  b.npc(
+    npc(
+      'wick',
+      400,
+      680,
+      -1,
+      'Wick',
+      [
+        'Street’s loud. I stayed. Someone has to keep the last light.',
+        'Kick, slide-dash, wings. In that order, if you want daylight.',
+      ],
+      'midnight',
+    ),
+  )
+
+  b.s(520, 620, 180, 40)
+  shaft(b, 760, 180, 500, 'right', 220)
+  b.n(530, 560, 'Kick the stack. Grate on top.')
+  b.r(840, 420)
+  b.r(840, 240)
+  b.v(920, 130)
+  b.p('chain', 760, 196)
+
+  b.s(1140, 186, 140, 28)
+  lowPipe(b, 1280, 186, 440)
+  b.r(1480, 150)
+  b.n(1290, -60, 'Slide-dash the street flue.')
+
+  b.s(1720, 186, 160, 28)
+  b.s(1960, 280, 160, 40)
+  b.k(2120, 780, 280)
+  b.s(2120, 798, 280, 40)
+  b.s(2400, 300, 180, 40)
+  b.n(1970, 220, 'Wings across. Do not walk it.')
+  b.r(2240, 240)
+  b.v(2460, 244)
+  b.p('shroom', 2420, 300)
+
+  b.s(2680, 280, 160, 40)
+  b.s(2920, 80, 28, 420)
+  b.s(3068, 60, 28, 480)
+  b.s(3216, 40, 28, 540)
+  b.o(2920, 40, 324)
+  b.s(3244, 46, 200, 28)
+  b.k(2948, 622, 268)
+  b.s(2920, 640, 324, 40)
+  b.n(2690, 220, 'Three kicks. Through the grate.')
+  b.r(3000, 360)
+  b.r(3148, 240)
+  b.r(3000, 120)
+  b.v(3280, 0)
+  b.p('chain', 2920, 40)
+  b.p('chain', 3216, 40)
+
+  b.c(3560, 200, 110)
+  b.c(3740, 160, 110)
+  b.c(3920, 200, 110)
+  b.s(4140, 180, 180, 40)
+  b.k(3560, 700, 740)
+  b.s(3560, 718, 740, 40)
+  b.n(3570, 140, 'Plates dump. Keep moving.')
+  b.r(3780, 110)
+  b.r(4200, 130)
+  b.v(4180, 124)
+
+  b.s(4440, 200, 160, 40)
+  b.f(4640, 40, 240, 260, 420, -60)
+  b.o(4880, 140, 120)
+  lowPipe(b, 5080, 280, 400)
+  b.n(4450, 140, 'Current, grate, then stay low.')
+  b.r(4760, 100)
+  b.r(5280, 244)
+  b.v(5140, 224)
+
+  b.s(5480, 280, 160, 40)
+  b.x(5700, 40, 90, 36, 200, 0.88, 0.2)
+  b.s(5860, 260, 180, 40)
+  b.m(6120, 200, 130, 26, 'x', 160, 1.3)
+  b.s(6480, 160, 560, 80)
+  b.n(5490, 220, 'Press, ride, daylight.')
+  b.r(5920, 210)
+  b.r(6180, 150)
+  b.r(6600, 110)
+  b.p('antenna', 6840, 160)
+  b.p('grate', 6500, 160)
+  b.p('lamp', 6960, 160)
+  b.p('web', 6484, 160)
+  b.n(6520, 100, 'The street. Put the cig out or don’t.')
+  b.v(6560, 104)
+
+  return makeWorld(
+    4,
+    'The Grate',
+    'One last kick',
+    'street',
+    7200,
+    1200,
+    1080,
+    { x: 80, y: 600 },
+    { x: 6880, y: 40, w: 70, h: 120 },
     b,
   )
 }

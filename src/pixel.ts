@@ -20,7 +20,9 @@ export function crisp(ctx: CanvasRenderingContext2D) {
   ctx.imageSmoothingEnabled = false
 }
 
-export function bakePixels(rows: string[], palette: Record<string, string>, scale: number) {
+export type Pal = Record<string, string>
+
+export function bakePixels(rows: string[], palette: Pal, scale: number) {
   const h = rows.length
   const w = rows[0]?.length ?? 0
   const c = document.createElement('canvas')

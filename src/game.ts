@@ -44,6 +44,7 @@ type GameUI = {
   unlockName: HTMLElement
   titleLooks: HTMLElement
   pauseLooks: HTMLElement
+  heroArt: HTMLCanvasElement
   touch: HTMLElement
 }
 
@@ -90,6 +91,7 @@ export class Game {
     window.addEventListener('resize', () => this.fitCanvas())
     this.showTouchIfNeeded()
     this.refreshLooks()
+    this.paintHero()
   }
 
   start() {
@@ -125,7 +127,7 @@ export class Game {
   }
 
   nextPipe() {
-    if (this.levelId >= 2) {
+    if (this.levelId >= 4) {
       this.setMode('title')
       return
     }
@@ -243,9 +245,14 @@ export class Game {
     }
     if (p.justDashed) {
       const behind = Math.atan2(p.vy, p.vx) + Math.PI
-      this.particles.emitDir(p.cx, p.cy, 12, look.wings[1], 280, behind, 1.3, 4)
-      this.particles.emitDir(p.cx, p.cy, 8, look.wings[0], 340, behind, 0.9, 3)
-      this.particles.emitDir(p.cx, p.cy, 6, look.wings[3], 180, behind, 1.5, 3)
+      if (p.slideDash) {
+        this.particles.emitDir(p.cx, p.bottom - 4, 14, look.wings[1], 320, Math.PI, 1.1, 3)
+        this.particles.emitDir(p.cx, p.bottom, 10, '#8a6a48', 220, Math.PI / 2, 0.8, 4)
+      } else {
+        this.particles.emitDir(p.cx, p.cy, 12, look.wings[1], 280, behind, 1.3, 4)
+        this.particles.emitDir(p.cx, p.cy, 8, look.wings[0], 340, behind, 0.9, 3)
+        this.particles.emitDir(p.cx, p.cy, 6, look.wings[3], 180, behind, 1.5, 3)
+      }
       this.audio.dash()
       this.hitstop = 0.04
       this.dashFlash = 0.07
@@ -378,7 +385,7 @@ export class Game {
     const orbs = this.world.orbs.filter((o) => o.got).length
     this.runOrbs += orbs
     this.runOrbMax += this.world.orbs.length
-    const last = this.levelId >= 2
+    const last = this.levelId >= 4
     const meta = LEVELS[this.levelId]
     this.ui.winEyebrow.textContent = last ? 'Street grate' : meta.name
     this.ui.winCopy.textContent = last
@@ -394,7 +401,7 @@ export class Game {
       <div><span class="k">Falls</span><span class="v">${this.deaths}</span></div>
     `
     this.ui.btnNext.classList.toggle('hidden', last)
-    this.ui.btnNext.textContent = last ? 'Title' : this.levelId === 0 ? 'The Filter' : 'The Overflow'
+    this.ui.btnNext.textContent = last ? 'Title' : LEVELS[this.levelId + 1].name
     this.setMode('win')
   }
 
@@ -422,10 +429,10 @@ export class Game {
     this.hint = ''
     this.ui.hint.textContent = ''
     this.toastT = 2.4
-    this.ui.toastNum.textContent = `0${id + 1}`
+    this.ui.toastNum.textContent = String(id + 1).padStart(2, '0')
     this.ui.toastName.textContent = this.world.name
     this.ui.toast.classList.remove('hidden')
-    this.ui.level.textContent = `${id + 1} / 3`
+    this.ui.level.textContent = `${id + 1} / 5`
     this.closeTalk()
     this.pops = []
   }
@@ -514,6 +521,11 @@ export class Game {
   refreshLooks() {
     this.paintLooks(this.ui.titleLooks)
     this.paintLooks(this.ui.pauseLooks)
+    this.paintHero()
+  }
+
+  private paintHero() {
+    this.renderer.paintHero(this.ui.heroArt, this.looks.equipped)
   }
 
   private paintLooks(root: HTMLElement) {
@@ -557,7 +569,7 @@ export class Game {
     this.ui.orbs.textContent = `${got} / ${this.world.orbs.length}`
     this.ui.deaths.textContent = String(this.deaths)
     this.ui.dash.classList.toggle('ready', this.player.canDash && !this.player.dashing)
-    this.ui.level.textContent = `${this.levelId + 1} / 3`
+    this.ui.level.textContent = `${this.levelId + 1} / 5`
   }
 
   private fitCanvas() {

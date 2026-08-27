@@ -17,6 +17,8 @@ import {
   PLAYER_SLIDE_H,
   PLAYER_W,
   RUN_SPEED,
+  SLIDE_DASH_SPEED,
+  SLIDE_DASH_TIME,
   SLIDE_FRICTION,
   WALL_CONTROL_LOCK,
   WALL_COYOTE,
@@ -53,7 +55,9 @@ export class Player {
   onWall = 0
   sliding = false
   dashing = false
+  slideDash = false
   canDash = true
+  wallKickT = 0
   squish = 1
   coyote = 0
   jumpBuf = 0
@@ -95,7 +99,9 @@ export class Player {
     this.h = PLAYER_H
     this.sliding = false
     this.dashing = false
+    this.slideDash = false
     this.canDash = true
+    this.wallKickT = 0
     this.onGround = false
     this.onWall = 0
     this.dashT = 0
@@ -127,6 +133,7 @@ export class Player {
     this.justJumped = false
     this.jumpedFromWall = false
     this.justDashed = false
+    this.wallKickT = Math.max(0, this.wallKickT - dt)
     this.wallLock = Math.max(0, this.wallLock - dt)
     this.controlLock = Math.max(0, this.controlLock - dt)
     this.dropT = Math.max(0, this.dropT - dt)
@@ -144,9 +151,13 @@ export class Player {
     if (this.dashing) {
       this.dashT -= dt
       if (this.dashT <= 0) {
+        const wasSlide = this.slideDash
         this.dashing = false
+        this.slideDash = false
         this.vx *= DASH_END_KEEP
-        this.vy *= DASH_END_KEEP
+        this.vy = wasSlide ? 0 : this.vy * DASH_END_KEEP
+      } else if (this.slideDash) {
+        this.vy = 0
       }
     } else {
       this.applyGravity(input, dt)
@@ -233,6 +244,21 @@ export class Player {
   private handleDash(input: Input) {
     if (this.busy) return
     if (!input.dashPressed || !this.canDash || this.dashing) return
+    const low = this.sliding || (this.onGround && input.down)
+    if (low) {
+      const dir = input.x !== 0 ? input.x : this.facing
+      this.facing = dir > 0 ? 1 : -1
+      this.sliding = true
+      this.slideDash = true
+      this.setHeight(PLAYER_SLIDE_H)
+      this.vx = this.facing * SLIDE_DASH_SPEED
+      this.vy = 0
+      this.dashing = true
+      this.canDash = false
+      this.dashT = SLIDE_DASH_TIME
+      this.justDashed = true
+      return
+    }
     let dx = input.x
     let dy = input.up ? -1 : input.down ? 1 : 0
     if (dx === 0 && dy === 0) dx = this.facing
@@ -240,6 +266,7 @@ export class Player {
     this.vx = (dx / mag) * DASH_SPEED
     this.vy = (dy / mag) * DASH_SPEED
     this.dashing = true
+    this.slideDash = false
     this.canDash = false
     this.dashT = DASH_TIME
     this.justDashed = true
@@ -249,6 +276,7 @@ export class Player {
   }
 
   private handleSlide(input: Input, world: World) {
+    if (this.slideDash) return
     const want = this.onGround && input.down && Math.abs(this.vx) > 70 && !this.dashing
     if (want && !this.sliding) {
       this.sliding = true
@@ -318,6 +346,7 @@ export class Player {
       this.controlLock = WALL_CONTROL_LOCK
       this.justJumped = true
       this.jumpedFromWall = true
+      this.wallKickT = 0.18
       this.sliding = false
       this.setHeight(PLAYER_H)
       this.squish = 1.25

@@ -1,19 +1,13 @@
 import { DASH_TIME, VIEW_H, VIEW_W } from './const'
 import { bakePixels, crisp, PX, prect, snap } from './pixel'
 import { lookById, LOOKS, type CosmeticId, type Look } from './cosmetics'
+import { bakeBank, type SpriteBank } from './sprites'
 import type { Camera } from './camera'
 import type { Particles } from './particles'
 import type { Player } from './player'
 import type { Npc, Platform, Pop, Secret, Theme, World } from './world'
 
-type Skin = {
-  idle: HTMLCanvasElement
-  run: HTMLCanvasElement[]
-  jump: HTMLCanvasElement
-  slide: HTMLCanvasElement
-  wall: HTMLCanvasElement
-  dash: HTMLCanvasElement
-}
+type Skin = SpriteBank
 
 export class Renderer {
   private skins = new Map<CosmeticId, Skin>()
@@ -30,7 +24,7 @@ export class Renderer {
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx
     crisp(ctx)
-    for (const look of LOOKS) this.skins.set(look.id, bakeSkin(look.pal))
+    for (const look of LOOKS) this.skins.set(look.id, bakeBank(look.pal))
     this.brick = bakeBrick('#1a1814', '#4a4034', '#3a342c', '#141210')
     this.rustBrick = bakeBrick('#24140c', '#8a4a22', '#5a3018', '#180c08')
     this.layerFar = bakeFar()
@@ -118,6 +112,12 @@ export class Renderer {
     if (this.theme === 'overflow') {
       return ['#060b12', '#071018', '#0a1c24', '#063038', 'rgba(40,220,200,0.14)']
     }
+    if (this.theme === 'flue') {
+      return ['#140806', '#1c0a06', '#2a1008', '#3a1408', 'rgba(255,80,20,0.18)']
+    }
+    if (this.theme === 'street') {
+      return ['#080610', '#0c0a16', '#141028', '#1a1830', 'rgba(180,140,255,0.14)']
+    }
     return ['#070b08', '#0b100e', '#102014', '#0a2a10', 'rgba(80,255,50,0.16)']
   }
 
@@ -142,7 +142,14 @@ export class Renderer {
 
   private sporeField(cam: Camera, time: number) {
     const ctx = this.ctx
-    ctx.fillStyle = this.theme === 'filter' ? '#ffb040' : this.theme === 'overflow' ? '#5ef0d8' : '#7cff3a'
+    ctx.fillStyle =
+      this.theme === 'filter' || this.theme === 'flue'
+        ? '#ffb040'
+        : this.theme === 'overflow'
+          ? '#5ef0d8'
+          : this.theme === 'street'
+            ? '#c8b0ff'
+            : '#7cff3a'
     for (let i = 0; i < 36; i++) {
       const x = snap(((i * 97 + time * 18 - cam.x * 0.25) % (VIEW_W + 20) + VIEW_W + 20) % (VIEW_W + 20))
       const y = snap((i * 53 + Math.sin(time + i) * 20) % VIEW_H)
@@ -155,8 +162,23 @@ export class Renderer {
   private drawSludge(world: World, cam: Camera, time: number) {
     const ctx = this.ctx
     const y = snap(world.killY - 24)
-    const slime = this.theme === 'filter' ? ['#ff8a30', '#d45a18', '#5a2010'] : this.theme === 'overflow' ? ['#4af0d0', '#1aa090', '#043838'] : ['#b6ff4a', '#7cff3a', '#1a5a12']
-    prect(ctx, cam.x - 20, y - 80, VIEW_W + 40, world.h - y + 120, this.theme === 'filter' ? 'rgba(180,70,20,0.28)' : this.theme === 'overflow' ? 'rgba(20,80,90,0.34)' : 'rgba(40,140,30,0.28)')
+    const slime =
+      this.theme === 'filter' || this.theme === 'flue'
+        ? ['#ff8a30', '#d45a18', '#5a2010']
+        : this.theme === 'overflow'
+          ? ['#4af0d0', '#1aa090', '#043838']
+          : this.theme === 'street'
+            ? ['#a090e0', '#504878', '#181428']
+            : ['#b6ff4a', '#7cff3a', '#1a5a12']
+    const fog =
+      this.theme === 'filter' || this.theme === 'flue'
+        ? 'rgba(180,70,20,0.28)'
+        : this.theme === 'overflow'
+          ? 'rgba(20,80,90,0.34)'
+          : this.theme === 'street'
+            ? 'rgba(40,20,70,0.32)'
+            : 'rgba(40,140,30,0.28)'
+    prect(ctx, cam.x - 20, y - 80, VIEW_W + 40, world.h - y + 120, fog)
     const start = snap(cam.x - 16)
     for (let x = start; x < cam.x + VIEW_W + 32; x += PX) {
       const wave = Math.floor(Math.sin(x * 0.04 + time * 2.4) * 2) * PX
@@ -186,7 +208,14 @@ export class Renderer {
   }
 
   private crumblePlate(x: number, y: number, w: number, shake: boolean) {
-    const body = this.theme === 'filter' ? '#6a3a18' : this.theme === 'overflow' ? '#2a4a48' : '#4a4e42'
+    const body =
+      this.theme === 'filter' || this.theme === 'flue'
+        ? '#6a3a18'
+        : this.theme === 'overflow'
+          ? '#2a4a48'
+          : this.theme === 'street'
+            ? '#3a3648'
+            : '#4a4e42'
     const hi = shake ? '#f0d878' : '#c4b48a'
     prect(this.ctx, x, y, w, 18, body)
     prect(this.ctx, x, y, w, PX, hi)
@@ -195,7 +224,7 @@ export class Renderer {
 
   private brickLedge(p: Platform) {
     const ctx = this.ctx
-    const tile = this.theme === 'filter' ? this.rustBrick : this.brick
+    const tile = this.theme === 'filter' || this.theme === 'flue' ? this.rustBrick : this.brick
     const tw = tile.width
     const th = tile.height
     for (let y = snap(p.y + 16); y < p.y + p.h; y += th) {
@@ -528,8 +557,10 @@ export class Renderer {
     crisp(ctx)
     const skin = this.skins.get(this.look.id) ?? this.skins.get('stock')!
     let spr = skin.idle
-    if (player.dashing) spr = skin.dash
+    if (player.slideDash) spr = skin.slideDash
+    else if (player.dashing) spr = skin.dash
     else if (player.sliding) spr = skin.slide
+    else if (player.wallKickT > 0) spr = skin.kick
     else if (player.onWall && !player.onGround) spr = skin.wall
     else if (!player.onGround) spr = skin.jump
     else if (Math.abs(player.vx) > 40) {
@@ -539,12 +570,12 @@ export class Renderer {
 
     for (const g of player.ghosts) {
       ctx.globalAlpha = Math.max(0, g.life * 1.6)
-      this.drawDashWingsAt(g.x + player.w / 2, g.y + g.h * 0.42, player, 0.45 + g.life)
-      this.drawRoach(skin.dash, g.x + player.w / 2, g.y + g.h, player.facing, this.look, false)
+      if (!player.slideDash) this.drawDashWingsAt(g.x + player.w / 2, g.y + g.h * 0.42, player, 0.45 + g.life)
+      this.drawRoach(player.slideDash ? skin.slideDash : skin.dash, g.x + player.w / 2, g.y + g.h, player.facing, this.look, false)
     }
     ctx.globalAlpha = 1
 
-    if (player.dashing) this.drawDashWings(player)
+    if (player.dashing && !player.slideDash) this.drawDashWings(player)
     this.drawRoach(spr, player.cx, player.bottom, player.facing, this.look, !player.sliding, player.squish)
   }
 
@@ -558,21 +589,50 @@ export class Renderer {
     squish = 1,
   ) {
     const ctx = this.ctx
-    const s = 1.95
-    const ox = spr === (this.skins.get(look.id)?.dash ?? spr) ? 0.42 : 0.45
+    const s = 1.22
+    const ox = 0.48
     ctx.save()
     ctx.translate(snap(x), snap(y))
     ctx.scale(facing, squish)
-    ctx.drawImage(spr, -Math.floor(spr.width * ox * s), -Math.floor(spr.height * s) + 8, spr.width * s, spr.height * s)
+    ctx.drawImage(spr, -Math.floor(spr.width * ox * s), -Math.floor(spr.height * s) + 4, spr.width * s, spr.height * s)
     if (look.glasses) {
-      prect(ctx, -6, -Math.floor(spr.height * s) + 28, 16, 6, '#111')
-      prect(ctx, -4, -Math.floor(spr.height * s) + 30, 4, PX, '#d8f0ff')
+      prect(ctx, -8, -Math.floor(spr.height * s) + 22, 18, 6, '#111')
+      prect(ctx, -6, -Math.floor(spr.height * s) + 24, 4, PX, '#d8f0ff')
     }
     ctx.restore()
     if (cig) {
       const flicker = Math.sin(x * 0.2) > 0
-      prect(ctx, x + facing * 16, y - (squish < 0.95 ? 18 : 27), PX, PX, flicker ? look.cig[0] : look.cig[1])
+      prect(ctx, x + facing * 14, y - (squish < 0.95 ? 16 : 34), PX, PX, flicker ? look.cig[0] : look.cig[1])
     }
+  }
+
+  paintHero(canvas: HTMLCanvasElement, lookId: CosmeticId) {
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const look = lookById(lookId)
+    const skin = this.skins.get(look.id) ?? this.skins.get('stock')!
+    const spr = skin.hero
+    ctx.imageSmoothingEnabled = false
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    const g = ctx.createLinearGradient(0, 0, 0, canvas.height)
+    g.addColorStop(0, 'rgba(12, 20, 14, 0)')
+    g.addColorStop(1, 'rgba(8, 14, 10, 0.55)')
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    const scale = Math.min((canvas.width * 0.92) / spr.width, (canvas.height * 0.88) / spr.height)
+    const dw = spr.width * scale
+    const dh = spr.height * scale
+    const dx = (canvas.width - dw) / 2
+    const dy = canvas.height - dh - 8
+    ctx.drawImage(spr, dx, dy, dw, dh)
+    ctx.fillStyle = look.cig[0]
+    ctx.fillRect(Math.floor(dx + dw * 0.72), Math.floor(dy + dh * 0.28), 4, 4)
+    ctx.fillStyle = look.smoke[0]
+    ctx.globalAlpha = 0.7
+    ctx.fillRect(Math.floor(dx + dw * 0.78), Math.floor(dy + dh * 0.12), 6, 6)
+    ctx.fillStyle = look.smoke[1]
+    ctx.fillRect(Math.floor(dx + dw * 0.86), Math.floor(dy + dh * 0.04), 8, 8)
+    ctx.globalAlpha = 1
   }
 
   private speedLines(player: Player) {
@@ -668,156 +728,6 @@ export class Renderer {
   }
 }
 
-function bakeSkin(pal: Record<string, string>): Skin {
-  return {
-    idle: bakeRoach(idleRows, 3, pal),
-    run: [runA, runB, runC, runB].map((rows) => bakeRoach(rows, 3, pal)),
-    jump: bakeRoach(jumpRows, 3, pal),
-    slide: bakeRoach(slideRows, 3, pal),
-    wall: bakeRoach(wallRows, 3, pal),
-    dash: bakeRoach(dashRows, 3, pal),
-  }
-}
-
-function bakeRoach(rows: string[], scale: number, pal: Record<string, string>) {
-  return bakePixels(rows, pal, scale)
-}
-
-const idleRows = [
-  '......aa..........',
-  '.....a..a.........',
-  '....HHHHH.........',
-  '...HhEoEhH........',
-  '...HHEEEHHC.......',
-  '....HHHHH.F.......',
-  '....WBBBW.........',
-  '...BBBBBBB........',
-  '..BbBBBBBb........',
-  '..B..BBB..b.......',
-  '.....BBB..........',
-  '....PP.PP.........',
-  '....LL.LL.........',
-  '....LL.LL.........',
-  '....S...S.........',
-]
-
-const runA = [
-  '......aa..........',
-  '.....a..a.........',
-  '....HHHHH.........',
-  '...HhEoEhH........',
-  '...HHEEEHHC.......',
-  '....HHHHH.F.......',
-  '....WBBBW.........',
-  '...BBBBBBB........',
-  '..BbBBBBBb........',
-  '.L...BBB...L......',
-  'L....BBB....L.....',
-  '.....PP.PP........',
-  '....LL............',
-  '...LL.....L.......',
-  '...S......S.......',
-]
-
-const runB = [
-  '......aa..........',
-  '.....a..a.........',
-  '....HHHHH.........',
-  '...HhEoEhH........',
-  '...HHEEEHHC.......',
-  '....HHHHH.F.......',
-  '....WBBBW.........',
-  '...BBBBBBB........',
-  '..BbBBBBBb........',
-  '..B..BBB..b.......',
-  '.....BBB..........',
-  '....PP.PP.........',
-  '....LL.LL.........',
-  '....LL.LL.........',
-  '....S...S.........',
-]
-
-const runC = [
-  '......aa..........',
-  '.....a..a.........',
-  '....HHHHH.........',
-  '...HhEoEhH........',
-  '...HHEEEHHC.......',
-  '....HHHHH.F.......',
-  '....WBBBW.........',
-  '...BBBBBBB........',
-  '..BbBBBBBb........',
-  '..L..BBB..L.......',
-  '...L.BBB.L........',
-  '....PP.PP.........',
-  '.....LL...........',
-  '....L...LL........',
-  '....S...S.........',
-]
-
-const jumpRows = [
-  '.....aa...........',
-  '....a..a..........',
-  '...HHHHH..........',
-  '..HhEoEhH.........',
-  '..HHEEEHHC........',
-  '...HHHHH.F........',
-  '...WBBBW..........',
-  '..BBBBBBB.........',
-  '.BbBBBBBb.........',
-  'L..BBBBB..L.......',
-  '....BBB...........',
-  '...PP.PP..........',
-  '...L...L..........',
-  '..L.....L.........',
-  '..S.....S.........',
-]
-
-const slideRows = [
-  '..................',
-  'aa...HHHHHC.......',
-  '..a.HhEoEhHF......',
-  '...BBBBBBBB.......',
-  '..BBBBBBBBB.......',
-  '.LLLLLLLLLL.......',
-  '.S........S.......',
-]
-
-const wallRows = [
-  '....aa............',
-  '...a..a...........',
-  '..HHHHH...........',
-  '.HhEoEhH..........',
-  '.HHEEEHHC.........',
-  '..HHHHH.F.........',
-  '..WBBBW...........',
-  '.BBBBBBB..........',
-  'BbBBBBBb..........',
-  'B..BBB..b.........',
-  '...BBB............',
-  '..PP.PP...........',
-  '..LL..............',
-  '..LL..............',
-  '..S...............',
-]
-
-const dashRows = [
-  '..........aa................',
-  '.........a..a...............',
-  '........HHHHH...............',
-  '.......HhEoEhHC.............',
-  '....mmHHHEEEHH.F............',
-  '..mMMMWBBBBWMMMm............',
-  '.Mv.v.BBBBBB.v.vM...........',
-  'vM....BbBBBb....Mv..........',
-  '......BBBBB.................',
-  '.....L.BBB.L................',
-  '......PP.PP.................',
-  '.....LL....LL...............',
-  '....LL......L...............',
-  '....S.......S...............',
-  '............................',
-]
 
 function bakeBrick(edge: string, h: string, H: string, D: string) {
   return bakePixels(

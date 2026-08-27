@@ -27,6 +27,7 @@ const game = new Game(canvas, {
   unlockName: el('#unlock-name'),
   titleLooks: el('#title-looks'),
   pauseLooks: el('#pause-looks'),
+  heroArt: el('#hero-art') as HTMLCanvasElement,
   touch: el('#touch'),
 })
 
@@ -41,7 +42,7 @@ el('#btn-title').addEventListener('click', () => game.backToTitle())
 document.querySelectorAll<HTMLButtonElement>('[data-level]').forEach((btn) => {
   btn.addEventListener('click', () => {
     const id = Number(btn.dataset.level)
-    if (id === 0 || id === 1 || id === 2) game.playLevel(id)
+    if (id >= 0 && id <= 4) game.playLevel(id as 0 | 1 | 2 | 3 | 4)
   })
 })
 
