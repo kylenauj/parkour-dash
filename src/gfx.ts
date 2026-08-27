@@ -139,12 +139,12 @@ export function pineTree(
     if (i % 11 === 0) prect(ctx, x - w / 2, y, Math.max(1, w * 0.4), 1, cols.bark)
   }
 
-  const tiers = Math.max(7, Math.round(11 * Math.min(1.6, s)))
+  const tiers = Math.max(9, Math.round(14 * Math.min(1.5, s)))
   for (let i = 0; i < tiers; i++) {
     const t = i / (tiers - 1)
-    const top = ground - height * (0.94 - t * 0.8)
-    const half = (3.5 + t * t * 22 + t * 8) * s
-    const drop = (7 + t * 13) * s
+    const top = ground - height * (0.93 - t * 0.79)
+    const half = (4 + t * t * 20 + t * 10) * s
+    const drop = (14 + t * 16) * s
     branchTier(ctx, x, top, half, drop, cols)
   }
   prect(ctx, x - 1, ground - height - 5 * s, 2, 7 * s, cols.mid)
@@ -224,7 +224,8 @@ export function roots(
 ) {
   for (let i = x + 2; i < x + w - 2; i += density) {
     const seed = hash(i, y)
-    if (seed < 0.42) continue
+    /** Coarse gate first so roots hang in clumps instead of a picket fence. */
+    if (noise(i, y, 90) < 0.44 || seed < 0.34) continue
     const len = 24 + seed * maxLen
     let rx = i
     const drift = (hash(i, y + 5) - 0.5) * 0.5

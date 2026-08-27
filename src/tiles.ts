@@ -21,7 +21,7 @@ export type GroundSkin = {
 export function bakeGround(theme: Theme): GroundSkin {
   if (theme === 'woods') {
     return {
-      body: dirtTile('#2a241c', '#1c1814', '#14110e', '#3a3428', '#4a4030', '#6a6048'),
+      body: dirtTile('#2b241b', '#211b14', '#171209', '#332c20', '#3d3527', '#4a4132'),
       wall: strataTile('#2a322c', '#1c241e', '#121814', '#3a4638'),
       pipe: pipeTile('#2a3238', '#3a444c', '#8a9aaa', '#12161a'),
       grass: true,
@@ -119,30 +119,38 @@ function canvas(w: number, h: number) {
 }
 
 function dirtTile(a: string, b: string, c: string, pebble: string, pebble2: string, dry: string) {
-  const { c: tile, ctx } = canvas(48, 32)
+  const { c: tile, ctx } = canvas(64, 48)
   if (!ctx) return tile
   ctx.fillStyle = b
-  ctx.fillRect(0, 0, 48, 32)
-  for (let y = 0; y < 32; y++) {
-    for (let x = 0; x < 48; x++) {
+  ctx.fillRect(0, 0, 64, 48)
+  for (let y = 0; y < 48; y++) {
+    for (let x = 0; x < 64; x++) {
       const n = hash(x * 3, y * 5)
-      if (n > 0.72) ctx.fillStyle = a
-      else if (n < 0.18) ctx.fillStyle = c
+      if (n > 0.78) ctx.fillStyle = a
+      else if (n < 0.3) ctx.fillStyle = c
       else continue
       ctx.fillRect(x, y, 1, 1)
     }
   }
-  for (let i = 0; i < 9; i++) {
-    const x = Math.floor(hash(i, 2) * 44)
-    const y = 6 + Math.floor(hash(i, 9) * 22)
-    ctx.fillStyle = hash(i, 4) > 0.5 ? pebble : pebble2
-    ctx.fillRect(x, y, 3 + (i % 2), 2)
-    ctx.fillStyle = dry
-    ctx.fillRect(x, y, 1, 1)
+  for (let i = 0; i < 14; i++) {
+    const x = Math.floor(hash(i, 12) * 58)
+    const y = Math.floor(hash(i, 21) * 42)
+    const w = 5 + Math.floor(hash(i, 5) * 9)
+    const h = 3 + Math.floor(hash(i, 6) * 5)
+    ctx.fillStyle = c
+    ctx.fillRect(x, y, w, h)
   }
-  ctx.fillStyle = c
-  ctx.fillRect(4, 18, 18, 1)
-  ctx.fillRect(22, 11, 14, 1)
+  for (let i = 0; i < 5; i++) {
+    const x = Math.floor(hash(i, 2) * 56)
+    const y = 6 + Math.floor(hash(i, 9) * 34)
+    const w = 4 + Math.floor(hash(i, 7) * 5)
+    ctx.fillStyle = hash(i, 4) > 0.5 ? pebble : pebble2
+    ctx.fillRect(x, y, w, 3)
+    ctx.fillStyle = dry
+    ctx.fillRect(x, y, Math.max(1, w - 3), 1)
+    ctx.fillStyle = c
+    ctx.fillRect(x, y + 3, w, 1)
+  }
   return tile
 }
 

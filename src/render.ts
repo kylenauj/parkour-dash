@@ -246,7 +246,7 @@ export class Renderer {
       ctx.fillStyle = '#3c3529'
       ctx.fillRect(x, y, 3, Math.min(h, 90))
       this.soilCap(x, y, w, g)
-      roots(ctx, x, y + 7, w, { root: '#6f4a26', shade: '#4a2f18', leaf: g.grass2 }, 27, 96)
+      roots(ctx, x, y + 7, w, { root: '#5f3f20', shade: '#3d2714', leaf: g.grass2 }, 15, 130)
     } else {
       ctx.fillStyle = g.hi
       ctx.fillRect(x, y, w, 2)
@@ -290,14 +290,16 @@ export class Renderer {
     const x = Math.floor(p.x)
     const y = Math.floor(p.y)
     const w = Math.floor(p.w)
-    const keel = Math.floor(Math.max(46, w * 0.42))
+    const keel = Math.floor(Math.max(58, w * 0.58))
+    const lip = 7
 
     const cx = x + w / 2
+    const span = w + lip * 2
     for (let row = 0; row < keel; row++) {
       const t = row / keel
       const round = Math.sqrt(Math.max(0, 1 - t * t))
       const wobble = (hash(x, y + row) - 0.5) * 5
-      const sw = Math.round(Math.max(4, w * round + wobble))
+      const sw = Math.round(Math.max(4, span * round + wobble))
       if (sw <= 4) break
       const sx = Math.round(cx - sw / 2 + wobble * 0.4)
       ctx.fillStyle = t < 0.1 ? '#3c3527' : t < 0.35 ? '#2b2519' : t < 0.68 ? '#201b12' : '#15110b'
@@ -313,16 +315,16 @@ export class Renderer {
     }
 
     ctx.fillStyle = g.moss
-    ctx.fillRect(x + 2, y + 4, w - 4, 4)
-    this.soilCap(x + 2, y, w - 4, g)
+    ctx.fillRect(x - lip + 2, y + 5, span - 4, 5)
+    this.soilCap(x - lip + 3, y, span - 6, g)
     roots(
       ctx,
-      x + 8,
-      y + keel * 0.5,
-      w - 20,
-      { root: '#96652f', shade: '#66421f', leaf: g.grass2 },
-      11,
-      keel * 1.5,
+      x + 6,
+      y + keel * 0.42,
+      w - 14,
+      { root: '#6d4823', shade: '#452c16', leaf: g.grass2 },
+      12,
+      keel * 1.3,
     )
   }
 
@@ -460,10 +462,10 @@ export class Renderer {
       const t = r / (h - 1)
       const w = Math.round(6 + t * halfBase * 2)
       const sx = 40 - w / 2
-      prect(ctx, sx, -h + r, w, 1, '#3f4a34')
-      prect(ctx, sx, -h + r, Math.max(2, w * 0.3), 1, '#55603c')
-      prect(ctx, sx + w * 0.72, -h + r, Math.max(2, w * 0.28), 1, '#232b1c')
-      if (r % 9 === 0) prect(ctx, sx, -h + r, w, 1, '#4a563a')
+      prect(ctx, sx, -h + r, w, 1, '#6a6e4c')
+      prect(ctx, sx, -h + r, Math.max(2, w * 0.32), 1, '#878a60')
+      prect(ctx, sx + w * 0.7, -h + r, Math.max(2, w * 0.3), 1, '#3b402c')
+      if (r % 9 === 0) prect(ctx, sx, -h + r, w, 1, '#787c56')
     }
     prect(ctx, 22, -30, 36, 30, '#141a12')
     for (let r = 0; r < 30; r++) {
