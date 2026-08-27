@@ -106,10 +106,11 @@ body {
 .hud-hint {
   flex: 1;
   text-align: center;
-  font-size: 22px;
+  font-size: 10px;
   color: var(--cyan);
   opacity: 0.92;
   padding-top: 6px;
+  line-height: 1.6;
 }
 
 .dash-pip {
@@ -128,7 +129,7 @@ body {
 }
 
 .panel {
-  width: min(520px, 100%);
+  width: min(640px, 100%);
   padding: 32px 28px 28px;
   border: 1px solid var(--line);
   background: var(--panel);
@@ -214,6 +215,73 @@ button {
 
 .primary:hover {
   filter: brightness(1.08);
+}
+
+.level-picks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 16px 0 0;
+}
+
+.level-btn {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  padding: 12px 10px;
+  background: rgba(124, 255, 58, 0.06);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.level-btn:hover {
+  background: rgba(124, 255, 58, 0.16);
+}
+
+.level-btn .num {
+  font-size: 9px;
+  color: var(--cyan);
+  letter-spacing: 0.14em;
+}
+
+.level-btn .name {
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.level-btn .sub {
+  font-family: Rajdhani, sans-serif;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.level-toast {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  text-align: center;
+  z-index: 4;
+}
+
+.level-toast .n {
+  display: block;
+  font-family: "Press Start 2P", monospace;
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  color: var(--cyan);
+  margin-bottom: 8px;
+}
+
+.level-toast .t {
+  display: block;
+  font-family: "Press Start 2P", monospace;
+  font-size: clamp(18px, 3vw, 28px);
+  color: #e8f8d8;
+  text-shadow: 4px 4px 0 #0a2a10, 0 0 24px rgba(124, 255, 58, 0.4);
 }
 
 .ghost {
@@ -318,6 +386,10 @@ button {
   }
 
   .win-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .level-picks {
     grid-template-columns: 1fr;
   }
 }

@@ -19,6 +19,10 @@
       <div id="hud" class="overlay hidden" aria-live="polite">
         <div class="hud-left">
           <div class="hud-stat">
+            <span class="hud-label">Pipe</span>
+            <span id="hud-level">1 / 3</span>
+          </div>
+          <div class="hud-stat">
             <span class="hud-label">Time</span>
             <span id="hud-time">0:00.00</span>
           </div>
@@ -38,20 +42,42 @@
         </div>
       </div>
 
+      <div id="level-toast" class="level-toast hidden">
+        <span id="toast-num" class="n">01</span>
+        <span id="toast-name" class="t">The Gutters</span>
+      </div>
+
       <div id="title-screen" class="overlay panel-screen">
         <div class="panel">
           <p class="eyebrow">Pixel sewer parkour</p>
           <h1>PIPE ROACH</h1>
           <p class="lede">
-            A roach-man with a cigarette. Smoke the pipes, wall-kick the stacks, dash the toxic glow.
+            Three pipes. A roach-man with a cigarette. Smoke the gutters, time the filter presses, ride the overflow home.
           </p>
-          <button id="btn-play" type="button" class="primary">Start run</button>
+          <button id="btn-play" type="button" class="primary">Full crawl</button>
+          <div class="level-picks" id="level-picks">
+            <button type="button" class="level-btn" data-level="0">
+              <span class="num">01</span>
+              <span class="name">The Gutters</span>
+              <span class="sub">Learn the crawl</span>
+            </button>
+            <button type="button" class="level-btn" data-level="1">
+              <span class="num">02</span>
+              <span class="name">The Filter</span>
+              <span class="sub">Do not linger</span>
+            </button>
+            <button type="button" class="level-btn" data-level="2">
+              <span class="num">03</span>
+              <span class="name">The Overflow</span>
+              <span class="sub">Ride the flood</span>
+            </button>
+          </div>
           <ul class="controls">
             <li><kbd>A</kbd><kbd>D</kbd> or arrows — move</li>
             <li><kbd>Space</kbd> / <kbd>W</kbd> / <kbd>↑</kbd> — jump · wall jump</li>
-            <li><kbd>Shift</kbd> / <kbd>J</kbd> — dash</li>
+            <li><kbd>Shift</kbd> / <kbd>J</kbd> — dash (wings out)</li>
             <li><kbd>S</kbd> / <kbd>↓</kbd> — slide · drop through</li>
-            <li><kbd>Esc</kbd> / <kbd>P</kbd> — pause · <kbd>R</kbd> — last checkpoint</li>
+            <li><kbd>Esc</kbd> / <kbd>P</kbd> — pause · <kbd>R</kbd> — last valve</li>
           </ul>
         </div>
       </div>
@@ -71,12 +97,13 @@
 
       <div id="win-screen" class="overlay panel-screen hidden">
         <div class="panel">
-          <p class="eyebrow">Drain reached</p>
-          <h2>Run complete</h2>
+          <p id="win-eyebrow" class="eyebrow">Drain reached</p>
+          <h2>Pipe clear</h2>
           <p id="win-copy" class="lede"></p>
           <div id="win-stats" class="win-stats"></div>
           <div class="btn-row">
-            <button id="btn-again" type="button" class="primary">Run it back</button>
+            <button id="btn-next" type="button" class="primary">Next pipe</button>
+            <button id="btn-again" type="button" class="ghost">Replay</button>
             <button id="btn-title" type="button" class="ghost">Title</button>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { bakePixels, crisp, PX, prect, snap } from './pixel'
 import type { Camera } from './camera'
 import type { Particles } from './particles'
 import type { Player } from './player'
-import type { Platform, World } from './world'
+import type { Platform, Theme, World } from './world'
 
 const PAL = {
   a: '#2a1a0c',
@@ -38,7 +38,9 @@ export class Renderer {
   private layerNear: HTMLCanvasElement
   private layerFore: HTMLCanvasElement
   private brick: HTMLCanvasElement
+  private rustBrick: HTMLCanvasElement
   private ctx: CanvasRenderingContext2D
+  private theme: Theme = 'gutter'
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx
@@ -49,7 +51,8 @@ export class Renderer {
     this.slide = bakeRoach(slideRows, 3)
     this.wall = bakeRoach(wallRows, 3)
     this.dash = bakeRoach(dashRows, 3)
-    this.brick = bakeBrick()
+    this.brick = bakeBrick('#1a1814', '#4a4034', '#3a342c', '#141210')
+    this.rustBrick = bakeBrick('#24140c', '#8a4a22', '#5a3018', '#180c08')
     this.layerFar = bakeFar()
     this.layerMid = bakeMid()
     this.layerNear = bakeNear()
@@ -61,14 +64,18 @@ export class Renderer {
     crisp(ctx)
     ctx.clearRect(0, 0, VIEW_W, VIEW_H)
 
+    this.theme = world.theme
     this.drawLayers(cam, time)
 
     ctx.save()
     ctx.translate(-snap(cam.x) + snap(cam.offset().x), -snap(cam.y) + snap(cam.offset().y))
     this.drawSludge(world, cam, time)
+    this.drawFans(world, time)
     this.drawPlatforms(world, cam)
+    this.drawCrushers(world)
     this.drawProps(world)
     this.drawSpikes(world)
+    this.drawDrips(world)
     this.drawOrbs(world, time)
     this.drawCheckpoints(world, time)
     this.drawGoal(world, time)
@@ -85,13 +92,14 @@ export class Renderer {
 
   private drawLayers(cam: Camera, time: number) {
     const ctx = this.ctx
-    ctx.fillStyle = '#070b08'
+    const sky = this.sky()
+    ctx.fillStyle = sky[0]
     ctx.fillRect(0, 0, VIEW_W, VIEW_H)
 
     const g = ctx.createLinearGradient(0, 0, 0, VIEW_H)
-    g.addColorStop(0, '#0b100e')
-    g.addColorStop(0.6, '#102014')
-    g.addColorStop(1, '#0a2a10')
+    g.addColorStop(0, sky[1])
+    g.addColorStop(0.6, sky[2])
+    g.addColorStop(1, sky[3])
     ctx.fillStyle = g
     ctx.fillRect(0, 0, VIEW_W, VIEW_H)
 
@@ -101,12 +109,22 @@ export class Renderer {
     this.blit(this.layerNear, -((cam.x * 0.32) % (VIEW_W + 200)), 0, 1)
 
     const bounce = ctx.createLinearGradient(0, VIEW_H * 0.5, 0, VIEW_H)
-    bounce.addColorStop(0, 'rgba(80,255,50,0)')
-    bounce.addColorStop(1, 'rgba(80,255,50,0.16)')
+    bounce.addColorStop(0, 'rgba(0,0,0,0)')
+    bounce.addColorStop(1, sky[4])
     ctx.fillStyle = bounce
     ctx.fillRect(0, 0, VIEW_W, VIEW_H)
 
     this.sporeField(cam, time)
+  }
+
+  private sky(): [string, string, string, string, string] {
+    if (this.theme === 'filter') {
+      return ['#120a06', '#1a0e08', '#2a140c', '#3a1808', 'rgba(255,120,30,0.16)']
+    }
+    if (this.theme === 'overflow') {
+      return ['#060b12', '#071018', '#0a1c24', '#063038', 'rgba(40,220,200,0.14)']
+    }
+    return ['#070b08', '#0b100e', '#102014', '#0a2a10', 'rgba(80,255,50,0.16)']
   }
 
   private blit(sheet: HTMLCanvasElement, x: number, y: number, alpha: number) {
@@ -130,7 +148,7 @@ export class Renderer {
 
   private sporeField(cam: Camera, time: number) {
     const ctx = this.ctx
-    ctx.fillStyle = '#7cff3a'
+    ctx.fillStyle = this.theme === 'filter' ? '#ffb040' : this.theme === 'overflow' ? '#5ef0d8' : '#7cff3a'
     for (let i = 0; i < 36; i++) {
       const x = snap(((i * 97 + time * 18 - cam.x * 0.25) % (VIEW_W + 20) + VIEW_W + 20) % (VIEW_W + 20))
       const y = snap((i * 53 + Math.sin(time + i) * 20) % VIEW_H)
@@ -143,30 +161,44 @@ export class Renderer {
   private drawSludge(world: World, cam: Camera, time: number) {
     const ctx = this.ctx
     const y = snap(world.killY - 24)
-    prect(ctx, cam.x - 20, y - 80, VIEW_W + 40, world.h - y + 120, 'rgba(40,140,30,0.28)')
+    const slime = this.theme === 'filter' ? ['#ff8a30', '#d45a18', '#5a2010'] : this.theme === 'overflow' ? ['#4af0d0', '#1aa090', '#043838'] : ['#b6ff4a', '#7cff3a', '#1a5a12']
+    prect(ctx, cam.x - 20, y - 80, VIEW_W + 40, world.h - y + 120, this.theme === 'filter' ? 'rgba(180,70,20,0.28)' : this.theme === 'overflow' ? 'rgba(20,80,90,0.34)' : 'rgba(40,140,30,0.28)')
     const start = snap(cam.x - 16)
     for (let x = start; x < cam.x + VIEW_W + 32; x += PX) {
       const wave = Math.floor(Math.sin(x * 0.04 + time * 2.4) * 2) * PX
-      prect(ctx, x, y + wave - 8, PX, 12, '#b6ff4a')
-      prect(ctx, x, y + wave, PX, 28, '#7cff3a')
-      prect(ctx, x, y + wave + 16, PX, 80, '#1a5a12')
+      prect(ctx, x, y + wave - 8, PX, 12, slime[0])
+      prect(ctx, x, y + wave, PX, 28, slime[1])
+      prect(ctx, x, y + wave + 16, PX, 80, slime[2])
     }
   }
 
   private drawPlatforms(world: World, cam: Camera) {
     for (const p of world.platforms) {
+      if (p.crumble === 'gone') continue
       if (p.x > cam.x + VIEW_W + 80 || p.x + p.w < cam.x - 80) continue
-      if (p.type === 'oneway') this.pipe(p.x, p.y, p.w, 12, true)
-      else if (p.h > p.w * 1.35) this.riser(p)
-      else if (p.h > 36 && p.w > 70) this.brickLedge(p)
-      else this.pipe(p.x, p.y, p.w, 20, false)
+      const shake = p.crumble === 'shake' ? Math.sin(p.timer * 70) * 3 : 0
+      const x = p.x + shake
+      if (p.type === 'oneway') this.pipe(x, p.y, p.w, 12, true)
+      else if (p.type === 'crumble') this.crumblePlate(x, p.y, p.w, p.crumble === 'shake')
+      else if (p.h > p.w * 1.35) this.riser({ ...p, x })
+      else if (p.h > 36 && p.w > 70) this.brickLedge({ ...p, x })
+      else this.pipe(x, p.y, p.w, 20, false)
     }
+  }
+
+  private crumblePlate(x: number, y: number, w: number, shake: boolean) {
+    const body = this.theme === 'filter' ? '#6a3a18' : this.theme === 'overflow' ? '#2a4a48' : '#4a4e42'
+    const hi = shake ? '#f0d878' : '#c4b48a'
+    prect(this.ctx, x, y, w, 18, body)
+    prect(this.ctx, x, y, w, PX, hi)
+    for (let i = x + 10; i < x + w; i += 22) prect(this.ctx, i, y + 6, PX, 10, '#1a1208')
   }
 
   private brickLedge(p: Platform) {
     const ctx = this.ctx
-    const tw = this.brick.width
-    const th = this.brick.height
+    const tile = this.theme === 'filter' ? this.rustBrick : this.brick
+    const tw = tile.width
+    const th = tile.height
     for (let y = snap(p.y + 16); y < p.y + p.h; y += th) {
       const row = Math.floor((y - p.y) / th)
       const ox = row % 2 === 0 ? 0 : tw / 2
@@ -175,26 +207,33 @@ export class Renderer {
         ctx.beginPath()
         ctx.rect(snap(p.x), snap(p.y + 16), snap(p.w), snap(p.h - 16))
         ctx.clip()
-        ctx.drawImage(this.brick, x, y)
+        ctx.drawImage(tile, x, y)
         ctx.restore()
       }
     }
     this.pipe(p.x, p.y, p.w, 20, false)
-    prect(ctx, p.x, p.y + p.h - 16, p.w, 16, 'rgba(80,255,50,0.12)')
+    const glow = this.theme === 'filter' ? 'rgba(255,140,40,0.12)' : this.theme === 'overflow' ? 'rgba(40,220,200,0.12)' : 'rgba(80,255,50,0.12)'
+    prect(ctx, p.x, p.y + p.h - 16, p.w, 16, glow)
   }
 
   private pipe(x: number, y: number, w: number, h: number, hang: boolean) {
-    prect(this.ctx, x, y, w, h, '#5a626a')
-    prect(this.ctx, x, y, w, PX, '#c4ccd4')
-    prect(this.ctx, x, y + PX, w, PX, '#8a929a')
-    prect(this.ctx, x, y + h - PX, w, PX, '#2a2e32')
+    const cols =
+      this.theme === 'filter'
+        ? ['#6a4a3a', '#d4b090', '#a07858', '#3a2418', '#4a3028']
+        : this.theme === 'overflow'
+          ? ['#3a5a5c', '#b0d4d4', '#6a9090', '#1a3030', '#2a4040']
+          : ['#5a626a', '#c4ccd4', '#8a929a', '#2a2e32', '#3a3e44']
+    prect(this.ctx, x, y, w, h, cols[0])
+    prect(this.ctx, x, y, w, PX, cols[1])
+    prect(this.ctx, x, y + PX, w, PX, cols[2])
+    prect(this.ctx, x, y + h - PX, w, PX, cols[3])
     for (let i = x + 24; i < x + w - 8; i += 56) {
-      prect(this.ctx, i, y - PX, PX * 2, h + PX * 2, '#3a3e44')
-      prect(this.ctx, i, y + PX, PX * 2, PX, '#d0d4d8')
+      prect(this.ctx, i, y - PX, PX * 2, h + PX * 2, cols[4])
+      prect(this.ctx, i, y + PX, PX * 2, PX, cols[1])
     }
     for (let i = 0; i < 5; i++) {
       const rx = x + 16 + ((hash(x, y) * 80 + i * 37) % Math.max(8, w - 32))
-      prect(this.ctx, rx, y + PX * (1 + (i % 2)), PX * 2, PX, '#8a3a18')
+      prect(this.ctx, rx, y + PX * (1 + (i % 2)), PX * 2, PX, this.theme === 'overflow' ? '#1aa090' : '#8a3a18')
     }
     if (hang) {
       for (let i = x + 12; i < x + w; i += 20) prect(this.ctx, i, y + h, PX, 12, '#4a4038')
@@ -202,14 +241,16 @@ export class Renderer {
   }
 
   private riser(p: Platform) {
-    prect(this.ctx, p.x, p.y, p.w, p.h, '#4a5258')
-    prect(this.ctx, p.x, p.y, PX, p.h, '#c4ccd4')
+    const body = this.theme === 'filter' ? '#5a3a2a' : this.theme === 'overflow' ? '#2e4a4c' : '#4a5258'
+    const hi = this.theme === 'filter' ? '#d4b090' : this.theme === 'overflow' ? '#b0d4d4' : '#c4ccd4'
+    prect(this.ctx, p.x, p.y, p.w, p.h, body)
+    prect(this.ctx, p.x, p.y, PX, p.h, hi)
     prect(this.ctx, p.x + p.w - PX, p.y, PX, p.h, '#1c2024')
     for (let y = p.y + 16; y < p.y + p.h - 8; y += 40) {
       prect(this.ctx, p.x - PX, y, p.w + PX * 2, PX * 2, '#2e3238')
-      prect(this.ctx, p.x, y, PX, PX, '#d0d4d8')
+      prect(this.ctx, p.x, y, PX, PX, hi)
     }
-    prect(this.ctx, p.x + PX * 2, p.y + p.h * 0.4, PX * 3, PX * 4, '#8a3a18')
+    prect(this.ctx, p.x + PX * 2, p.y + p.h * 0.4, PX * 3, PX * 4, this.theme === 'overflow' ? '#1aa090' : '#8a3a18')
   }
 
   private drawProps(world: World) {
@@ -223,6 +264,10 @@ export class Renderer {
       else if (prop.kind === 'vent') this.pixelVent()
       else if (prop.kind === 'tank') this.pixelTank()
       else if (prop.kind === 'antenna') this.pixelStack()
+      else if (prop.kind === 'lamp') this.pixelLamp()
+      else if (prop.kind === 'nest') this.pixelNest()
+      else if (prop.kind === 'grate') this.pixelGrate()
+      else if (prop.kind === 'chain') this.pixelChain()
       else this.pixelCrane()
       ctx.restore()
     }
@@ -278,6 +323,72 @@ export class Renderer {
     prect(this.ctx, -4, -72, 78, 4, '#8a9098')
   }
 
+  private pixelLamp() {
+    prect(this.ctx, 8, -36, 8, 20, '#3a3e38')
+    prect(this.ctx, 2, -48, 20, 14, '#2a2e28')
+    prect(this.ctx, 6, -44, 12, 8, '#ffe080')
+  }
+
+  private pixelNest() {
+    prect(this.ctx, 0, -16, 28, 8, '#5a3a18')
+    prect(this.ctx, 4, -22, 20, 8, '#7a5020')
+    prect(this.ctx, 10, -12, 8, 12, '#3a2410')
+  }
+
+  private pixelGrate() {
+    prect(this.ctx, 0, 0, 64, 8, '#2a2e28')
+    for (let i = 0; i < 6; i++) prect(this.ctx, 4 + i * 10, 0, 4, 8, '#6a7068')
+  }
+
+  private pixelChain() {
+    for (let i = 0; i < 8; i++) prect(this.ctx, 4 + (i % 2) * 4, -90 + i * 10, 8, 8, '#8a9098')
+  }
+
+  private drawFans(world: World, time: number) {
+    const ctx = this.ctx
+    for (const f of world.fans) {
+      const col = this.theme === 'filter' ? '#ffb060' : this.theme === 'overflow' ? '#7ef0e0' : '#9cff6a'
+      ctx.globalAlpha = 0.22
+      prect(ctx, f.x, f.y, f.w, f.h, col)
+      ctx.globalAlpha = 0.55
+      const mag = Math.hypot(f.fx, f.fy) || 1
+      const dx = f.fx / mag
+      const dy = f.fy / mag
+      for (let i = 0; i < 10; i++) {
+        const u = ((time * 1.8 + i * 0.13) % 1)
+        prect(
+          ctx,
+          f.x + 8 + (f.w - 16) * (0.15 + ((i * 17) % 70) / 100) + dx * u * 24,
+          f.y + 8 + (f.h - 16) * ((i * 13) % 80) / 100 + dy * u * 24,
+          PX * (1 + (i % 2)),
+          PX,
+          col,
+        )
+      }
+      ctx.globalAlpha = 1
+    }
+  }
+
+  private drawCrushers(world: World) {
+    for (const c of world.crushers) {
+      prect(this.ctx, c.x, c.y, c.w, c.h, '#4a3020')
+      prect(this.ctx, c.x, c.y, c.w, PX, '#c49060')
+      prect(this.ctx, c.x, c.y + c.h - PX, c.w, PX, '#1a1008')
+      for (let x = c.x + 6; x < c.x + c.w - 4; x += 14) {
+        prect(this.ctx, x, c.y + c.h, 8, 10, '#d8d0c4')
+        prect(this.ctx, x + 2, c.y + c.h + 10, 4, 6, '#8a8078')
+      }
+    }
+  }
+
+  private drawDrips(world: World) {
+    const col = this.theme === 'filter' ? '#ff8a30' : '#7cff3a'
+    for (const d of world.drips) {
+      prect(this.ctx, d.x, d.y, 8, 12, col)
+      prect(this.ctx, d.x + 2, d.y + 2, 4, 4, '#fff4c0')
+    }
+  }
+
   private drawSpikes(world: World) {
     for (const s of world.spikes) {
       for (let x = 0; x < s.w; x += PX * 3) {
@@ -302,7 +413,8 @@ export class Renderer {
     for (const c of world.checkpoints) {
       prect(this.ctx, c.x + 8, c.y, 8, c.h, '#2a2e28')
       const on = c.armed || Math.sin(time * 3) > 0
-      prect(this.ctx, c.x + 4, c.y + 4, 16, 16, c.armed || on ? '#7cff3a' : '#4a5a30')
+      const lit = this.theme === 'filter' ? '#ffb040' : this.theme === 'overflow' ? '#5ef0d8' : '#7cff3a'
+      prect(this.ctx, c.x + 4, c.y + 4, 16, 16, c.armed || on ? lit : '#4a5a30')
       prect(this.ctx, c.x + 8, c.y + 8, 8, 8, '#111')
     }
   }
@@ -311,7 +423,8 @@ export class Renderer {
     const g = world.goal
     prect(this.ctx, g.x, g.y, g.w, g.h, '#3a3e44')
     const pulse = Math.sin(time * 4) > 0
-    prect(this.ctx, g.x + 12, g.y + 16, g.w - 24, g.h - 32, pulse ? '#7cff3a' : '#1a5a12')
+    const lit = this.theme === 'filter' ? '#ffb040' : this.theme === 'overflow' ? '#5ef0d8' : '#7cff3a'
+    prect(this.ctx, g.x + 12, g.y + 16, g.w - 24, g.h - 32, pulse ? lit : '#1a5a12')
     for (let i = 0; i < 5; i++) prect(this.ctx, g.x + 16 + i * 8, g.y + 20, PX, g.h - 40, '#111')
   }
 
@@ -366,7 +479,7 @@ export class Renderer {
       ctx.save()
       ctx.translate(snap(g.x + player.w / 2), snap(g.y + g.h))
       ctx.scale(player.facing, 1)
-      ctx.drawImage(this.dash, -Math.floor(this.dash.width * 0.42), -this.dash.height + 4)
+      ctx.drawImage(this.dash, -Math.floor(this.dash.width * 0.42 * 1.95), -Math.floor(this.dash.height * 1.95) + 8, this.dash.width * 1.95, this.dash.height * 1.95)
       ctx.restore()
     }
     ctx.globalAlpha = 1
@@ -375,11 +488,12 @@ export class Renderer {
 
     const px = snap(player.cx)
     const py = snap(player.bottom)
+    const s = 1.95
     ctx.save()
     ctx.translate(px, py)
     ctx.scale(player.facing, 1)
     const ox = player.dashing ? 0.42 : 0.45
-    ctx.drawImage(spr, -Math.floor(spr.width * ox), -spr.height + 4)
+    ctx.drawImage(spr, -Math.floor(spr.width * ox * s), -Math.floor(spr.height * s) + 8, spr.width * s, spr.height * s)
     ctx.restore()
 
     if (!player.sliding) {
@@ -400,10 +514,10 @@ export class Renderer {
     const mag = Math.hypot(player.vx, player.vy) || 1
     const back = Math.atan2(player.vy / mag, player.vx / mag) + Math.PI
 
-    this.paintWing(x, y, back - 0.62 + flap, 22 + span * 58, 16 + span * 26, ['#fff4c0', '#f0d878', '#c8a050'], span)
-    this.paintWing(x, y, back + 0.62 - flap, 22 + span * 58, 16 + span * 26, ['#fff4c0', '#f0d878', '#c8a050'], span)
-    this.paintWing(x, y, back - 0.28 + flap * 0.4, 14 + span * 36, 10 + span * 14, ['#f0d878', '#8a6828', '#5a3010'], span)
-    this.paintWing(x, y, back + 0.28 - flap * 0.4, 14 + span * 36, 10 + span * 14, ['#f0d878', '#8a6828', '#5a3010'], span)
+    this.paintWing(x, y, back - 0.62 + flap, 28 + span * 70, 18 + span * 30, ['#fff4c0', '#f0d878', '#c8a050'], span)
+    this.paintWing(x, y, back + 0.62 - flap, 28 + span * 70, 18 + span * 30, ['#fff4c0', '#f0d878', '#c8a050'], span)
+    this.paintWing(x, y, back - 0.28 + flap * 0.4, 18 + span * 44, 12 + span * 16, ['#f0d878', '#8a6828', '#5a3010'], span)
+    this.paintWing(x, y, back + 0.28 - flap * 0.4, 18 + span * 44, 12 + span * 16, ['#f0d878', '#8a6828', '#5a3010'], span)
 
     if (u < 0.34 && power >= 0.95) {
       const burst = (1 - u / 0.34) * power
@@ -606,7 +720,7 @@ const dashRows = [
   '............................',
 ]
 
-function bakeBrick() {
+function bakeBrick(edge: string, h: string, H: string, D: string) {
   return bakePixels(
     [
       '############',
@@ -616,7 +730,7 @@ function bakeBrick() {
       '#hHHHHHHHHD#',
       '#DDDDDDDDDD#',
     ],
-    { '#': '#1a1814', h: '#4a4034', H: '#3a342c', D: '#141210' },
+    { '#': edge, h, H, D },
     PX,
   )
 }

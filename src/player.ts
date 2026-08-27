@@ -27,7 +27,7 @@ import {
 } from './const'
 import type { Input } from './input'
 import type { Platform, World } from './world'
-import { aabb } from './world'
+import { aabb, platActive } from './world'
 
 export type Ghost = { x: number; y: number; h: number; life: number }
 
@@ -150,6 +150,18 @@ export class Player {
     } else {
       this.applyGravity(input, dt)
     }
+
+    if (!this.dashing) {
+      for (const fan of world.fans) {
+        if (aabb(this, fan)) {
+          this.vx += fan.fx * dt
+          this.vy += fan.fy * dt
+        }
+      }
+    }
+
+    this.vy = Math.max(-920, Math.min(MAX_FALL, this.vy))
+    this.vx = Math.max(-980, Math.min(980, this.vx))
 
     this.tryJump(input)
 
@@ -328,7 +340,7 @@ export class Player {
     const feet = this.bottom
     const test = { x: this.x, y: feet - PLAYER_H, w: this.w, h: PLAYER_H }
     for (const p of world.platforms) {
-      if (p.type === 'oneway') continue
+      if (p.type === 'oneway' || !platActive(p)) continue
       if (aabb(test, p)) return false
     }
     return true
@@ -369,7 +381,7 @@ export class Player {
     this.y += dy
 
     for (const p of world.platforms) {
-      if (!aabb(this, p)) continue
+      if (!platActive(p) || !aabb(this, p)) continue
       const oneWay = p.type === 'oneway'
       if (oneWay) {
         if (dx !== 0 || dy <= 0 || this.dropT > 0) continue
@@ -416,7 +428,7 @@ export class Player {
   }
 
   private solidAt(world: World, r: { x: number; y: number; w: number; h: number }) {
-    return world.platforms.some((p) => p.type !== 'oneway' && aabb(r, p))
+    return world.platforms.some((p) => p.type !== 'oneway' && platActive(p) && aabb(r, p))
   }
 }
 

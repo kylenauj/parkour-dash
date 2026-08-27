@@ -1,6 +1,6 @@
 # Pipe Roach
 
-Pixel-art cockroach parkour. Play a roach-man with a cigarette, smoke the rusted pipes, and dash the toxic drains.
+Pixel-art cockroach parkour in three sewer pipes. Play a roach-man with a cigarette, dash with the wings out, and crawl from the gutters to daylight.
 
 ## Play
 
@@ -15,7 +15,7 @@ npm install
 npm run dev
 ```
 
-Open the printed local URL (default `http://localhost:43173`). Click **Start run**, then use the keyboard — or the on-screen buttons on a phone.
+Open the printed local URL (default `http://localhost:43173`). **Full crawl** plays all three levels in order. You can also jump into a single pipe from the title screen.
 
 | Action | Keys |
 | --- | --- |
@@ -24,11 +24,15 @@ Open the printed local URL (default `http://localhost:43173`). Click **Start run
 | Dash | `Shift` or `J` |
 | Slide / drop through | `S` or `↓` |
 | Pause | `Esc` or `P` |
-| Last checkpoint | `R` |
+| Last valve | `R` |
 
-## How it feels
+## The three pipes
 
-The roach uses coyote time, jump buffering, short hops if you tap jump, automatic wall cling, a single air dash that shoots the wings out, and a slide that fits under low pipes. Touch a vertical pipe and press jump to kick to the other side — you do not have to hold into the wall. Falls send you back to the last valve. Grab optional crumbs for a cleaner score at the drain.
+1. **The Gutters** — jumps, wall-kicks, slides, a dash over the drain, and a crumbling plate at the gate.
+2. **The Filter** — rust, collapsing plates, timed presses, and tighter stacks. Do not linger.
+3. **The Overflow** — currents, acid drips, an updraft shaft, and a last hop to the street grate.
+
+Dash unfurls a burst of roach wings. Land to refresh it. Touch a vertical pipe and press jump to kick — you do not have to hold into the wall. Falls send you back to the last valve. Optional crumbs score a cleaner run.
 
 ## Build
 

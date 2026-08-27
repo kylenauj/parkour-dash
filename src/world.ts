@@ -1,4 +1,6 @@
-export type PlatType = 'solid' | 'oneway' | 'moving'
+export type PlatType = 'solid' | 'oneway' | 'moving' | 'crumble'
+export type Theme = 'gutter' | 'filter' | 'overflow'
+export type LevelId = 0 | 1 | 2
 
 export type Platform = {
   x: number
@@ -13,6 +15,8 @@ export type Platform = {
   range: number
   speed: number
   phase: number
+  crumble: 'idle' | 'shake' | 'gone'
+  timer: number
 }
 
 export type Rect = { x: number; y: number; w: number; h: number }
@@ -21,12 +25,38 @@ export type Orb = Rect & { got: boolean }
 export type Checkpoint = Rect & { armed: boolean }
 export type Sign = { x: number; y: number; text: string }
 export type Prop = {
-  kind: 'antenna' | 'tank' | 'vent' | 'crane' | 'barrel' | 'barrelTip' | 'shroom' | 'web'
+  kind:
+    | 'antenna'
+    | 'tank'
+    | 'vent'
+    | 'crane'
+    | 'barrel'
+    | 'barrelTip'
+    | 'shroom'
+    | 'web'
+    | 'lamp'
+    | 'nest'
+    | 'grate'
+    | 'chain'
   x: number
   y: number
 }
 
+export type Fan = Rect & { fx: number; fy: number }
+export type DripSpout = { x: number; y: number; every: number; t: number }
+export type Drip = { x: number; y: number; vy: number }
+export type Crusher = Rect & {
+  originY: number
+  range: number
+  speed: number
+  phase: number
+}
+
 export type World = {
+  id: LevelId
+  name: string
+  subtitle: string
+  theme: Theme
   w: number
   h: number
   killY: number
@@ -38,17 +68,27 @@ export type World = {
   goal: Rect
   signs: Sign[]
   props: Prop[]
+  fans: Fan[]
+  spouts: DripSpout[]
+  drips: Drip[]
+  crushers: Crusher[]
 }
 
-function solid(x: number, y: number, w: number, h: number): Platform {
+export const LEVELS: { id: LevelId; name: string; subtitle: string }[] = [
+  { id: 0, name: 'The Gutters', subtitle: 'Learn the crawl' },
+  { id: 1, name: 'The Filter', subtitle: 'Do not linger' },
+  { id: 2, name: 'The Overflow', subtitle: 'Ride the flood' },
+]
+
+export function solid(x: number, y: number, w: number, h: number): Platform {
   return plat(x, y, w, h, 'solid')
 }
 
-function oneway(x: number, y: number, w: number): Platform {
+export function oneway(x: number, y: number, w: number): Platform {
   return plat(x, y, w, 16, 'oneway')
 }
 
-function moving(
+export function moving(
   x: number,
   y: number,
   w: number,
@@ -56,12 +96,18 @@ function moving(
   axis: 'x' | 'y',
   range: number,
   speed: number,
+  phase = 0,
 ): Platform {
   const p = plat(x, y, w, h, 'moving')
   p.axis = axis
   p.range = range
   p.speed = speed
+  p.phase = phase
   return p
+}
+
+export function crumble(x: number, y: number, w: number): Platform {
+  return plat(x, y, w, 18, 'crumble')
 }
 
 function plat(x: number, y: number, w: number, h: number, type: PlatType): Platform {
@@ -78,130 +124,39 @@ function plat(x: number, y: number, w: number, h: number, type: PlatType): Platf
     range: 0,
     speed: 0,
     phase: 0,
+    crumble: 'idle',
+    timer: 0,
   }
 }
 
-export function createWorld(): World {
-  const platforms: Platform[] = []
-  const spikes: Rect[] = []
-  const orbs: Orb[] = []
-  const checkpoints: Checkpoint[] = []
-  const signs: Sign[] = []
-  const props: Prop[] = []
+export function aabb(a: Rect, b: Rect) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
+}
 
-  const addOrb = (x: number, y: number) => orbs.push({ x, y, w: 16, h: 16, got: false })
-  const addCheck = (x: number, y: number) => checkpoints.push({ x, y, w: 28, h: 56, armed: false })
-  const spikeRow = (x: number, y: number, w: number) => spikes.push({ x, y, w, h: 18 })
+export function platActive(p: Platform) {
+  return p.crumble !== 'gone'
+}
 
-  // --- 1. Opening roofs ---
-  platforms.push(solid(0, 640, 460, 360))
-  platforms.push(solid(540, 640, 200, 360))
-  platforms.push(solid(820, 600, 190, 400))
-  platforms.push(solid(1090, 640, 250, 360))
-  platforms.push(solid(1420, 560, 210, 80))
-  signs.push({ x: 120, y: 560, text: 'Skitter and jump the pipes' })
-  addOrb(620, 580)
-  addOrb(900, 540)
-  props.push({ kind: 'vent', x: 40, y: 640 })
-  props.push({ kind: 'barrel', x: 210, y: 640 })
-  props.push({ kind: 'barrelTip', x: 330, y: 640 })
-  props.push({ kind: 'shroom', x: 430, y: 640 })
-  props.push({ kind: 'web', x: 20, y: 640 })
-
-  // --- 2. Rising steps ---
-  platforms.push(solid(1710, 500, 150, 40))
-  platforms.push(solid(1940, 430, 150, 40))
-  platforms.push(solid(2170, 360, 300, 48))
-  signs.push({ x: 2180, y: 300, text: 'Checkpoint — keep moving' })
-  addCheck(2320, 304)
-  addOrb(2010, 370)
-  props.push({ kind: 'antenna', x: 2410, y: 360 })
-  props.push({ kind: 'barrel', x: 2210, y: 360 })
-  props.push({ kind: 'web', x: 2174, y: 360 })
-
-  // --- 3. Pipe stack (doorway under left riser, climb out the top) ---
-  platforms.push(solid(2540, 640, 220, 48))
-  platforms.push(solid(2760, 180, 28, 400))
-  platforms.push(solid(2898, 168, 28, 500))
-  spikeRow(2788, 782, 110)
-  platforms.push(solid(2760, 800, 166, 70))
-  platforms.push(solid(2878, 168, 350, 32))
-  signs.push({ x: 2548, y: 580, text: 'Touch a pipe, then jump — no need to hold in' })
-  addOrb(2840, 480)
-  addOrb(2840, 300)
-
-  // --- 4. Girder hops + oneway ---
-  platforms.push(oneway(3220, 280, 120))
-  platforms.push(oneway(3410, 220, 120))
-  platforms.push(solid(3600, 420, 360, 48))
-  addCheck(3720, 364)
-  addOrb(3460, 170)
-  signs.push({ x: 3620, y: 360, text: 'Hold down + jump to drop through' })
-  props.push({ kind: 'crane', x: 3860, y: 420 })
-  props.push({ kind: 'barrelTip', x: 3680, y: 420 })
-  props.push({ kind: 'shroom', x: 3588, y: 420 })
-
-  // --- 5. Slide tunnel ---
-  platforms.push(solid(4040, 420, 620, 48))
-  platforms.push(solid(4180, 300, 260, 92))
-  platforms.push(solid(4560, 300, 140, 92))
-  signs.push({ x: 4060, y: 360, text: 'Hold down to slide under' })
-  addOrb(4300, 396)
-
-  // --- 6. Dash canyon ---
-  platforms.push(solid(4760, 500, 220, 48))
-  platforms.push(solid(5280, 500, 180, 48))
-  platforms.push(solid(5780, 460, 260, 48))
-  spikeRow(4980, 780, 300)
-  spikeRow(5460, 780, 320)
-  platforms.push(solid(4980, 798, 300, 40))
-  platforms.push(solid(5460, 798, 320, 40))
-  signs.push({ x: 4770, y: 440, text: 'Dash (Shift / J) across the drain' })
-  addOrb(5160, 430)
-  addOrb(5620, 390)
-  addCheck(5900, 404)
-  props.push({ kind: 'tank', x: 5840, y: 460 })
-  props.push({ kind: 'shroom', x: 4780, y: 500 })
-
-  // --- 7. Moving crane + vertical mix ---
-  platforms.push(moving(6180, 420, 140, 28, 'x', 180, 1.15))
-  platforms.push(oneway(6500, 340, 110))
-  platforms.push(oneway(6500, 240, 110))
-  platforms.push(solid(6680, 180, 32, 360))
-  platforms.push(solid(6820, 120, 32, 420))
-  platforms.push(solid(6680, 80, 172, 28))
-  spikeRow(6712, 548, 108)
-  platforms.push(solid(6680, 566, 172, 40))
-  signs.push({ x: 6180, y: 360, text: 'Ride, then kick up the pipe stack' })
-  addOrb(6550, 200)
-  addOrb(6780, 40)
-
-  // --- 8. Final sprint ---
-  platforms.push(solid(7120, 220, 180, 40))
-  platforms.push(solid(7380, 300, 140, 40))
-  platforms.push(moving(7600, 260, 120, 28, 'y', 90, 1.3))
-  platforms.push(solid(7860, 200, 420, 80))
-  props.push({ kind: 'antenna', x: 8120, y: 200 })
-  props.push({ kind: 'barrel', x: 7980, y: 200 })
-  props.push({ kind: 'barrel', x: 8048, y: 200 })
-  props.push({ kind: 'web', x: 7864, y: 200 })
-  addOrb(7440, 250)
-  addCheck(7900, 144)
-  signs.push({ x: 7880, y: 140, text: 'The open drain' })
-
-  return {
-    w: 8400,
-    h: 1100,
-    killY: 980,
-    spawn: { x: 80, y: 560 },
-    platforms,
-    spikes,
-    orbs,
-    checkpoints,
-    goal: { x: 8120, y: 80, w: 70, h: 120 },
-    signs,
-    props,
+export function resetCollectibles(world: World) {
+  for (const o of world.orbs) o.got = false
+  for (const c of world.checkpoints) c.armed = false
+  world.drips = []
+  for (const p of world.platforms) {
+    if (p.type === 'crumble') {
+      p.crumble = 'idle'
+      p.timer = 0
+    }
   }
+}
+
+export function updateMovers(world: World, dt: number) {
+  updateMoving(world, dt)
+  updateCrushers(world, dt)
+}
+
+export function updateHazards(world: World, dt: number, riding: Platform | null, body: Rect) {
+  updateDrips(world, dt)
+  updateCrumbles(world, dt, riding, body)
 }
 
 export function updateMoving(world: World, dt: number) {
@@ -219,11 +174,105 @@ export function updateMoving(world: World, dt: number) {
   }
 }
 
-export function aabb(a: Rect, b: Rect) {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
+function updateCrushers(world: World, dt: number) {
+  for (const c of world.crushers) {
+    c.phase += dt * c.speed
+    const t = ((c.phase % 1) + 1) % 1
+    let k = 0
+    if (t < 0.32) k = 0
+    else if (t < 0.42) k = (t - 0.32) / 0.1
+    else if (t < 0.58) k = 1
+    else k = 1 - (t - 0.58) / 0.42
+    c.y = c.originY + k * c.range
+  }
 }
 
-export function resetCollectibles(world: World) {
-  for (const o of world.orbs) o.got = false
-  for (const c of world.checkpoints) c.armed = false
+function updateDrips(world: World, dt: number) {
+  for (const s of world.spouts) {
+    s.t += dt
+    if (s.t >= s.every) {
+      s.t -= s.every
+      world.drips.push({ x: s.x, y: s.y, vy: 40 })
+    }
+  }
+  for (const d of world.drips) {
+    d.vy = Math.min(980, d.vy + 1600 * dt)
+    d.y += d.vy * dt
+  }
+  world.drips = world.drips.filter((d) => {
+    if (d.y > world.killY + 40) return false
+    const box = { x: d.x, y: d.y, w: 10, h: 12 }
+    for (const p of world.platforms) {
+      if (!platActive(p) || p.type === 'oneway') continue
+      if (aabb(box, p)) return false
+    }
+    return true
+  })
+}
+
+function updateCrumbles(world: World, dt: number, riding: Platform | null, body: Rect) {
+  if (riding && riding.type === 'crumble' && riding.crumble === 'idle') {
+    riding.crumble = 'shake'
+    riding.timer = 0.42
+  }
+  for (const p of world.platforms) {
+    if (p.type !== 'crumble') continue
+    if (p.crumble === 'idle') continue
+    p.timer -= dt
+    if (p.timer > 0) continue
+    if (p.crumble === 'shake') {
+      p.crumble = 'gone'
+      p.timer = 1.7
+    } else if (aabb(body, p)) {
+      p.timer = 0.15
+    } else {
+      p.crumble = 'idle'
+      p.timer = 0
+    }
+  }
+}
+
+export function makeWorld(
+  id: LevelId,
+  name: string,
+  subtitle: string,
+  theme: Theme,
+  w: number,
+  h: number,
+  killY: number,
+  spawn: { x: number; y: number },
+  goal: Rect,
+  bits: {
+    platforms: Platform[]
+    spikes: Rect[]
+    orbs: Orb[]
+    checkpoints: Checkpoint[]
+    signs: Sign[]
+    props: Prop[]
+    fans?: Fan[]
+    spouts?: DripSpout[]
+    crushers?: Crusher[]
+  },
+): World {
+  return {
+    id,
+    name,
+    subtitle,
+    theme,
+    w,
+    h,
+    killY,
+    spawn,
+    platforms: bits.platforms,
+    spikes: bits.spikes,
+    orbs: bits.orbs,
+    checkpoints: bits.checkpoints,
+    goal,
+    signs: bits.signs,
+    props: bits.props,
+    fans: bits.fans ?? [],
+    spouts: bits.spouts ?? [],
+    drips: [],
+    crushers: bits.crushers ?? [],
+  }
 }

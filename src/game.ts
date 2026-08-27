@@ -5,7 +5,8 @@ import { Input } from './input'
 import { Particles } from './particles'
 import { Player } from './player'
 import { Renderer } from './render'
-import { aabb, createWorld, resetCollectibles, updateMoving, type World } from './world'
+import { aabb, LEVELS, resetCollectibles, updateHazards, updateMovers, type LevelId, type World } from './world'
+import { createWorld } from './levels'
 
 type Mode = 'title' | 'play' | 'pause' | 'win'
 
@@ -16,11 +17,17 @@ type GameUI = {
   deaths: HTMLElement
   hint: HTMLElement
   dash: HTMLElement
+  level: HTMLElement
   title: HTMLElement
   pause: HTMLElement
   win: HTMLElement
+  winEyebrow: HTMLElement
   winCopy: HTMLElement
   winStats: HTMLElement
+  btnNext: HTMLElement
+  toast: HTMLElement
+  toastNum: HTMLElement
+  toastName: HTMLElement
   touch: HTMLElement
 }
 
@@ -41,6 +48,12 @@ export class Game {
   private clock = 0
   private canvas: HTMLCanvasElement
   private ui: GameUI
+  private levelId: LevelId = 0
+  private campaign = true
+  private runOrbs = 0
+  private runOrbMax = 0
+  private toastT = 0
+  private lastCrumble = false
 
   constructor(canvas: HTMLCanvasElement, ui: GameUI) {
     this.canvas = canvas
@@ -48,7 +61,7 @@ export class Game {
     const ctx = canvas.getContext('2d')
     if (!ctx) throw new Error('Canvas is not available')
     this.renderer = new Renderer(ctx)
-    this.world = createWorld()
+    this.world = createWorld(0)
     this.player.spawnAt(this.world.spawn.x, this.world.spawn.y)
     this.camera.follow(this.player.cx, this.player.cy, 0, 0, this.world.w, this.world.h, 1)
     this.input.bindTouch(ui.touch)
@@ -70,7 +83,33 @@ export class Game {
 
   playFromTitle() {
     this.audio.resume()
-    this.resetRun()
+    this.startCampaign()
+  }
+
+  playLevel(id: LevelId) {
+    this.audio.resume()
+    this.campaign = false
+    this.loadLevel(id, true)
+    this.setMode('play')
+  }
+
+  startCampaign() {
+    this.campaign = true
+    this.runOrbs = 0
+    this.runOrbMax = 0
+    this.deaths = 0
+    this.loadLevel(0, true)
+    this.setMode('play')
+  }
+
+  nextPipe() {
+    if (this.levelId >= 2) {
+      this.setMode('title')
+      return
+    }
+    this.audio.resume()
+    this.audio.nextLevel()
+    this.loadLevel((this.levelId + 1) as LevelId, false)
     this.setMode('play')
   }
 
@@ -105,6 +144,8 @@ export class Game {
 
       this.respawnFlash = Math.max(0, this.respawnFlash - dt)
       this.elapsed += dt
+      this.toastT = Math.max(0, this.toastT - dt)
+      this.ui.toast.classList.toggle('hidden', this.toastT <= 0)
       this.syncHud()
     } else if (this.mode === 'pause' && this.input.pausePressed) {
       this.setMode('play')
@@ -121,8 +162,9 @@ export class Game {
   }
 
   private simulate(dt: number) {
-    updateMoving(this.world, dt)
+    updateMovers(this.world, dt)
     if (!this.player.dead) this.player.update(dt, this.input, this.world)
+    updateHazards(this.world, dt, this.player.riding, this.player)
     this.particles.update(dt)
     this.fx()
     this.pickups()
@@ -181,6 +223,9 @@ export class Game {
     if (p.onGround && Math.abs(p.vx) > 220 && Math.random() < 0.35) {
       this.particles.emit(p.x + (p.facing < 0 ? p.w : 0), p.bottom, 1, '#5a4634', 30, 2)
     }
+    const shaking = this.player.riding?.type === 'crumble' && this.player.riding.crumble === 'shake'
+    if (shaking && !this.lastCrumble) this.audio.crumble()
+    this.lastCrumble = !!shaking
   }
 
   private pickups() {
@@ -210,9 +255,24 @@ export class Game {
       this.die()
       return
     }
-    if (p.dashing) return
-    for (const s of this.world.spikes) {
-      if (aabb(p, s)) {
+    if (p.dashing) {
+      // Dash still dies to crushers.
+    } else {
+      for (const s of this.world.spikes) {
+        if (aabb(p, s)) {
+          this.die()
+          return
+        }
+      }
+      for (const d of this.world.drips) {
+        if (aabb(p, { x: d.x, y: d.y, w: 10, h: 12 })) {
+          this.die()
+          return
+        }
+      }
+    }
+    for (const c of this.world.crushers) {
+      if (aabb(p, c)) {
         this.die()
         return
       }
@@ -247,29 +307,56 @@ export class Game {
     if (this.mode !== 'play') return
     this.audio.win()
     const orbs = this.world.orbs.filter((o) => o.got).length
-    this.ui.winCopy.textContent =
-      orbs === this.world.orbs.length
-        ? 'Every crumb, every pipe. You skittered the whole drain clean.'
-        : 'You reached the open drain. Grab the rest of the crumbs on the next pass if you want a perfect run.'
+    this.runOrbs += orbs
+    this.runOrbMax += this.world.orbs.length
+    const last = this.levelId >= 2
+    const meta = LEVELS[this.levelId]
+    this.ui.winEyebrow.textContent = last ? 'Street grate' : meta.name
+    this.ui.winCopy.textContent = last
+      ? orbs === this.world.orbs.length
+        ? 'Daylight. Every crumb, every pipe, the whole crawl clean.'
+        : 'You made the street. Some crumbs are still in the dark if you want a perfect crawl.'
+      : orbs === this.world.orbs.length
+        ? `${meta.name} is picked clean. The next pipe is waiting.`
+        : `${meta.name} is open. Grab the rest of the crumbs on a replay, or crawl on.`
     this.ui.winStats.innerHTML = `
       <div><span class="k">Time</span><span class="v">${formatTime(this.elapsed)}</span></div>
       <div><span class="k">Crumbs</span><span class="v">${orbs} / ${this.world.orbs.length}</span></div>
       <div><span class="k">Falls</span><span class="v">${this.deaths}</span></div>
     `
+    this.ui.btnNext.classList.toggle('hidden', last)
+    this.ui.btnNext.textContent = last ? 'Title' : this.levelId === 0 ? 'The Filter' : 'The Overflow'
     this.setMode('win')
   }
 
-  private resetRun() {
-    this.world = createWorld()
+  replay() {
+    this.audio.resume()
+    this.loadLevel(this.levelId, true)
+    this.setMode('play')
+  }
+
+  private loadLevel(id: LevelId, resetDeaths: boolean) {
+    this.levelId = id
+    this.world = createWorld(id)
     resetCollectibles(this.world)
     this.player.spawnAt(this.world.spawn.x, this.world.spawn.y)
     this.camera.x = 0
-    this.camera.y = 200
+    this.camera.y = Math.max(0, this.world.spawn.y - 400)
     this.particles.items = []
     this.elapsed = 0
-    this.deaths = 0
+    if (resetDeaths && !this.campaign) this.deaths = 0
+    if (resetDeaths && this.campaign && id === 0) {
+      this.deaths = 0
+      this.runOrbs = 0
+      this.runOrbMax = 0
+    }
     this.hint = ''
     this.ui.hint.textContent = ''
+    this.toastT = 2.4
+    this.ui.toastNum.textContent = `0${id + 1}`
+    this.ui.toastName.textContent = this.world.name
+    this.ui.toast.classList.remove('hidden')
+    this.ui.level.textContent = `${id + 1} / 3`
   }
 
   private setMode(mode: Mode) {
@@ -279,6 +366,8 @@ export class Game {
     this.ui.win.classList.toggle('hidden', mode !== 'win')
     this.ui.hud.classList.toggle('hidden', mode === 'title')
     this.ui.touch.classList.toggle('hidden', mode !== 'play')
+    if (mode === 'title' || mode === 'win') this.ui.toast.classList.add('hidden')
+    else if (mode === 'play' && this.toastT > 0) this.ui.toast.classList.remove('hidden')
     this.showTouchIfNeeded()
   }
 
@@ -288,6 +377,7 @@ export class Game {
     this.ui.orbs.textContent = `${got} / ${this.world.orbs.length}`
     this.ui.deaths.textContent = String(this.deaths)
     this.ui.dash.classList.toggle('ready', this.player.canDash && !this.player.dashing)
+    this.ui.level.textContent = `${this.levelId + 1} / 3`
   }
 
   private fitCanvas() {

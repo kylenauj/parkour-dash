@@ -37,6 +37,15 @@ export class AudioBus {
     this.blip(780, 1040, 0.12, 'triangle', 0.06, 0.06)
   }
 
+  crumble() {
+    this.noise(0.07, 0.08)
+  }
+
+  nextLevel() {
+    this.blip(400, 640, 0.1, 'square', 0.06)
+    this.blip(640, 880, 0.12, 'square', 0.07, 0.08)
+  }
+
   death() {
     this.blip(240, 70, 0.22, 'sawtooth', 0.1)
   }
