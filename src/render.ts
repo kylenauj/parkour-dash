@@ -2,8 +2,11 @@ import { DASH_TIME, VIEW_H, VIEW_W } from './const'
 import { crisp, PX, prect, snap } from './pixel'
 import { lookById, LOOKS, type CosmeticId, type Look } from './cosmetics'
 import { bakeBabe, bakeBank, type SpriteBank } from './sprites'
+
+/** Baked sprites carry one padding cell (2px) below the feet. */
+const S_PAD = 2
 import { bakePack, type LayerPack } from './backdrop'
-import { disk, hash, pineTree, stamp } from './gfx'
+import { boulders, disk, hash, pineTree, roots, stamp } from './gfx'
 import { bakeGround, type GroundSkin } from './tiles'
 import type { Camera } from './camera'
 import type { Particles } from './particles'
@@ -85,11 +88,12 @@ export class Renderer {
     const ctx = this.ctx
     const sky = this.sky()
     if (this.theme === 'woods') {
-      const dusk = ctx.createLinearGradient(0, 0, 0, VIEW_H)
-      dusk.addColorStop(0, '#0a1220')
-      dusk.addColorStop(0.45, '#152038')
-      dusk.addColorStop(1, '#1a2430')
-      ctx.fillStyle = dusk
+      const night = ctx.createLinearGradient(0, 0, 0, VIEW_H)
+      night.addColorStop(0, '#070d1c')
+      night.addColorStop(0.35, '#0e1930')
+      night.addColorStop(0.62, '#1b2a4a')
+      night.addColorStop(1, '#16233c')
+      ctx.fillStyle = night
       ctx.fillRect(0, 0, VIEW_W, VIEW_H)
     } else {
       ctx.fillStyle = sky[0]
@@ -218,7 +222,7 @@ export class Renderer {
   }
 
   private groundFace(p: Platform) {
-    if (p.h <= 64) {
+    if (this.theme === 'woods' && p.h <= 64) {
       this.rockIsland(p)
       return
     }
@@ -235,69 +239,89 @@ export class Renderer {
 
     stamp(ctx, earth.body, x, y, w, h)
 
-    ctx.fillStyle = g.shade
-    ctx.fillRect(x + w - 5, y, 5, h)
-    ctx.fillStyle = '#d8c8a0'
-    ctx.fillRect(x, y, 3, Math.min(h, 70))
-
     if (earth.grass) {
-      ctx.fillStyle = g.grass
-      ctx.fillRect(x, y - 2, w, 4)
-      for (let i = x + 2; i < x + w - 1; i += 4) {
-        const gh = 5 + Math.floor(hash(i, y) * 7)
-        ctx.fillStyle = hash(i, y + 1) > 0.45 ? g.grass2 : g.grass
-        ctx.fillRect(i, y - gh, 2, gh)
-      }
-      for (let i = x + 18; i < x + w - 10; i += 26) {
-        ctx.fillStyle = '#3a2a18'
-        ctx.fillRect(i, y + 8, 2, 18 + Math.floor(hash(i, 2) * 24))
-        ctx.fillRect(i + 4, y + 20, 2, 12 + Math.floor(hash(i, 4) * 16))
+      boulders(ctx, x, y, w, h, { face: '#3a3428', lit: '#57503e', shade: '#14110e' })
+      ctx.fillStyle = '#0e0b08'
+      ctx.fillRect(x + w - 6, y, 6, h)
+      ctx.fillStyle = '#4a4234'
+      ctx.fillRect(x, y, 3, Math.min(h, 90))
+      this.soilCap(x, y, w, g)
+      roots(ctx, x, y + 8, w, { root: '#3a2a18', shade: '#241a10', leaf: g.moss }, 15, 54)
+    } else {
+      ctx.fillStyle = g.hi
+      ctx.fillRect(x, y, w, 2)
+      ctx.fillStyle = g.shade
+      ctx.fillRect(x + w - 4, y, 4, h)
+      for (let i = x + 16; i < x + w - 6; i += 28) {
+        ctx.fillStyle = g.rivet
+        ctx.fillRect(i, y + 4, 4, 4)
       }
     }
   }
 
+  /** Grass lip with moonlit tufts and a soil shelf under it. */
+  private soilCap(x: number, y: number, w: number, g: GroundSkin['cols']) {
+    const ctx = this.ctx
+    ctx.fillStyle = '#20180f'
+    ctx.fillRect(x, y, w, 7)
+    ctx.fillStyle = g.grass
+    ctx.fillRect(x, y - 3, w, 6)
+    ctx.fillStyle = g.grass2
+    ctx.fillRect(x, y - 3, w, 2)
+    for (let i = x + 1; i < x + w - 1; i += 3) {
+      const seed = hash(i, y)
+      const gh = 4 + Math.floor(seed * 9)
+      ctx.fillStyle = seed > 0.62 ? g.grassTip : seed > 0.3 ? g.grass2 : g.grass
+      ctx.fillRect(i, y - gh, 2, gh)
+    }
+    for (let i = x + 6; i < x + w - 6; i += 34) {
+      if (hash(i, y + 3) < 0.5) continue
+      ctx.fillStyle = g.grassTip
+      ctx.fillRect(i, y - 15, 1, 12)
+      ctx.fillRect(i + 4, y - 12, 1, 9)
+    }
+  }
+
+  /** Mossy floating rock: tapered stone mass, grass lid, trailing roots. */
   private rockIsland(p: Platform) {
     const ctx = this.ctx
-    const earth = this.earth()
-    const g = earth.cols
+    const g = this.earth().cols
     const x = Math.floor(p.x)
     const y = Math.floor(p.y)
     const w = Math.floor(p.w)
-    const h = Math.max(18, Math.floor(p.h))
+    const keel = Math.floor(Math.max(46, w * 0.42))
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'
-    ctx.fillRect(x + 12, y + h + 2, w - 20, 8)
-
-    for (let row = 0; row < h; row++) {
-      const t = row / Math.max(1, h - 1)
-      const insetL = Math.floor(t * 12 + hash(x, y + row) * 5)
-      const insetR = Math.floor(t * 10 + hash(x + 9, y + row) * 5)
-      const sx = x + insetL
-      const sw = Math.max(8, w - insetL - insetR)
-      ctx.fillStyle = row < 6 ? '#3a3428' : row < h * 0.45 ? '#2a241c' : '#1c1814'
+    for (let row = 0; row < keel; row++) {
+      const t = row / keel
+      const taper = t * t * (w * 0.42)
+      const wobble = (hash(x, y + row) - 0.5) * 6
+      const sx = Math.round(x + taper * 0.9 + wobble)
+      const sw = Math.round(Math.max(6, w - taper * 1.85))
+      if (sw <= 6) break
+      ctx.fillStyle = t < 0.12 ? '#3c3527' : t < 0.4 ? '#2b2519' : t < 0.7 ? '#201b12' : '#15110b'
       ctx.fillRect(sx, y + row, sw, 1)
-      if (row < 8) {
-        ctx.fillStyle = '#d8c8a0'
-        ctx.fillRect(sx, y + row, 2, 1)
-      }
-      ctx.fillStyle = '#0e0c0a'
+      ctx.fillStyle = '#4c4433'
+      ctx.fillRect(sx, y + row, 2, 1)
+      ctx.fillStyle = '#0d0a07'
       ctx.fillRect(sx + sw - 3, y + row, 3, 1)
+      if (hash(sx, y + row) > 0.86) {
+        ctx.fillStyle = '#463d2c'
+        ctx.fillRect(sx + 4 + hash(row, x) * (sw - 8), y + row, 3, 2)
+      }
     }
 
-    if (earth.grass) {
-      ctx.fillStyle = g.grass
-      ctx.fillRect(x + 2, y - 2, w - 4, 4)
-      for (let i = x + 4; i < x + w - 4; i += 4) {
-        const gh = 4 + Math.floor(hash(i, y) * 6)
-        ctx.fillStyle = hash(i, y) > 0.5 ? g.grass2 : g.grass
-        ctx.fillRect(i, y - gh, 2, gh)
-      }
-      for (let i = x + 14; i < x + w - 10; i += 18) {
-        ctx.fillStyle = '#2a2018'
-        ctx.fillRect(i, y + h - 2, 2, 8 + Math.floor(hash(i, 1) * 10))
-        ctx.fillRect(i + 3, y + h, 2, 5 + Math.floor(hash(i, 2) * 8))
-      }
-    }
+    ctx.fillStyle = g.moss
+    ctx.fillRect(x + 2, y + 4, w - 4, 4)
+    this.soilCap(x + 2, y, w - 4, g)
+    roots(
+      ctx,
+      x + 10,
+      y + keel * 0.45,
+      w - 24,
+      { root: '#33251a', shade: '#1d150e', leaf: g.moss },
+      13,
+      keel * 0.9,
+    )
   }
 
   private crumblePlate(x: number, y: number, w: number, shake: boolean) {
@@ -417,28 +441,40 @@ export class Renderer {
   }
 
   private pixelPine() {
-    pineTree(this.ctx, 24, 0, 1.05, {
-      trunk: '#2a2018',
-      bark: '#4a3828',
-      mid: '#1a2818',
-      lit: '#3a5a32',
-      dark: '#0c140c',
+    pineTree(this.ctx, 26, 2, 1.15, {
+      trunk: '#3a2a1c',
+      bark: '#54402c',
+      mid: '#1c3222',
+      lit: '#3a5c38',
+      dark: '#0e1c14',
     })
   }
 
   private pixelTent() {
     const ctx = this.ctx
-    for (let r = 0; r < 52; r++) {
-      const w = 8 + (r / 52) * 64
-      prect(ctx, 40 - w / 2, -52 + r, w, 1, r < 6 ? '#3a5a30' : '#243c24')
-      prect(ctx, 40 - w / 2, -52 + r, Math.max(2, w * 0.18), 1, '#4a6a40')
-      prect(ctx, 40 + w * 0.28, -52 + r, w * 0.22, 1, '#142018')
+    const h = 56
+    const halfBase = 38
+    for (let r = 0; r < h; r++) {
+      const t = r / (h - 1)
+      const w = Math.round(6 + t * halfBase * 2)
+      const sx = 40 - w / 2
+      prect(ctx, sx, -h + r, w, 1, '#3f4a34')
+      prect(ctx, sx, -h + r, Math.max(2, w * 0.3), 1, '#55603c')
+      prect(ctx, sx + w * 0.72, -h + r, Math.max(2, w * 0.28), 1, '#232b1c')
+      if (r % 9 === 0) prect(ctx, sx, -h + r, w, 1, '#4a563a')
     }
-    prect(ctx, 36, -52, 8, 52, '#1a2818')
-    prect(ctx, 28, -22, 18, 22, '#0a100a')
-    prect(ctx, 8, -8, 4, 10, '#3a3428')
-    prect(ctx, 68, -8, 4, 10, '#3a3428')
-    prect(ctx, 12, -40, 10, 2, '#7cff3a')
+    prect(ctx, 22, -30, 36, 30, '#141a12')
+    for (let r = 0; r < 30; r++) {
+      const w = Math.round(4 + (r / 30) * 26)
+      prect(ctx, 40 - w / 2, -30 + r, w, 1, '#0b0f0a')
+    }
+    prect(ctx, 39, -h - 3, 3, 8, '#5a4a30')
+    prect(ctx, 4, -14, 3, 16, '#4a3c28')
+    prect(ctx, 74, -14, 3, 16, '#4a3c28')
+    prect(ctx, 7, -13, 14, 1, '#5a5040')
+    prect(ctx, 60, -13, 14, 1, '#5a5040')
+    prect(ctx, 0, -12, 14, 12, '#2c3422')
+    prect(ctx, 2, -14, 9, 3, '#3c4630')
   }
 
   private pixelRock() {
@@ -467,18 +503,32 @@ export class Renderer {
   }
 
   private pixelTruck() {
-    prect(this.ctx, 0, -36, 88, 28, '#3a4a28')
-    prect(this.ctx, 4, -34, 80, 4, '#5a6a40')
-    prect(this.ctx, 48, -52, 36, 20, '#2a3820')
-    prect(this.ctx, 52, -48, 18, 10, '#7a9080')
-    prect(this.ctx, 8, -12, 16, 12, '#1a1c18')
-    prect(this.ctx, 60, -12, 16, 12, '#1a1c18')
-    prect(this.ctx, 11, -9, 8, 6, '#4a4c48')
-    prect(this.ctx, 63, -9, 8, 6, '#4a4c48')
-    prect(this.ctx, 54, -70, 10, 18, '#5a6260')
-    prect(this.ctx, 52, -78, 14, 8, '#8a9088')
-    prect(this.ctx, 20, -30, 20, 8, '#111')
-    prect(this.ctx, 72, -28, 10, 6, '#d8c84a')
+    const ctx = this.ctx
+    prect(ctx, 2, -8, 92, 6, 'rgba(0,0,0,0.45)')
+    prect(ctx, 4, -30, 88, 22, '#404c30')
+    prect(ctx, 4, -30, 88, 3, '#5c6a42')
+    prect(ctx, 4, -12, 88, 4, '#222a1a')
+    prect(ctx, 10, -52, 56, 24, '#3a4630')
+    prect(ctx, 10, -52, 56, 3, '#5a6842')
+    prect(ctx, 14, -48, 22, 14, '#1c2a30')
+    prect(ctx, 15, -47, 8, 5, '#54707c')
+    prect(ctx, 40, -48, 22, 14, '#1c2a30')
+    prect(ctx, 41, -47, 7, 5, '#48646e')
+    prect(ctx, 66, -46, 26, 16, '#38442c')
+    prect(ctx, 66, -46, 26, 2, '#5a6842')
+    prect(ctx, 8, -56, 60, 3, '#2a3420')
+    prect(ctx, 12, -60, 4, 5, '#2a3420')
+    prect(ctx, 60, -60, 4, 5, '#2a3420')
+    prect(ctx, 86, -28, 8, 7, '#e8d88a')
+    prect(ctx, 87, -27, 5, 4, '#fff6c8')
+    prect(ctx, 4, -26, 4, 6, '#a03828')
+    disk(ctx, 24, -6, 10, '#15170f')
+    disk(ctx, 24, -6, 5, '#3c4034')
+    disk(ctx, 24, -6, 2, '#6a6e5c')
+    disk(ctx, 74, -6, 10, '#15170f')
+    disk(ctx, 74, -6, 5, '#3c4034')
+    disk(ctx, 74, -6, 2, '#6a6e5c')
+    prect(ctx, 30, -44, 2, 14, '#5a6842')
   }
 
   private pixelGrass() {
@@ -798,10 +848,10 @@ export class Renderer {
     squish = 1,
   ) {
     const ctx = this.ctx
-    const s = 1.08
+    const s = 1.45
     const ox = 0.48
     const dx = -Math.floor(spr.width * ox * s)
-    const dy = -Math.floor(spr.height * s) + 2
+    const dy = -Math.floor(spr.height * s) + Math.round(S_PAD * s)
     ctx.save()
     ctx.translate(snap(x), snap(y))
     ctx.scale(facing, squish)
@@ -813,12 +863,12 @@ export class Renderer {
     ctx.restore()
     if (cig) {
       const flicker = Math.sin(x * 0.2) > 0
-      const cx = x + facing * 16
-      const cy = y - (squish < 0.95 ? 18 : 40)
-      this.ctx.globalAlpha = 0.32
-      prect(this.ctx, cx - 5, cy - 5, 14, 14, look.cig[0])
-      this.ctx.globalAlpha = 1
-      prect(this.ctx, cx, cy, 3, 3, flicker ? look.cig[0] : look.cig[1])
+      const cx = x + facing * 20
+      const cy = y - (squish < 0.95 ? 20 : 40)
+      ctx.globalAlpha = flicker ? 0.26 : 0.16
+      disk(ctx, cx, cy, 7, look.cig[0])
+      ctx.globalAlpha = 1
+      prect(ctx, cx - 1, cy - 1, 3, 3, flicker ? look.cig[0] : look.cig[1])
     }
   }
 

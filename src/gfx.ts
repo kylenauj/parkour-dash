@@ -1,8 +1,32 @@
 import { prect } from './pixel'
 
+export type PineCols = {
+  trunk: string
+  bark: string
+  mid: string
+  lit: string
+  dark: string
+}
+
 export function hash(x: number, y: number) {
   const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
   return n - Math.floor(n)
+}
+
+export function noise(x: number, y: number, scale: number) {
+  const xs = x / scale
+  const ys = y / scale
+  const x0 = Math.floor(xs)
+  const y0 = Math.floor(ys)
+  const tx = xs - x0
+  const ty = ys - y0
+  const a = hash(x0, y0)
+  const b = hash(x0 + 1, y0)
+  const c = hash(x0, y0 + 1)
+  const d = hash(x0 + 1, y0 + 1)
+  const sx = tx * tx * (3 - 2 * tx)
+  const sy = ty * ty * (3 - 2 * ty)
+  return (a * (1 - sx) + b * sx) * (1 - sy) + (c * (1 - sx) + d * sx) * sy
 }
 
 export function disk(
@@ -19,26 +43,29 @@ export function disk(
   }
 }
 
-export function diskShade(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  r: number,
-  lit: string,
-  mid: string,
-  dark: string,
-) {
-  disk(ctx, cx, cy, r, mid)
-  disk(ctx, cx - r * 0.18, cy - r * 0.18, r * 0.78, lit)
-  const cut = r * 0.72
-  for (let y = -r; y <= r; y++) {
-    const w = Math.floor(Math.sqrt(Math.max(0, r * r - y * y)))
-    const shade = Math.floor(w * 0.38)
-    if (y > -cut * 0.15) prect(ctx, cx + w - shade, cy + y, shade, 1, dark)
+export function moon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  for (let i = 6; i >= 1; i--) {
+    ctx.globalAlpha = 0.035 * i
+    disk(ctx, cx, cy, r + i * 9, '#9ab4e0')
+  }
+  ctx.globalAlpha = 1
+  disk(ctx, cx, cy, r, '#e8e4d0')
+  disk(ctx, cx - r * 0.12, cy - r * 0.14, r * 0.86, '#f8f4e4')
+  disk(ctx, cx - r * 0.3, cy - r * 0.3, r * 0.5, '#fffdf4')
+  const craters: [number, number, number][] = [
+    [-0.3, 0.32, 0.16],
+    [0.34, -0.24, 0.12],
+    [0.1, 0.5, 0.1],
+    [-0.5, -0.16, 0.09],
+    [0.46, 0.3, 0.08],
+  ]
+  for (const [ox, oy, cr] of craters) {
+    disk(ctx, cx + ox * r, cy + oy * r, Math.max(1, cr * r), '#ded8c4')
+    disk(ctx, cx + ox * r - 1, cy + oy * r - 1, Math.max(1, cr * r * 0.6), '#efe9d8')
   }
 }
 
-/** Upward triangle foliage: point at (cx, top), base width `half * 2`, height `h`. */
+/** Flat silhouette triangle, for distant tree bands. */
 export function pineLayer(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -51,12 +78,38 @@ export function pineLayer(
 ) {
   for (let r = 0; r < h; r++) {
     const t = r / Math.max(1, h - 1)
-    const jag = Math.floor((hash(cx + r, top) - 0.5) * 7)
+    const jag = Math.floor((hash(cx + r, top) - 0.5) * 5)
     const w = Math.max(1, 1 + t * half + jag)
     const y = top + r
     prect(ctx, cx - w, y, w * 2, 1, mid)
-    if (r % 2 === 0) prect(ctx, cx - w, y, Math.max(1, w * 0.28), 1, lit)
-    prect(ctx, cx + w * 0.5, y, Math.max(1, w * 0.5), 1, dark)
+    if (r % 3 === 0) prect(ctx, cx + w * 0.4, y, Math.max(1, w * 0.55), 1, lit)
+    prect(ctx, cx - w, y, Math.max(1, w * 0.3), 1, dark)
+  }
+}
+
+/** Drooping conifer skirt: wide at the bottom, tips flicking outward. */
+function branchTier(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  top: number,
+  half: number,
+  drop: number,
+  cols: PineCols,
+) {
+  for (let r = 0; r < drop; r++) {
+    const t = r / Math.max(1, drop - 1)
+    const w = Math.max(1, half * (0.22 + t * 0.78))
+    const y = Math.round(top + r)
+    prect(ctx, x - w, y, w * 2, 1, cols.mid)
+    prect(ctx, x + w * 0.28, y, Math.max(1, w * 0.72), 1, cols.dark)
+    if (r % 2 === 0) prect(ctx, x - w, y, Math.max(1, w * 0.42), 1, cols.lit)
+  }
+  const tip = Math.round(top + drop)
+  const w = half
+  for (const side of [-1, 1]) {
+    const spur = Math.max(2, half * 0.22)
+    prect(ctx, x + side * w - (side < 0 ? spur : 0), tip - 1, spur, 2, cols.mid)
+    prect(ctx, x + side * w - (side < 0 ? spur : 0), tip - 1, spur, 1, side < 0 ? cols.lit : cols.dark)
   }
 }
 
@@ -65,52 +118,150 @@ export function pineTree(
   x: number,
   ground: number,
   scale: number,
-  cols: { trunk: string; bark: string; mid: string; lit: string; dark: string },
+  cols: PineCols,
 ) {
   const s = scale
-  const trunkW = Math.max(4, 7 * s)
-  const plant = 12 * s
-  const trunkH = 70 * s
-  prect(ctx, x - trunkW / 2 - 6 * s, ground - 4, 12 * s + trunkW, 6, cols.dark)
-  prect(ctx, x - trunkW / 2 - 3 * s, ground - 2, 6 * s, 4, cols.trunk)
-  prect(ctx, x + 2, ground - 2, 6 * s, 4, cols.trunk)
-  prect(ctx, x - trunkW / 2, ground - trunkH, trunkW, trunkH + plant, cols.trunk)
-  prect(ctx, x - trunkW / 2, ground - trunkH, 2, trunkH, cols.bark)
-  for (let i = 0; i < 4; i++) {
-    prect(ctx, x - trunkW / 2 + 1, ground - trunkH + 10 + i * 14 * s, trunkW - 2, 2, cols.dark)
+  const height = 168 * s
+  const trunkBase = Math.max(3, Math.round(5 * s))
+
+  prect(ctx, x - trunkBase * 1.6, ground - 3, trunkBase * 3.2, 5, cols.trunk)
+  for (const side of [-1, 1]) {
+    const rw = trunkBase * (1.6 + hash(x, side) * 1.4)
+    prect(ctx, side < 0 ? x - rw : x, ground - 2, rw, 4, cols.trunk)
+    prect(ctx, side < 0 ? x - rw : x, ground, rw * 0.7, 2, cols.dark)
   }
-  const layers = 5
-  for (let i = 0; i < layers; i++) {
-    const half = (16 + i * 11) * s
-    const h = (26 + i * 2) * s
-    const top = ground - (48 + (layers - i) * 26) * s
-    pineLayer(ctx, x, top, half, h, cols.mid, cols.lit, cols.dark)
+
+  for (let i = 0; i < height * 0.92; i++) {
+    const y = ground - i
+    const w = Math.max(trunkBase * 0.42, trunkBase * (1 - i / (height * 1.5)))
+    prect(ctx, x - w / 2, y, Math.max(1, w), 1, cols.trunk)
+    prect(ctx, x + w / 2 - 1, y, 1, 1, cols.dark)
+    if (i % 11 === 0) prect(ctx, x - w / 2, y, Math.max(1, w * 0.4), 1, cols.bark)
+  }
+
+  const tiers = Math.max(7, Math.round(11 * Math.min(1.6, s)))
+  for (let i = 0; i < tiers; i++) {
+    const t = i / (tiers - 1)
+    const top = ground - height * (0.94 - t * 0.8)
+    const half = (3.5 + t * t * 22 + t * 8) * s
+    const drop = (7 + t * 13) * s
+    branchTier(ctx, x, top, half, drop, cols)
+  }
+  prect(ctx, x - 1, ground - height - 5 * s, 2, 7 * s, cols.mid)
+}
+
+export function mountains(
+  ctx: CanvasRenderingContext2D,
+  opts: {
+    width: number
+    baseY: number
+    peaks: { x: number; h: number }[]
+    fill: string
+    lit: string
+    dark: string
+    snow?: string
+    snowShade?: string
+    snowLine?: number
+    ridge?: number
+  },
+) {
+  const { width, baseY, peaks, fill, lit, dark, snow, snowShade, snowLine, ridge = 8 } = opts
+  const pts = [
+    { x: -60, h: peaks[0]?.h ?? 80 },
+    ...peaks,
+    { x: width + 60, h: peaks[peaks.length - 1]?.h ?? 80 },
+  ]
+  let seg = 1
+  const heights: number[] = []
+  for (let x = 0; x < width; x++) {
+    while (seg < pts.length - 1 && pts[seg].x < x) seg++
+    const a = pts[seg - 1]
+    const b = pts[seg]
+    const t = (x - a.x) / Math.max(1, b.x - a.x)
+    const ease = t * t * (3 - 2 * t)
+    const base = a.h + (b.h - a.h) * ease
+    heights.push(base + (noise(x, 0, 40) - 0.5) * ridge + (noise(x, 9, 11) - 0.5) * ridge * 0.4)
+  }
+
+  for (let x = 0; x < width; x++) {
+    const h = heights[x]
+    const topY = Math.round(baseY - h)
+    const slope = (heights[Math.min(width - 1, x + 3)] ?? h) - (heights[Math.max(0, x - 3)] ?? h)
+    prect(ctx, x, topY, 1, baseY - topY + 10, fill)
+
+    if (slope < -0.4) prect(ctx, x, topY, 1, Math.min(60, h * 0.55), lit)
+    else if (slope > 0.4) prect(ctx, x, topY, 1, Math.min(70, h * 0.6), dark)
+
+    if (noise(x, 40, 26) > 0.66) {
+      const gy = topY + h * 0.35
+      prect(ctx, x, gy, 1, h * 0.3, dark)
+    }
+
+    if (snow && snowLine !== undefined && topY < snowLine) {
+      const depth = Math.min(h * 0.62, (snowLine - topY) * (0.55 + noise(x, 3, 18) * 0.5))
+      if (depth > 1) {
+        prect(ctx, x, topY, 1, depth, snow)
+        if (snowShade && slope > 0.4) prect(ctx, x, topY, 1, depth * 0.75, snowShade)
+        const streak = noise(x, 71, 14)
+        if (streak > 0.62) prect(ctx, x, topY + depth, 1, depth * 0.35 * streak, snow)
+      }
+    }
   }
 }
 
-export function mountainRange(
+export function fog(ctx: CanvasRenderingContext2D, y: number, h: number, w: number, color: string) {
+  for (let i = 0; i < h; i++) {
+    const t = i / h
+    ctx.globalAlpha = Math.sin(t * Math.PI) * 0.55
+    prect(ctx, 0, y + i, w, 1, color)
+  }
+  ctx.globalAlpha = 1
+}
+
+/** Dangling roots and vines under a soil lip. */
+export function roots(
   ctx: CanvasRenderingContext2D,
-  yBase: number,
-  width: number,
-  peaks: { x: number; h: number }[],
-  fill: string,
-  snow?: string,
-  face?: string,
+  x: number,
+  y: number,
+  w: number,
+  cols: { root: string; shade: string; leaf?: string },
+  density = 16,
+  maxLen = 46,
 ) {
-  const pts = [{ x: -40, h: peaks[0]?.h ?? 80 }, ...peaks, { x: width + 40, h: peaks[peaks.length - 1]?.h ?? 80 }]
-  let prev = 1
-  for (let x = 0; x < width; x++) {
-    while (prev < pts.length - 1 && pts[prev].x < x) prev++
-    const a = pts[prev - 1]
-    const b = pts[prev]
-    const t = (x - a.x) / Math.max(1, b.x - a.x)
-    const h = a.h + (b.h - a.h) * t
-    prect(ctx, x, yBase - h, 1, h + 8, fill)
-    if (hash(x, Math.floor(h)) > 0.72) prect(ctx, x, yBase - h * 0.45, 1, 3, face ?? fill)
-    if (face && b.h > a.h) prect(ctx, x, yBase - h, 1, Math.min(18, h * 0.16), face)
-    if (snow && h > 90) {
-      const cap = Math.min(18, (h - 90) * 0.35)
-      prect(ctx, x, yBase - h, 1, cap, snow)
+  for (let i = x + 2; i < x + w - 2; i += density) {
+    const seed = hash(i, y)
+    if (seed < 0.25) continue
+    const len = 10 + seed * maxLen
+    let rx = i
+    for (let d = 0; d < len; d++) {
+      if (d % 9 === 0) rx += hash(i + d, y) > 0.5 ? 1 : -1
+      prect(ctx, rx, y + d, d > len * 0.7 ? 1 : 2, 1, d > len * 0.55 ? cols.shade : cols.root)
+    }
+    if (cols.leaf && seed > 0.7) {
+      prect(ctx, rx - 2, y + len * 0.4, 3, 2, cols.leaf)
+      prect(ctx, rx + 1, y + len * 0.62, 3, 2, cols.leaf)
+    }
+  }
+}
+
+/** Embedded stones for cliff faces. */
+export function boulders(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  cols: { face: string; lit: string; shade: string },
+  step = 26,
+) {
+  for (let by = y + 8; by < y + h - 6; by += step) {
+    for (let bx = x + 6; bx < x + w - 8; bx += step) {
+      const seed = hash(bx, by)
+      if (seed < 0.42) continue
+      const r = 3 + Math.floor(seed * 6)
+      disk(ctx, bx + (seed * 9), by + (hash(by, bx) * 7), r, cols.face)
+      disk(ctx, bx + seed * 9 - 1, by + hash(by, bx) * 7 - 1, Math.max(1, r * 0.55), cols.lit)
+      prect(ctx, bx + seed * 9 - r, by + hash(by, bx) * 7 + r - 1, r * 2, 2, cols.shade)
     }
   }
 }

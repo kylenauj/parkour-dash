@@ -1,5 +1,5 @@
 import { VIEW_H, VIEW_W } from './const'
-import { disk, hash, mountainRange, pineLayer, pineTree } from './gfx'
+import { fog, hash, moon, mountains, pineLayer, pineTree } from './gfx'
 import { crisp, prect } from './pixel'
 import type { Theme } from './world'
 
@@ -31,81 +31,86 @@ function woodsFar() {
   if (!ctx) return c
   const w = c.width
 
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < 150; i++) {
     const x = Math.floor(hash(i, 1) * w)
-    const y = 8 + Math.floor(hash(i, 2) * 220)
-    ctx.globalAlpha = 0.25 + hash(i, 4) * 0.45
-    prect(ctx, x, y, hash(i, 3) > 0.9 ? 2 : 1, 1, '#d8e4f4')
+    const y = 6 + Math.floor(hash(i, 2) * 300)
+    ctx.globalAlpha = 0.2 + hash(i, 4) * 0.6
+    prect(ctx, x, y, hash(i, 3) > 0.93 ? 2 : 1, 1, hash(i, 7) > 0.75 ? '#fff8e8' : '#c8d8f4')
   }
   ctx.globalAlpha = 1
 
-  disk(ctx, 1120, 72, 16, '#e4dcc4')
-  disk(ctx, 1116, 68, 6, '#f4eee0')
-  prect(ctx, 1126, 76, 3, 2, '#c8c0a8')
-  prect(ctx, 1114, 80, 2, 2, '#c0b89c')
+  moon(ctx, 1168, 78, 24)
 
-  mountainRange(
-    ctx,
-    390,
-    w,
-    [
-      { x: 60, h: 70 },
-      { x: 210, h: 130 },
-      { x: 380, h: 90 },
-      { x: 560, h: 150 },
-      { x: 760, h: 100 },
-      { x: 960, h: 160 },
-      { x: 1180, h: 110 },
-      { x: 1400, h: 140 },
-      { x: 1580, h: 80 },
+  mountains(ctx, {
+    width: w,
+    baseY: 452,
+    peaks: [
+      { x: 40, h: 96 },
+      { x: 200, h: 150 },
+      { x: 360, h: 120 },
+      { x: 520, h: 205 },
+      { x: 700, h: 240 },
+      { x: 880, h: 165 },
+      { x: 1030, h: 205 },
+      { x: 1210, h: 150 },
+      { x: 1380, h: 190 },
+      { x: 1560, h: 130 },
     ],
-    '#2a3848',
-    '#8a9aaa',
-    '#3a4c5c',
-  )
-  ridgePines(ctx, 390, 0.22, '#1c2834')
-  mountainRange(
-    ctx,
-    470,
-    w,
-    [
-      { x: 0, h: 60 },
-      { x: 160, h: 110 },
-      { x: 340, h: 70 },
-      { x: 540, h: 130 },
-      { x: 760, h: 85 },
-      { x: 980, h: 140 },
-      { x: 1200, h: 90 },
-      { x: 1420, h: 120 },
-      { x: 1600, h: 70 },
+    fill: '#3c5070',
+    lit: '#4e6488',
+    dark: '#2c3c58',
+    snow: '#c8d8ee',
+    snowShade: '#8fa4c4',
+    snowLine: 300,
+    ridge: 10,
+  })
+  fog(ctx, 400, 70, w, '#2a3c5c')
+
+  mountains(ctx, {
+    width: w,
+    baseY: 486,
+    peaks: [
+      { x: 0, h: 74 },
+      { x: 170, h: 122 },
+      { x: 340, h: 92 },
+      { x: 520, h: 148 },
+      { x: 740, h: 108 },
+      { x: 950, h: 162 },
+      { x: 1150, h: 116 },
+      { x: 1350, h: 146 },
+      { x: 1560, h: 96 },
     ],
-    '#1a2634',
-    undefined,
-    '#283848',
-  )
-  ridgePines(ctx, 470, 0.32, '#121c28')
+    fill: '#2c3e5c',
+    lit: '#3a4e70',
+    dark: '#22304a',
+    snow: '#a8bcd8',
+    snowShade: '#7c90b0',
+    snowLine: 366,
+    ridge: 8,
+  })
+  fog(ctx, 440, 64, w, '#22324e')
   return c
 }
 
-function ridgePines(ctx: CanvasRenderingContext2D, yBase: number, scale: number, col: string) {
-  for (let i = 0; i < 40; i++) {
-    const x = 20 + i * 42
-    const h = (18 + (i % 5) * 10) * (0.8 + scale)
-    pineLayer(ctx, x, yBase - h - 8, 7 + (i % 3) * 3, h, col, col, '#0c1218')
-  }
-}
-
+/** Valley canopy: dense pine rows fading into haze. */
 function woodsMid() {
   const { c, ctx } = sheet()
   if (!ctx) return c
-  prect(ctx, 0, 540, c.width, 200, '#0c1412')
-  const palettes = [
-    { trunk: '#10140e', bark: '#1c2018', mid: '#121a14', lit: '#1c2818', dark: '#080c08' },
-    { trunk: '#0e120c', bark: '#181c14', mid: '#101610', lit: '#182214', dark: '#060806' },
+  const w = c.width
+  const rows: { y: number; scale: number; step: number; col: string; dark: string }[] = [
+    { y: 512, scale: 0.3, step: 15, col: '#22334c', dark: '#1a2840' },
+    { y: 548, scale: 0.4, step: 19, col: '#1c2c42', dark: '#152238' },
+    { y: 590, scale: 0.52, step: 24, col: '#182636', dark: '#111c2a' },
+    { y: 638, scale: 0.66, step: 30, col: '#131f2c', dark: '#0c1620' },
+    { y: 694, scale: 0.82, step: 38, col: '#0e1822', dark: '#080f16' },
   ]
-  for (let i = 0; i < 36; i++) {
-    const x = -8 + i * 48
-    pineTree(ctx, x, 548, 0.42 + (i % 5) * 0.08, palettes[i % 2])
+  for (const row of rows) {
+    for (let i = 0; i * row.step < w + 40; i++) {
+      const x = -20 + i * row.step + (hash(i, row.y) - 0.5) * row.step * 0.8
+      const h = (34 + hash(i, row.y + 1) * 34) * (0.6 + row.scale)
+      pineLayer(ctx, x, row.y - h, 4 + row.scale * 9, h, row.col, row.col, row.dark)
+    }
+    fog(ctx, row.y - 14, 30, w, '#1e3050')
   }
   return c
 }
@@ -113,11 +118,15 @@ function woodsMid() {
 function woodsNear() {
   const { c, ctx } = sheet(220)
   if (!ctx) return c
-  const palettes = [
-    { trunk: '#0c0e0a', bark: '#16140e', mid: '#0c120e', lit: '#141c12', dark: '#050605' },
-  ]
-  for (let i = 0; i < 10; i++) {
-    pineTree(ctx, 40 + i * 160, VIEW_H - 8, 0.7 + (i % 3) * 0.1, palettes[0])
+  const cols = {
+    trunk: '#241a12',
+    bark: '#3a2a1c',
+    mid: '#16281e',
+    lit: '#2a4630',
+    dark: '#0c1610',
+  }
+  for (let i = 0; i < 9; i++) {
+    pineTree(ctx, 60 + i * 180, VIEW_H + 26, 0.62 + (i % 3) * 0.1, cols)
   }
   return c
 }
@@ -125,12 +134,17 @@ function woodsNear() {
 function woodsFore() {
   const { c, ctx } = sheet(220)
   if (!ctx) return c
-  for (let i = 0; i < 16; i++) {
-    const x = i * 100
-    const h = 36 + (i % 4) * 14
-    prect(ctx, x, VIEW_H - h, 110, h, '#05070a')
-    pineLayer(ctx, x + 36, VIEW_H - h - 54, 28, 58, '#05070a', '#080c10', '#030406')
+  const cols = {
+    trunk: '#100c08',
+    bark: '#1c1610',
+    mid: '#0c1610',
+    lit: '#16241a',
+    dark: '#050806',
   }
+  pineTree(ctx, 44, VIEW_H + 60, 1.25, cols)
+  pineTree(ctx, 210, VIEW_H + 96, 1.05, cols)
+  pineTree(ctx, VIEW_W - 120, VIEW_H + 70, 1.2, cols)
+  pineTree(ctx, VIEW_W + 90, VIEW_H + 50, 1.1, cols)
   return c
 }
 
