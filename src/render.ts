@@ -848,7 +848,7 @@ export class Renderer {
     squish = 1,
   ) {
     const ctx = this.ctx
-    const s = 1.45
+    const s = 1
     const ox = 0.48
     const dx = -Math.floor(spr.width * ox * s)
     const dy = -Math.floor(spr.height * s) + Math.round(S_PAD * s)

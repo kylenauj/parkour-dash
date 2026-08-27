@@ -32,31 +32,6 @@ export function bakePixels(rows: string[], palette: Pal, scale: number) {
   const ctx = c.getContext('2d')
   if (!ctx) return c
   ctx.imageSmoothingEnabled = false
-  const filled = (x: number, y: number) => {
-    if (y < 0 || y >= h || x < 0 || x >= w) return false
-    return Boolean(palette[rows[y][x]])
-  }
-  const ink = '#07090c'
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      if (!filled(x, y)) continue
-      for (const [ox, oy] of [
-        [-1, 0],
-        [1, 0],
-        [0, -1],
-        [0, 1],
-        [-1, -1],
-        [1, -1],
-        [-1, 1],
-        [1, 1],
-      ]) {
-        if (!filled(x + ox, y + oy)) {
-          ctx.fillStyle = ink
-          ctx.fillRect((x + pad + ox) * scale, (y + pad + oy) * scale, scale, scale)
-        }
-      }
-    }
-  }
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const color = palette[rows[y][x]]
