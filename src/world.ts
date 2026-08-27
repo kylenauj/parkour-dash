@@ -20,7 +20,11 @@ export type Rect = { x: number; y: number; w: number; h: number }
 export type Orb = Rect & { got: boolean }
 export type Checkpoint = Rect & { armed: boolean }
 export type Sign = { x: number; y: number; text: string }
-export type Prop = { kind: 'antenna' | 'tank' | 'vent' | 'crane'; x: number; y: number }
+export type Prop = {
+  kind: 'antenna' | 'tank' | 'vent' | 'crane' | 'barrel' | 'barrelTip' | 'shroom' | 'web'
+  x: number
+  y: number
+}
 
 export type World = {
   w: number
@@ -98,8 +102,11 @@ export function createWorld(): World {
   signs.push({ x: 120, y: 560, text: 'Skitter and jump the pipes' })
   addOrb(620, 580)
   addOrb(900, 540)
-  props.push({ kind: 'vent', x: 80, y: 640 })
-  props.push({ kind: 'tank', x: 300, y: 640 })
+  props.push({ kind: 'vent', x: 40, y: 640 })
+  props.push({ kind: 'barrel', x: 210, y: 640 })
+  props.push({ kind: 'barrelTip', x: 330, y: 640 })
+  props.push({ kind: 'shroom', x: 430, y: 640 })
+  props.push({ kind: 'web', x: 20, y: 640 })
 
   // --- 2. Rising steps ---
   platforms.push(solid(1710, 500, 150, 40))
@@ -109,6 +116,8 @@ export function createWorld(): World {
   addCheck(2320, 304)
   addOrb(2010, 370)
   props.push({ kind: 'antenna', x: 2410, y: 360 })
+  props.push({ kind: 'barrel', x: 2210, y: 360 })
+  props.push({ kind: 'web', x: 2174, y: 360 })
 
   // --- 3. Pipe stack (doorway under left riser, climb out the top) ---
   platforms.push(solid(2540, 640, 220, 48))
@@ -129,6 +138,8 @@ export function createWorld(): World {
   addOrb(3460, 170)
   signs.push({ x: 3620, y: 360, text: 'Hold down + jump to drop through' })
   props.push({ kind: 'crane', x: 3860, y: 420 })
+  props.push({ kind: 'barrelTip', x: 3680, y: 420 })
+  props.push({ kind: 'shroom', x: 3588, y: 420 })
 
   // --- 5. Slide tunnel ---
   platforms.push(solid(4040, 420, 620, 48))
@@ -149,6 +160,8 @@ export function createWorld(): World {
   addOrb(5160, 430)
   addOrb(5620, 390)
   addCheck(5900, 404)
+  props.push({ kind: 'tank', x: 5840, y: 460 })
+  props.push({ kind: 'shroom', x: 4780, y: 500 })
 
   // --- 7. Moving crane + vertical mix ---
   platforms.push(moving(6180, 420, 140, 28, 'x', 180, 1.15))
@@ -169,6 +182,9 @@ export function createWorld(): World {
   platforms.push(moving(7600, 260, 120, 28, 'y', 90, 1.3))
   platforms.push(solid(7860, 200, 420, 80))
   props.push({ kind: 'antenna', x: 8120, y: 200 })
+  props.push({ kind: 'barrel', x: 7980, y: 200 })
+  props.push({ kind: 'barrel', x: 8048, y: 200 })
+  props.push({ kind: 'web', x: 7864, y: 200 })
   addOrb(7440, 250)
   addCheck(7900, 144)
   signs.push({ x: 7880, y: 140, text: 'The open drain' })

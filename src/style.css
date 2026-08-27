@@ -1,12 +1,12 @@
 :root {
-  --bg: #1a1410;
-  --panel: rgba(28, 20, 14, 0.86);
-  --line: rgba(196, 161, 90, 0.32);
-  --cyan: #c4a15a;
-  --mint: #e0c07a;
+  --bg: #0c120e;
+  --panel: rgba(10, 16, 12, 0.88);
+  --line: rgba(124, 255, 58, 0.32);
+  --cyan: #7cff3a;
+  --mint: #c8ff78;
   --pink: #c45a2a;
-  --text: #f2e6c8;
-  --muted: #b8a080;
+  --text: #e8f8d8;
+  --muted: #8aaa78;
 }
 
 * {
@@ -39,7 +39,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #1a1410;
+  background: #0c120e;
   image-rendering: auto;
   display: block;
 }
@@ -55,7 +55,8 @@ body {
   display: grid;
   place-items: center;
   background:
-    radial-gradient(ellipse at 50% 10%, rgba(196, 161, 90, 0.16), transparent 50%),
+    radial-gradient(ellipse at 50% 120%, rgba(80, 255, 50, 0.16), transparent 50%),
+    radial-gradient(ellipse at 50% 10%, rgba(255, 200, 80, 0.08), transparent 45%),
     linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.62));
   padding: 24px;
 }
@@ -98,7 +99,7 @@ body {
   font-size: 28px;
   line-height: 1;
   color: var(--mint);
-  text-shadow: 0 0 16px rgba(224, 192, 122, 0.35);
+  text-shadow: 0 0 16px rgba(124, 255, 58, 0.4);
 }
 
 .hud-hint {
@@ -131,7 +132,7 @@ body {
   border: 1px solid var(--line);
   background: var(--panel);
   backdrop-filter: blur(12px);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), 0 0 40px rgba(196, 161, 90, 0.1);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), 0 0 40px rgba(80, 255, 50, 0.12);
 }
 
 .eyebrow {
@@ -153,8 +154,8 @@ h2 {
 h1 {
   font-size: clamp(64px, 12vw, 92px);
   letter-spacing: 0.06em;
-  color: #f2e6c8;
-  text-shadow: 0 0 28px rgba(196, 161, 90, 0.35);
+  color: #e8f8d8;
+  text-shadow: 0 0 28px rgba(124, 255, 58, 0.35);
 }
 
 h2 {
@@ -185,7 +186,7 @@ kbd {
   padding: 1px 6px;
   margin-right: 4px;
   border: 1px solid var(--line);
-  background: rgba(196, 161, 90, 0.1);
+  background: rgba(124, 255, 58, 0.1);
   color: var(--cyan);
   font-family: Rajdhani, sans-serif;
   font-weight: 700;
@@ -205,8 +206,8 @@ button {
 
 .primary {
   background: var(--cyan);
-  color: #1a120c;
-  box-shadow: 0 0 24px rgba(196, 161, 90, 0.4);
+  color: #0c1408;
+  box-shadow: 0 0 24px rgba(124, 255, 58, 0.45);
 }
 
 .primary:hover {
@@ -280,7 +281,7 @@ button {
 .touch .jump {
   width: 88px;
   height: 88px;
-  background: rgba(196, 161, 90, 0.22);
+  background: rgba(124, 255, 58, 0.22);
   color: var(--cyan);
 }
 

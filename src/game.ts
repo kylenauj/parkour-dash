@@ -144,12 +144,12 @@ export class Game {
   private fx() {
     const p = this.player
     if (p.justJumped) {
-      this.particles.burstUp(p.cx, p.bottom, 8, '#c4a15a')
+      this.particles.burstUp(p.cx, p.bottom, 8, '#9fff5a')
       if (p.jumpedFromWall) this.audio.wallJump()
       else this.audio.jump()
     }
     if (p.justDashed) {
-      this.particles.emit(p.cx, p.cy, 14, '#6b4423', 220, 4)
+      this.particles.emit(p.cx, p.cy, 14, '#7cff3a', 220, 4)
       this.audio.dash()
       this.hitstop = 0.03
       this.camera.bump(0.25)
@@ -206,7 +206,7 @@ export class Game {
   private die() {
     this.player.dead = true
     this.deaths += 1
-    this.particles.emit(this.player.cx, this.player.cy, 22, '#c45a2a', 240, 4)
+    this.particles.emit(this.player.cx, this.player.cy, 22, '#7cff3a', 240, 4)
     this.audio.death()
     this.camera.bump(0.55)
     this.hitstop = 0.08
