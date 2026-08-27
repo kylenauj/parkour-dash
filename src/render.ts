@@ -1,7 +1,8 @@
 import { DASH_TIME, VIEW_H, VIEW_W } from './const'
 import { bakePixels, crisp, PX, prect, snap } from './pixel'
 import { lookById, LOOKS, type CosmeticId, type Look } from './cosmetics'
-import { bakeBank, type SpriteBank } from './sprites'
+import { bakeBabe, bakeBank, type SpriteBank } from './sprites'
+import { bakePack, type LayerPack } from './backdrop'
 import type { Camera } from './camera'
 import type { Particles } from './particles'
 import type { Player } from './player'
@@ -11,26 +12,26 @@ type Skin = SpriteBank
 
 export class Renderer {
   private skins = new Map<CosmeticId, Skin>()
-  private layerFar: HTMLCanvasElement
-  private layerMid: HTMLCanvasElement
-  private layerNear: HTMLCanvasElement
-  private layerFore: HTMLCanvasElement
+  private packs = new Map<Theme, LayerPack>()
+  private babe: HTMLCanvasElement
   private brick: HTMLCanvasElement
   private rustBrick: HTMLCanvasElement
+  private rockBrick: HTMLCanvasElement
   private ctx: CanvasRenderingContext2D
   private theme: Theme = 'gutter'
   private look: Look = LOOKS[0]
+  private clock = 0
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx
     crisp(ctx)
     for (const look of LOOKS) this.skins.set(look.id, bakeBank(look.pal))
+    this.babe = bakeBabe(lookById('babe').pal)
     this.brick = bakeBrick('#1a1814', '#4a4034', '#3a342c', '#141210')
     this.rustBrick = bakeBrick('#24140c', '#8a4a22', '#5a3018', '#180c08')
-    this.layerFar = bakeFar()
-    this.layerMid = bakeMid()
-    this.layerNear = bakeNear()
-    this.layerFore = bakeFore()
+    this.rockBrick = bakeBrick('#12161a', '#3a4248', '#2a3238', '#0c1014')
+    const themes: Theme[] = ['woods', 'gutter', 'filter', 'overflow', 'flue', 'street']
+    for (const t of themes) this.packs.set(t, bakePack(t))
   }
 
   draw(
@@ -48,6 +49,7 @@ export class Renderer {
     ctx.clearRect(0, 0, VIEW_W, VIEW_H)
     this.look = lookById(lookId)
     this.theme = world.theme
+    this.clock = time
     this.drawLayers(cam, time)
 
     ctx.save()
@@ -72,7 +74,8 @@ export class Renderer {
     if (nearNpc) this.drawPrompt(nearNpc, time)
     ctx.restore()
 
-    this.blit(this.layerFore, -((cam.x * 1.12) % (VIEW_W + 200)), 0, 0.55)
+    const pack = this.packs.get(this.theme)!
+    this.blit(pack.fore, -((cam.x * 1.12) % (VIEW_W + 200)), 0, 0.55)
     if (player.dashing) this.speedLines(player)
     this.scanlines()
     this.vignette()
@@ -92,9 +95,10 @@ export class Renderer {
     ctx.fillRect(0, 0, VIEW_W, VIEW_H)
 
     this.dither()
-    this.blit(this.layerFar, -((cam.x * 0.08) % (VIEW_W + 320)), 40, 0.7)
-    this.blit(this.layerMid, -((cam.x * 0.18) % (VIEW_W + 320)), 20, 0.85)
-    this.blit(this.layerNear, -((cam.x * 0.32) % (VIEW_W + 200)), 0, 1)
+    const pack = this.packs.get(this.theme)!
+    this.blit(pack.far, -((cam.x * 0.08) % (VIEW_W + 320)), 40, 0.7)
+    this.blit(pack.mid, -((cam.x * 0.18) % (VIEW_W + 320)), 20, 0.85)
+    this.blit(pack.near, -((cam.x * 0.32) % (VIEW_W + 200)), 0, 1)
 
     const bounce = ctx.createLinearGradient(0, VIEW_H * 0.5, 0, VIEW_H)
     bounce.addColorStop(0, 'rgba(0,0,0,0)')
@@ -106,6 +110,9 @@ export class Renderer {
   }
 
   private sky(): [string, string, string, string, string] {
+    if (this.theme === 'woods') {
+      return ['#6a7a88', '#4a5868', '#2a3848', '#1a242e', 'rgba(20,30,50,0.32)']
+    }
     if (this.theme === 'filter') {
       return ['#120a06', '#1a0e08', '#2a140c', '#3a1808', 'rgba(255,120,30,0.16)']
     }
@@ -143,7 +150,9 @@ export class Renderer {
   private sporeField(cam: Camera, time: number) {
     const ctx = this.ctx
     ctx.fillStyle =
-      this.theme === 'filter' || this.theme === 'flue'
+      this.theme === 'woods'
+        ? '#c8d8e8'
+        : this.theme === 'filter' || this.theme === 'flue'
         ? '#ffb040'
         : this.theme === 'overflow'
           ? '#5ef0d8'
@@ -163,7 +172,9 @@ export class Renderer {
     const ctx = this.ctx
     const y = snap(world.killY - 24)
     const slime =
-      this.theme === 'filter' || this.theme === 'flue'
+      this.theme === 'woods'
+        ? ['#4a5a48', '#2a3a30', '#121810']
+        : this.theme === 'filter' || this.theme === 'flue'
         ? ['#ff8a30', '#d45a18', '#5a2010']
         : this.theme === 'overflow'
           ? ['#4af0d0', '#1aa090', '#043838']
@@ -171,7 +182,9 @@ export class Renderer {
             ? ['#a090e0', '#504878', '#181428']
             : ['#b6ff4a', '#7cff3a', '#1a5a12']
     const fog =
-      this.theme === 'filter' || this.theme === 'flue'
+      this.theme === 'woods'
+        ? 'rgba(20,40,50,0.28)'
+        : this.theme === 'filter' || this.theme === 'flue'
         ? 'rgba(180,70,20,0.28)'
         : this.theme === 'overflow'
           ? 'rgba(20,80,90,0.34)'
@@ -224,7 +237,8 @@ export class Renderer {
 
   private brickLedge(p: Platform) {
     const ctx = this.ctx
-    const tile = this.theme === 'filter' || this.theme === 'flue' ? this.rustBrick : this.brick
+    const tile =
+      this.theme === 'woods' ? this.rockBrick : this.theme === 'filter' || this.theme === 'flue' ? this.rustBrick : this.brick
     const tw = tile.width
     const th = tile.height
     for (let y = snap(p.y + 16); y < p.y + p.h; y += th) {
@@ -240,13 +254,24 @@ export class Renderer {
       }
     }
     this.pipe(p.x, p.y, p.w, 20, false)
-    const glow = this.theme === 'filter' ? 'rgba(255,140,40,0.12)' : this.theme === 'overflow' ? 'rgba(40,220,200,0.12)' : 'rgba(80,255,50,0.12)'
+    if (this.theme === 'woods') {
+      prect(ctx, p.x, p.y - 6, p.w, 8, '#1a2818')
+      for (let i = p.x + 8; i < p.x + p.w; i += 18) {
+        prect(ctx, i, p.y - 12, PX, 8, i % 36 === 0 ? '#3a5a30' : '#2a3a24')
+      }
+    }
+    const glow =
+      this.theme === 'woods'
+        ? 'rgba(80,120,90,0.12)'
+        : this.theme === 'filter' ? 'rgba(255,140,40,0.12)' : this.theme === 'overflow' ? 'rgba(40,220,200,0.12)' : 'rgba(80,255,50,0.12)'
     prect(ctx, p.x, p.y + p.h - 16, p.w, 16, glow)
   }
 
   private pipe(x: number, y: number, w: number, h: number, hang: boolean) {
     const cols =
-      this.theme === 'filter'
+      this.theme === 'woods'
+        ? ['#3a4248', '#8a9aaa', '#5a646c', '#1a2024', '#2a3238']
+        : this.theme === 'filter'
         ? ['#6a4a3a', '#d4b090', '#a07858', '#3a2418', '#4a3028']
         : this.theme === 'overflow'
           ? ['#3a5a5c', '#b0d4d4', '#6a9090', '#1a3030', '#2a4040']
@@ -296,6 +321,13 @@ export class Renderer {
       else if (prop.kind === 'nest') this.pixelNest()
       else if (prop.kind === 'grate') this.pixelGrate()
       else if (prop.kind === 'chain') this.pixelChain()
+      else if (prop.kind === 'pine') this.pixelPine()
+      else if (prop.kind === 'tent') this.pixelTent()
+      else if (prop.kind === 'rock') this.pixelRock()
+      else if (prop.kind === 'pole') this.pixelPole(time, prop.x)
+      else if (prop.kind === 'truck') this.pixelTruck()
+      else if (prop.kind === 'grass') this.pixelGrass()
+      else if (prop.kind === 'mouth') this.pixelMouth()
       else this.pixelCrane()
       ctx.restore()
     }
@@ -343,6 +375,62 @@ export class Renderer {
     prect(this.ctx, 4, -96, 12, 96, '#5a626a')
     prect(this.ctx, 4, -96, 12, PX, '#c4ccd4')
     prect(this.ctx, 2, -104, 16, 8, '#7cff3a')
+  }
+
+  private pixelPine() {
+    prect(this.ctx, 18, -110, 10, 110, '#2a2018')
+    prect(this.ctx, 0, -70, 48, 28, '#152018')
+    prect(this.ctx, 6, -92, 36, 24, '#1a2818')
+    prect(this.ctx, 12, -110, 24, 22, '#203020')
+    prect(this.ctx, 16, -108, PX, 8, '#4a6a40')
+  }
+
+  private pixelTent() {
+    prect(this.ctx, 4, -52, 72, 52, '#1a2a18')
+    prect(this.ctx, 8, -48, 64, 44, '#2a4a28')
+    prect(this.ctx, 36, -52, 8, 52, '#142014')
+    prect(this.ctx, 28, -20, 20, 20, '#0c140c')
+    prect(this.ctx, 10, -44, 16, PX, '#7cff3a')
+  }
+
+  private pixelRock() {
+    prect(this.ctx, 0, -28, 40, 28, '#2a3238')
+    prect(this.ctx, 8, -36, 24, 12, '#3a444c')
+    prect(this.ctx, 4, -24, 12, PX, '#8a9aaa')
+  }
+
+  private pixelPole(time: number, seed: number) {
+    prect(this.ctx, 10, -96, 8, 96, '#3a4048')
+    prect(this.ctx, 8, -100, 12, 8, '#5a626a')
+    prect(this.ctx, 18, -92, 28, 6, '#2a3038')
+    const on = Math.sin(time * 7 + seed) > -0.5
+    prect(this.ctx, 38, -90, 12, 10, on ? '#d8f0ff' : '#6a8090')
+    if (on) {
+      this.ctx.globalAlpha = 0.16
+      prect(this.ctx, 20, -88, 48, 70, '#c8e0ff')
+      this.ctx.globalAlpha = 1
+    }
+  }
+
+  private pixelTruck() {
+    prect(this.ctx, 0, -36, 88, 28, '#3a4a28')
+    prect(this.ctx, 48, -52, 36, 20, '#2a3820')
+    prect(this.ctx, 8, -12, 16, 12, '#1a1c18')
+    prect(this.ctx, 60, -12, 16, 12, '#1a1c18')
+    prect(this.ctx, 54, -70, 10, 18, '#5a6260')
+    prect(this.ctx, 52, -78, 14, 8, '#8a9088')
+    prect(this.ctx, 20, -30, 20, 8, '#111')
+  }
+
+  private pixelGrass() {
+    for (let i = 0; i < 7; i++) prect(this.ctx, i * 6, -10 - (i % 3) * 6, PX, 10 + (i % 3) * 6, i % 2 === 0 ? '#3a5a30' : '#2a4024')
+  }
+
+  private pixelMouth() {
+    prect(this.ctx, 0, -140, 140, 140, '#1a1c20')
+    prect(this.ctx, 16, -124, 108, 108, '#0a0c10')
+    prect(this.ctx, 32, -108, 76, 92, '#050608')
+    prect(this.ctx, 20, -124, 100, PX, '#8a9aaa')
   }
 
   private pixelCrane() {
@@ -465,11 +553,26 @@ export class Renderer {
 
   private drawGoal(world: World, time: number) {
     const g = world.goal
+    if (this.theme === 'woods') {
+      prect(this.ctx, g.x - 20, g.y - 20, g.w + 40, g.h + 40, '#12141a')
+      prect(this.ctx, g.x, g.y, g.w, g.h, '#050608')
+      const pulse = 0.35 + Math.sin(time * 3) * 0.12
+      this.ctx.globalAlpha = pulse
+      prect(this.ctx, g.x + 16, g.y + 20, g.w - 32, g.h - 40, '#1a3040')
+      this.ctx.globalAlpha = 1
+      return
+    }
     prect(this.ctx, g.x, g.y, g.w, g.h, '#3a3e44')
     const pulse = Math.sin(time * 4) > 0
-    const lit = this.theme === 'filter' ? '#ffb040' : this.theme === 'overflow' ? '#5ef0d8' : '#7cff3a'
+    const lit = world.id === 5 ? '#ff90b0' : this.theme === 'filter' ? '#ffb040' : this.theme === 'overflow' ? '#5ef0d8' : '#7cff3a'
     prect(this.ctx, g.x + 12, g.y + 16, g.w - 24, g.h - 32, pulse ? lit : '#1a5a12')
     for (let i = 0; i < 5; i++) prect(this.ctx, g.x + 16 + i * 8, g.y + 20, PX, g.h - 40, '#111')
+    if (world.id === 5) {
+      for (let i = 0; i < 4; i++) {
+        const a = time * 2 + i
+        prect(this.ctx, g.x + 20 + Math.sin(a) * 18, g.y - 8 + Math.cos(a * 1.3) * 10, PX, PX, '#ffb0c8')
+      }
+    }
   }
 
   private drawSigns(world: World) {
@@ -537,6 +640,10 @@ export class Renderer {
   private drawNpcs(world: World, time: number) {
     for (const n of world.npcs) {
       const look = lookById(n.look)
+      if (n.id === 'babe') {
+        this.drawRoach(this.babe, n.x, n.y, n.facing, look, false)
+        continue
+      }
       const skin = this.skins.get(n.look) ?? this.skins.get('stock')!
       const idle = Math.abs(Math.sin(time * 2 + n.x)) < 0.12 ? skin.jump : skin.idle
       this.drawSmokeList(n.smoke, look.smoke)
@@ -575,8 +682,30 @@ export class Renderer {
     }
     ctx.globalAlpha = 1
 
-    if (player.dashing && !player.slideDash) this.drawDashWings(player)
+    if (player.dashing && !player.slideDash) {
+      this.drawDashWings(player)
+      this.drawDashAura(player)
+    }
     this.drawRoach(spr, player.cx, player.bottom, player.facing, this.look, !player.sliding, player.squish)
+  }
+
+  private drawDashAura(player: Player) {
+    const ctx = this.ctx
+    const u = 1 - Math.max(0, player.dashT) / DASH_TIME
+    for (let i = 0; i < 18; i++) {
+      const a = this.clock * 14 + i * 0.4
+      const r = 18 + Math.sin(a * 2 + u * 8) * 16 + u * 22
+      ctx.globalAlpha = 0.22 + (i % 3) * 0.08
+      prect(
+        ctx,
+        player.cx + Math.cos(a) * r,
+        player.cy + Math.sin(a * 1.3) * r * 0.55,
+        PX * (i % 3 === 0 ? 2 : 1),
+        PX,
+        i % 2 === 0 ? '#7ef0ff' : '#c090ff',
+      )
+    }
+    ctx.globalAlpha = 1
   }
 
   private drawRoach(
@@ -591,10 +720,18 @@ export class Renderer {
     const ctx = this.ctx
     const s = 1.22
     const ox = 0.48
+    const dx = -Math.floor(spr.width * ox * s)
+    const dy = -Math.floor(spr.height * s) + 4
     ctx.save()
     ctx.translate(snap(x), snap(y))
     ctx.scale(facing, squish)
-    ctx.drawImage(spr, -Math.floor(spr.width * ox * s), -Math.floor(spr.height * s) + 4, spr.width * s, spr.height * s)
+    ctx.globalAlpha = 0.55
+    ctx.filter = 'brightness(2.2)'
+    ctx.drawImage(spr, dx - 1, dy, spr.width * s, spr.height * s)
+    ctx.drawImage(spr, dx + 1, dy, spr.width * s, spr.height * s)
+    ctx.filter = 'none'
+    ctx.globalAlpha = 1
+    ctx.drawImage(spr, dx, dy, spr.width * s, spr.height * s)
     if (look.glasses) {
       prect(ctx, -8, -Math.floor(spr.height * s) + 22, 18, 6, '#111')
       prect(ctx, -6, -Math.floor(spr.height * s) + 24, 4, PX, '#d8f0ff')
@@ -602,7 +739,12 @@ export class Renderer {
     ctx.restore()
     if (cig) {
       const flicker = Math.sin(x * 0.2) > 0
-      prect(ctx, x + facing * 14, y - (squish < 0.95 ? 16 : 34), PX, PX, flicker ? look.cig[0] : look.cig[1])
+      const cx = x + facing * 14
+      const cy = y - (squish < 0.95 ? 16 : 34)
+      this.ctx.globalAlpha = 0.28
+      prect(this.ctx, cx - 4, cy - 4, 12, 12, look.cig[0])
+      this.ctx.globalAlpha = 1
+      prect(this.ctx, cx, cy, PX, PX, flicker ? look.cig[0] : look.cig[1])
     }
   }
 
@@ -744,76 +886,6 @@ function bakeBrick(edge: string, h: string, H: string, D: string) {
   )
 }
 
-function bakeFar() {
-  const c = document.createElement('canvas')
-  c.width = VIEW_W + 320
-  c.height = VIEW_H
-  const ctx = c.getContext('2d')
-  if (!ctx) return c
-  crisp(ctx)
-  for (let i = 0; i < 9; i++) {
-    const x = 40 + i * 160
-    prect(ctx, x, 180, 120, 400, '#0c140e')
-    prect(ctx, x + 20, 200, 80, 160, '#070a08')
-    prect(ctx, x + 36, 240, 48, 80, '#7cff3a')
-    ctx.globalAlpha = 0.15
-    ctx.fillRect(x + 36, 240, 48, 80)
-    ctx.globalAlpha = 1
-  }
-  return c
-}
-
-function bakeMid() {
-  const c = document.createElement('canvas')
-  c.width = VIEW_W + 320
-  c.height = VIEW_H
-  const ctx = c.getContext('2d')
-  if (!ctx) return c
-  crisp(ctx)
-  for (let i = 0; i < 14; i++) {
-    const x = i * 110
-    prect(ctx, x + 20, 120, 16, 520, '#1c2420')
-    prect(ctx, x + 24, 120, 4, 520, '#3a4a40')
-    prect(ctx, x, 280, 90, 12, '#1c2420')
-    prect(ctx, x, 280, 90, 4, '#4a5a50')
-  }
-  return c
-}
-
-function bakeNear() {
-  const c = document.createElement('canvas')
-  c.width = VIEW_W + 200
-  c.height = VIEW_H
-  const ctx = c.getContext('2d')
-  if (!ctx) return c
-  crisp(ctx)
-  for (let x = 0; x < c.width; x += 32) {
-    for (let y = 0; y < 80; y += 16) {
-      if ((x + y) % 64 === 0) prect(ctx, x, y, 4, 80, '#1a1e1a')
-    }
-  }
-  for (let i = 0; i < 8; i++) {
-    prect(ctx, 80 + i * 180, 40, 8, 24, '#ffe080')
-    prect(ctx, 76 + i * 180, 32, 16, 8, '#2a2e28')
-  }
-  return c
-}
-
-function bakeFore() {
-  const c = document.createElement('canvas')
-  c.width = VIEW_W + 200
-  c.height = VIEW_H
-  const ctx = c.getContext('2d')
-  if (!ctx) return c
-  crisp(ctx)
-  ctx.globalAlpha = 0.45
-  for (let i = 0; i < 18; i++) {
-    prect(ctx, i * 90, 0, 4, 50 + (i % 3) * 20, '#0a0e0a')
-    prect(ctx, 30 + i * 90, VIEW_H - 40, 50, 40, '#0a0e0a')
-  }
-  ctx.globalAlpha = 1
-  return c
-}
 
 function hash(x: number, y: number) {
   const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453

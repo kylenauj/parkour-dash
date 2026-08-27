@@ -17,29 +17,24 @@
       <canvas id="game" width="1280" height="720" aria-label="Pipe Roach parkour game"></canvas>
 
       <div id="hud" class="overlay hidden" aria-live="polite">
-        <div class="hud-left">
-          <div class="hud-stat">
-            <span class="hud-label">Pipe</span>
-            <span id="hud-level">1 / 5</span>
-          </div>
-          <div class="hud-stat">
-            <span class="hud-label">Time</span>
-            <span id="hud-time">0:00.00</span>
-          </div>
-          <div class="hud-stat">
-            <span class="hud-label">Crumbs</span>
-            <span id="hud-orbs">0 / 10</span>
-          </div>
-          <div class="hud-stat">
-            <span class="hud-label">Falls</span>
-            <span id="hud-deaths">0</span>
+        <div class="hud-frame">
+          <canvas id="hud-portrait" width="72" height="88" aria-hidden="true"></canvas>
+          <div class="hud-meta">
+            <span class="hud-name">Pipe Roach</span>
+            <div class="hud-row">
+              <span id="hud-level">1 / 6</span>
+              <span id="hud-time">0:00.00</span>
+            </div>
+            <div class="dash-track">
+              <div id="dash-pip" class="dash-fill ready"></div>
+            </div>
+            <div class="hud-row dim">
+              <span>Crumbs <span id="hud-orbs">0 / 10</span></span>
+              <span>Falls <span id="hud-deaths">0</span></span>
+            </div>
           </div>
         </div>
         <div id="hud-hint" class="hud-hint"></div>
-        <div class="hud-right">
-          <span class="dash-label">Dash</span>
-          <div id="dash-pip" class="dash-pip ready"></div>
-        </div>
       </div>
 
       <div id="level-toast" class="level-toast hidden">
@@ -53,40 +48,45 @@
             <div class="hero-col">
               <canvas id="hero-art" width="220" height="280" aria-hidden="true"></canvas>
               <p class="hero-tag">Pipe Roach</p>
-              <p class="hero-sub">One cig. Five pipes.</p>
+              <p class="hero-sub">Lonely smoker. She’s at the top.</p>
             </div>
             <div class="copy-col">
-              <p class="eyebrow">Sewer parkour</p>
+              <p class="eyebrow">The Pipe Line</p>
               <h1>PIPE ROACH</h1>
               <p class="lede">
-                Kick the walls, slide-dash the flues, crawl to the street. He smokes. You drive.
+                He left the rocky forest with a cig and a reason. Crawl the pipes. Babe Roach is waiting at the grate.
               </p>
               <button id="btn-play" type="button" class="primary">Full crawl</button>
               <div class="level-picks" id="level-picks">
                 <button type="button" class="level-btn" data-level="0">
                   <span class="num">01</span>
-                  <span class="name">The Gutters</span>
-                  <span class="sub">Learn the crawl</span>
+                  <span class="name">The Ridge</span>
+                  <span class="sub">Leave the trees</span>
                 </button>
                 <button type="button" class="level-btn" data-level="1">
                   <span class="num">02</span>
-                  <span class="name">The Filter</span>
-                  <span class="sub">Do not linger</span>
+                  <span class="name">The Gutters</span>
+                  <span class="sub">Learn the crawl</span>
                 </button>
                 <button type="button" class="level-btn" data-level="2">
                   <span class="num">03</span>
-                  <span class="name">The Overflow</span>
-                  <span class="sub">Ride the flood</span>
+                  <span class="name">The Filter</span>
+                  <span class="sub">Do not linger</span>
                 </button>
                 <button type="button" class="level-btn" data-level="3">
                   <span class="num">04</span>
-                  <span class="name">The Flues</span>
-                  <span class="sub">Stay low</span>
+                  <span class="name">The Overflow</span>
+                  <span class="sub">Ride the flood</span>
                 </button>
                 <button type="button" class="level-btn" data-level="4">
                   <span class="num">05</span>
+                  <span class="name">The Flues</span>
+                  <span class="sub">Stay low</span>
+                </button>
+                <button type="button" class="level-btn" data-level="5">
+                  <span class="num">06</span>
                   <span class="name">The Grate</span>
-                  <span class="sub">One last kick</span>
+                  <span class="sub">Babe was waiting</span>
                 </button>
               </div>
               <details class="how-to">
@@ -112,7 +112,7 @@
         <div class="panel">
           <p class="eyebrow">Paused</p>
           <h2>Take a breath</h2>
-          <p class="lede">The pipes can wait. Resume, retry this checkpoint, or start the whole run over.</p>
+          <p class="lede">The Pipe Line can wait. Resume, retry this valve, or start the crawl over.</p>
           <div class="btn-row">
             <button id="btn-resume" type="button" class="primary">Resume</button>
             <button id="btn-retry" type="button" class="ghost">Checkpoint</button>

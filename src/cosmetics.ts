@@ -1,4 +1,4 @@
-export type CosmeticId = 'stock' | 'ash' | 'goldleaf' | 'wet' | 'blush' | 'midnight' | 'ruby'
+export type CosmeticId = 'stock' | 'ash' | 'goldleaf' | 'wet' | 'blush' | 'midnight' | 'ruby' | 'babe'
 
 export type Look = {
   id: CosmeticId
@@ -214,6 +214,35 @@ export const LOOKS: Look[] = [
     wings: ['#ffe0d8', '#ff8080', '#d04040', '#5a1010'],
     cig: ['#ffc0b0', '#ff3030'],
     glasses: true,
+  },
+  {
+    id: 'babe',
+    name: 'Babe',
+    how: 'She was waiting at the top of the line.',
+    pal: {
+      a: '#4a2030',
+      A: '#8a3858',
+      H: '#c86888',
+      h: '#f098b0',
+      D: '#5a2838',
+      E: '#fff0f4',
+      o: '#180810',
+      C: '#ffe8ee',
+      F: '#ff6a90',
+      B: '#3a1828',
+      b: '#6a3048',
+      P: '#c05070',
+      L: '#8a2848',
+      S: '#3a1020',
+      W: '#a03858',
+      m: '#ffb0c8',
+      M: '#ffe0ea',
+      v: '#fff4f8',
+    },
+    smoke: ['#ffe8f0', '#e090b0', '#5a2838'],
+    wings: ['#fff0f4', '#ffb0c8', '#e07098', '#6a2040'],
+    cig: ['#ffd0e0', '#ff5080'],
+    glasses: false,
   },
 ]
 

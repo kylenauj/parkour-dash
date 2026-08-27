@@ -45,6 +45,7 @@ type GameUI = {
   titleLooks: HTMLElement
   pauseLooks: HTMLElement
   heroArt: HTMLCanvasElement
+  portrait: HTMLCanvasElement
   touch: HTMLElement
 }
 
@@ -127,7 +128,7 @@ export class Game {
   }
 
   nextPipe() {
-    if (this.levelId >= 4) {
+    if (this.levelId >= 5) {
       this.setMode('title')
       return
     }
@@ -300,7 +301,7 @@ export class Game {
         this.particles.ring(orb.x + 8, orb.y + 8, '#fff6c8', 6)
         this.pop(orb.x, orb.y, '+1', '#ffe08a')
         this.audio.orb()
-        if (this.world.orbs.every((o) => o.got) && this.world.id === 0) this.grant('blush')
+        if (this.world.orbs.every((o) => o.got) && this.world.id === 1) this.grant('blush')
       }
     }
     for (const c of this.world.checkpoints) {
@@ -385,15 +386,15 @@ export class Game {
     const orbs = this.world.orbs.filter((o) => o.got).length
     this.runOrbs += orbs
     this.runOrbMax += this.world.orbs.length
-    const last = this.levelId >= 4
+    const last = this.levelId >= 5
     const meta = LEVELS[this.levelId]
-    this.ui.winEyebrow.textContent = last ? 'Street grate' : meta.name
+    this.ui.winEyebrow.textContent = last ? 'Babe Roach' : meta.name
     this.ui.winCopy.textContent = last
       ? orbs === this.world.orbs.length
-        ? 'Daylight. Every crumb, every pipe, the whole crawl clean.'
-        : 'You made the street. Some crumbs are still in the dark if you want a perfect crawl.'
+        ? 'She was waiting. Every crumb, every pipe, the cig still lit.'
+        : 'Babe Roach kept the grate warm. Some crumbs are still in the dark if you want a perfect crawl.'
       : orbs === this.world.orbs.length
-        ? `${meta.name} is picked clean. The next pipe is waiting.`
+        ? `${meta.name} is picked clean. The Pipe Line keeps going.`
         : `${meta.name} is open. Grab the rest of the crumbs on a replay, or crawl on.`
     this.ui.winStats.innerHTML = `
       <div><span class="k">Time</span><span class="v">${formatTime(this.elapsed)}</span></div>
@@ -402,6 +403,7 @@ export class Game {
     `
     this.ui.btnNext.classList.toggle('hidden', last)
     this.ui.btnNext.textContent = last ? 'Title' : LEVELS[this.levelId + 1].name
+    if (last) this.grant('babe')
     this.setMode('win')
   }
 
@@ -432,7 +434,7 @@ export class Game {
     this.ui.toastNum.textContent = String(id + 1).padStart(2, '0')
     this.ui.toastName.textContent = this.world.name
     this.ui.toast.classList.remove('hidden')
-    this.ui.level.textContent = `${id + 1} / 5`
+    this.ui.level.textContent = `${id + 1} / 6`
     this.closeTalk()
     this.pops = []
   }
@@ -526,6 +528,7 @@ export class Game {
 
   private paintHero() {
     this.renderer.paintHero(this.ui.heroArt, this.looks.equipped)
+    this.renderer.paintHero(this.ui.portrait, this.looks.equipped)
   }
 
   private paintLooks(root: HTMLElement) {
@@ -569,7 +572,7 @@ export class Game {
     this.ui.orbs.textContent = `${got} / ${this.world.orbs.length}`
     this.ui.deaths.textContent = String(this.deaths)
     this.ui.dash.classList.toggle('ready', this.player.canDash && !this.player.dashing)
-    this.ui.level.textContent = `${this.levelId + 1} / 5`
+    this.ui.level.textContent = `${this.levelId + 1} / 6`
   }
 
   private fitCanvas() {

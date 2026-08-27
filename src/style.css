@@ -1,12 +1,12 @@
 :root {
-  --bg: #0c120e;
-  --panel: rgba(10, 16, 12, 0.88);
-  --line: rgba(124, 255, 58, 0.32);
-  --cyan: #7cff3a;
-  --mint: #c8ff78;
-  --pink: #c45a2a;
-  --text: #e8f8d8;
-  --muted: #8aaa78;
+  --bg: #0a1016;
+  --panel: rgba(8, 12, 18, 0.9);
+  --line: rgba(160, 200, 220, 0.3);
+  --cyan: #7ee0ff;
+  --mint: #e8f4f8;
+  --pink: #ff6a90;
+  --text: #e8f0f8;
+  --muted: #8a9aaa;
 }
 
 * {
@@ -56,8 +56,8 @@ body {
   display: grid;
   place-items: center;
   background:
-    radial-gradient(ellipse at 50% 120%, rgba(80, 255, 50, 0.16), transparent 50%),
-    radial-gradient(ellipse at 50% 10%, rgba(255, 200, 80, 0.08), transparent 45%),
+    radial-gradient(ellipse at 50% 120%, rgba(80, 180, 255, 0.16), transparent 50%),
+    radial-gradient(ellipse at 50% 10%, rgba(255, 120, 160, 0.08), transparent 45%),
     linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.62));
   padding: 24px;
 }
@@ -70,62 +70,87 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 18px 22px;
+  padding: 16px 18px;
   gap: 16px;
 }
 
-.hud-left,
-.hud-right {
+.hud-frame {
   display: flex;
-  gap: 18px;
-  align-items: center;
+  gap: 12px;
+  align-items: stretch;
+  padding: 8px 12px 8px 8px;
+  border: 2px solid #8a9aaa;
+  background: linear-gradient(180deg, rgba(18, 22, 28, 0.92), rgba(8, 10, 14, 0.92));
+  box-shadow: 0 0 0 1px #1a2028, 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 0 20px rgba(126, 224, 255, 0.06);
 }
 
-.hud-stat {
-  min-width: 78px;
+#hud-portrait {
+  width: 72px;
+  height: 88px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: radial-gradient(ellipse at 50% 70%, rgba(126, 224, 255, 0.18), #080c10);
+  border: 2px solid #c8d0d8;
 }
 
-.hud-label,
-.dash-label {
-  display: block;
-  font-size: 11px;
-  letter-spacing: 0.18em;
+.hud-meta {
+  display: grid;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.hud-name {
+  font-size: 9px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+  color: var(--cyan);
+}
+
+.hud-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: "Press Start 2P", monospace;
+  font-size: 10px;
+  color: var(--mint);
+}
+
+.hud-row.dim {
+  font-family: Rajdhani, sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.04em;
   color: var(--muted);
 }
 
-.hud-stat span:last-child,
-.hud-hint {
-  font-family: "Press Start 2P", monospace;
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--mint);
-  text-shadow: 0 0 16px rgba(124, 255, 58, 0.4);
+.dash-track {
+  width: 160px;
+  height: 10px;
+  border: 1px solid var(--cyan);
+  background: #0a1014;
+}
+
+.dash-fill {
+  width: 40%;
+  height: 100%;
+  background: transparent;
+}
+
+.dash-fill.ready {
+  width: 100%;
+  background: var(--cyan);
+  box-shadow: 0 0 12px rgba(126, 224, 255, 0.85);
 }
 
 .hud-hint {
   flex: 1;
   text-align: center;
+  font-family: "Press Start 2P", monospace;
   font-size: 10px;
   color: var(--cyan);
   opacity: 0.92;
-  padding-top: 6px;
+  padding-top: 10px;
   line-height: 1.6;
-}
-
-.dash-pip {
-  width: 18px;
-  height: 18px;
-  margin-top: 4px;
-  border-radius: 50%;
-  border: 2px solid var(--cyan);
-  background: transparent;
-  box-shadow: 0 0 12px rgba(62, 224, 255, 0.2);
-}
-
-.dash-pip.ready {
-  background: var(--cyan);
-  box-shadow: 0 0 16px rgba(62, 224, 255, 0.85);
+  text-shadow: 0 0 16px rgba(126, 224, 255, 0.35);
 }
 
 .panel {
@@ -189,7 +214,7 @@ body {
 .how-to {
   margin: 16px 0 0;
   border: 1px solid var(--line);
-  background: rgba(124, 255, 58, 0.04);
+  background: rgba(126, 224, 255, 0.04);
   padding: 8px 12px;
 }
 
@@ -229,8 +254,8 @@ h2 {
 h1 {
   font-size: clamp(28px, 5vw, 42px);
   letter-spacing: 0.04em;
-  color: #e8f8d8;
-  text-shadow: 4px 4px 0 #0a2a10, 0 0 28px rgba(124, 255, 58, 0.35);
+  color: #e8f0f8;
+  text-shadow: 4px 4px 0 #0a1420, 0 0 28px rgba(126, 224, 255, 0.35);
 }
 
 h2 {
@@ -283,8 +308,8 @@ button {
 
 .primary {
   background: var(--cyan);
-  color: #0c1408;
-  box-shadow: 0 0 24px rgba(124, 255, 58, 0.45);
+  color: #081018;
+  box-shadow: 0 0 24px rgba(126, 224, 255, 0.45);
 }
 
 .primary:hover {
@@ -293,7 +318,7 @@ button {
 
 .level-picks {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin: 16px 0 0;
 }

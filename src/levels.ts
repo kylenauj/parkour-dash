@@ -21,11 +21,12 @@ import {
 } from './world'
 
 export function createWorld(id: LevelId = 0): World {
-  if (id === 1) return filterBeds()
-  if (id === 2) return overflow()
-  if (id === 3) return flues()
-  if (id === 4) return grate()
-  return gutters()
+  if (id === 0) return ridge()
+  if (id === 1) return gutters()
+  if (id === 2) return filterBeds()
+  if (id === 3) return overflow()
+  if (id === 4) return flues()
+  return grate()
 }
 
 /** Walk in under the left pipe, stand on a stoop, kick up, jump through the grate. */
@@ -117,6 +118,102 @@ function kit() {
   }
 }
 
+function ridge(): World {
+  const b = kit()
+
+  b.s(0, 620, 620, 380)
+  b.n(70, 540, 'Pipe Roach. Lonely smoker. She is at the top of the line.')
+  b.r(280, 560)
+  b.p('tent', 80, 620)
+  b.p('truck', 220, 620)
+  b.p('barrel', 360, 620)
+  b.p('barrelTip', 430, 620)
+  b.p('pole', 520, 620)
+  b.p('pine', 40, 620)
+  b.p('pine', 580, 620)
+  b.p('grass', 160, 620)
+  b.p('grass', 480, 620)
+  b.p('rock', 300, 620)
+  b.npc(
+    npc(
+      'moss',
+      490,
+      620,
+      -1,
+      'Moss',
+      [
+        'You again. Cig’s still lit. Babe’s still at the top.',
+        'Forest ends where the Pipe Line starts. Don’t get cute in the trees.',
+        'Go on. She’s worse when she waits.',
+      ],
+      'wet',
+    ),
+  )
+
+  b.s(680, 560, 160, 40)
+  b.s(900, 500, 150, 40)
+  b.s(1120, 560, 180, 40)
+  b.r(940, 460)
+  b.n(690, 500, 'Jump the rocks. The line is east.')
+  b.p('pine', 700, 560)
+  b.p('rock', 980, 500)
+  b.p('grass', 1160, 560)
+
+  b.s(1380, 620, 280, 380)
+  b.o(1680, 540, 140)
+  b.n(1400, 560, 'Down + jump drops through a log.')
+  b.r(1720, 500)
+  b.p('pine', 1480, 620)
+  b.v(1520, 564)
+
+  b.s(1900, 620, 200, 40)
+  b.k(2100, 800, 200)
+  b.s(2100, 818, 200, 40)
+  b.s(2300, 580, 200, 40)
+  b.n(1910, 560, 'Wings out if the gap looks mean. Shift / J.')
+  b.r(2180, 520)
+  b.p('rock', 2340, 580)
+
+  b.s(2580, 620, 240, 48)
+  shaft(b, 2820, 620, 220, 'right', 260)
+  b.n(2590, 560, 'Walk under. Hold into the rock, jump, kick up.')
+  b.r(2908, 420)
+  b.p('pine', 2600, 620)
+  b.v(3120, 168)
+
+  b.s(3240, 224, 180, 40)
+  b.s(3480, 300, 160, 40)
+  b.s(3720, 380, 180, 40)
+  b.s(3960, 460, 220, 40)
+  b.n(3490, 240, 'Drop down toward the mouth.')
+  b.r(3540, 260)
+  b.r(4020, 420)
+  b.p('pine', 3760, 380)
+
+  b.s(4240, 520, 720, 480)
+  b.p('mouth', 4560, 520)
+  b.p('pole', 4320, 520)
+  b.p('grass', 4400, 520)
+  b.p('rock', 4700, 520)
+  b.n(4280, 460, 'The Pipe Line. Babe Roach is at the top. Crawl.')
+  b.r(4480, 480)
+  b.v(4300, 464)
+  b.p('pine', 4880, 520)
+
+  return makeWorld(
+    0,
+    'The Ridge',
+    'Leave the trees',
+    'woods',
+    5200,
+    1100,
+    980,
+    { x: 100, y: 540 },
+    { x: 4620, y: 400, w: 90, h: 120 },
+    b,
+  )
+}
+
 function gutters(): World {
   const b = kit()
 
@@ -144,8 +241,8 @@ function gutters(): World {
       'Nix',
       [
         'Hey. Got a light? Nah, keep yours. That one is lucky.',
-        'You dash with the wings out. Looks stupid. Looks fast.',
-        'Take the ash stain. Wear the crawl.',
+        'Babe’s at the top of the line. That’s the whole crawl.',
+        'Take the ash stain. Wear the lonely.',
       ],
       'ash',
       'ash',
@@ -244,7 +341,7 @@ function gutters(): World {
   )
 
   return makeWorld(
-    0,
+    1,
     'The Gutters',
     'Learn the crawl',
     'gutter',
@@ -376,7 +473,7 @@ function filterBeds(): World {
   b.n(7580, 60, 'Overflow hatch')
 
   return makeWorld(
-    1,
+    2,
     'The Filter',
     'Do not linger',
     'filter',
@@ -533,7 +630,7 @@ function overflow(): World {
   b.v(7640, 124)
 
   return makeWorld(
-    2,
+    3,
     'The Overflow',
     'Ride the flood',
     'overflow',
@@ -641,7 +738,7 @@ function flues(): World {
   b.v(6360, 124)
 
   return makeWorld(
-    3,
+    4,
     'The Flues',
     'Stay low',
     'flue',
@@ -752,13 +849,29 @@ function grate(): World {
   b.p('grate', 6500, 160)
   b.p('lamp', 6960, 160)
   b.p('web', 6484, 160)
-  b.n(6520, 100, 'The street. Put the cig out or don’t.')
+  b.n(6520, 100, 'Babe Roach. Put the cig out or don’t.')
   b.v(6560, 104)
+  b.npc(
+    npc(
+      'babe',
+      6800,
+      160,
+      -1,
+      'Babe Roach',
+      [
+        'Took you long enough, Pipe.',
+        'Forest spit you out. I kept the grate warm.',
+        'Come here. You can keep the cig. I like you smoky.',
+      ],
+      'babe',
+      'babe',
+    ),
+  )
 
   return makeWorld(
-    4,
+    5,
     'The Grate',
-    'One last kick',
+    'Babe was waiting',
     'street',
     7200,
     1200,

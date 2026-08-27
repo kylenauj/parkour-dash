@@ -1,8 +1,8 @@
 import type { CosmeticId } from './cosmetics'
 
 export type PlatType = 'solid' | 'oneway' | 'moving' | 'crumble'
-export type Theme = 'gutter' | 'filter' | 'overflow' | 'flue' | 'street'
-export type LevelId = 0 | 1 | 2 | 3 | 4
+export type Theme = 'woods' | 'gutter' | 'filter' | 'overflow' | 'flue' | 'street'
+export type LevelId = 0 | 1 | 2 | 3 | 4 | 5
 
 export type Platform = {
   x: number
@@ -40,6 +40,13 @@ export type Prop = {
     | 'nest'
     | 'grate'
     | 'chain'
+    | 'pine'
+    | 'tent'
+    | 'rock'
+    | 'pole'
+    | 'truck'
+    | 'grass'
+    | 'mouth'
   x: number
   y: number
 }
@@ -129,11 +136,12 @@ export type World = {
 }
 
 export const LEVELS: { id: LevelId; name: string; subtitle: string }[] = [
-  { id: 0, name: 'The Gutters', subtitle: 'Learn the crawl' },
-  { id: 1, name: 'The Filter', subtitle: 'Do not linger' },
-  { id: 2, name: 'The Overflow', subtitle: 'Ride the flood' },
-  { id: 3, name: 'The Flues', subtitle: 'Stay low' },
-  { id: 4, name: 'The Grate', subtitle: 'One last kick' },
+  { id: 0, name: 'The Ridge', subtitle: 'Leave the trees' },
+  { id: 1, name: 'The Gutters', subtitle: 'Learn the crawl' },
+  { id: 2, name: 'The Filter', subtitle: 'Do not linger' },
+  { id: 3, name: 'The Overflow', subtitle: 'Ride the flood' },
+  { id: 4, name: 'The Flues', subtitle: 'Stay low' },
+  { id: 5, name: 'The Grate', subtitle: 'Babe was waiting' },
 ]
 
 export function solid(x: number, y: number, w: number, h: number): Platform {
@@ -212,6 +220,7 @@ export function stash(id: CosmeticId, x: number, y: number): Secret {
 
 export function updateNpcSmoke(npcs: Npc[], dt: number) {
   for (const n of npcs) {
+    if (n.id === 'babe') continue
     const mouthX = n.x + n.facing * 16
     const mouthY = n.y - 27
     if (Math.random() < 0.45) {
