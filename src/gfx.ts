@@ -44,10 +44,10 @@ export function disk(
 }
 
 export function moon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  for (let i = 6; i >= 1; i--) {
-    ctx.globalAlpha = 0.035 * i
-    disk(ctx, cx, cy, r + i * 9, '#9ab4e0')
-  }
+  ctx.globalAlpha = 0.07
+  disk(ctx, cx, cy, r + 10, '#b6ccf0')
+  ctx.globalAlpha = 0.1
+  disk(ctx, cx, cy, r + 4, '#cfe0ff')
   ctx.globalAlpha = 1
   disk(ctx, cx, cy, r, '#e8e4d0')
   disk(ctx, cx - r * 0.12, cy - r * 0.14, r * 0.86, '#f8f4e4')
@@ -198,12 +198,13 @@ export function mountains(
     }
 
     if (snow && snowLine !== undefined && topY < snowLine) {
-      const depth = Math.min(h * 0.62, (snowLine - topY) * (0.55 + noise(x, 3, 18) * 0.5))
+      const above = snowLine - topY
+      const depth = Math.min(h * 0.26, above * (0.3 + noise(x, 3, 22) * 0.35))
       if (depth > 1) {
         prect(ctx, x, topY, 1, depth, snow)
-        if (snowShade && slope > 0.4) prect(ctx, x, topY, 1, depth * 0.75, snowShade)
-        const streak = noise(x, 71, 14)
-        if (streak > 0.62) prect(ctx, x, topY + depth, 1, depth * 0.35 * streak, snow)
+        if (snowShade && slope > 0.4) prect(ctx, x, topY, 1, depth * 0.7, snowShade)
+        const streak = noise(x, 71, 9)
+        if (streak > 0.74) prect(ctx, x, topY + depth, 1, depth * 0.45 * streak, snow)
       }
     }
   }
@@ -255,14 +256,16 @@ export function boulders(
   cols: { face: string; lit: string; shade: string },
   step = 26,
 ) {
-  for (let by = y + 8; by < y + h - 6; by += step) {
-    for (let bx = x + 6; bx < x + w - 8; bx += step) {
+  for (let by = y + 10; by < y + h - 6; by += step) {
+    for (let bx = x + 8; bx < x + w - 10; bx += step) {
       const seed = hash(bx, by)
-      if (seed < 0.42) continue
-      const r = 3 + Math.floor(seed * 6)
-      disk(ctx, bx + (seed * 9), by + (hash(by, bx) * 7), r, cols.face)
-      disk(ctx, bx + seed * 9 - 1, by + hash(by, bx) * 7 - 1, Math.max(1, r * 0.55), cols.lit)
-      prect(ctx, bx + seed * 9 - r, by + hash(by, bx) * 7 + r - 1, r * 2, 2, cols.shade)
+      if (seed < 0.55) continue
+      const r = 3 + Math.floor(seed * 9)
+      const ox = bx + seed * step * 0.6
+      const oy = by + hash(by, bx) * step * 0.5
+      disk(ctx, ox, oy, r, cols.face)
+      disk(ctx, ox - 1, oy - 1, Math.max(1, r * 0.5), cols.lit)
+      prect(ctx, ox - r, oy + r - 1, r * 2, 2, cols.shade)
     }
   }
 }

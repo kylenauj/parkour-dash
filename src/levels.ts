@@ -128,7 +128,6 @@ function ridge(): World {
   b.p('truck', 220, 620)
   b.p('barrel', 360, 620)
   b.p('barrelTip', 430, 620)
-  b.p('pole', 520, 620)
   b.p('pine', 18, 620)
   b.p('pine', 118, 620)
   b.p('pine', 560, 620)
@@ -157,8 +156,6 @@ function ridge(): World {
   b.s(1120, 560, 180, 40)
   b.r(940, 460)
   b.n(690, 500, 'Jump the rocks.')
-  b.p('rock', 980, 500)
-  b.p('grass', 1160, 560)
 
   b.s(1380, 620, 280, 380)
   b.o(1680, 540, 140)
@@ -193,7 +190,6 @@ function ridge(): World {
 
   b.s(4240, 520, 720, 480)
   b.p('mouth', 4560, 520)
-  b.p('pole', 4320, 520)
   b.p('grass', 4400, 520)
   b.p('rock', 4700, 520)
   b.n(4280, 460, 'The Pipe Line. Crawl.')

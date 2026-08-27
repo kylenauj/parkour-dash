@@ -240,13 +240,13 @@ export class Renderer {
     stamp(ctx, earth.body, x, y, w, h)
 
     if (earth.grass) {
-      boulders(ctx, x, y, w, h, { face: '#3a3428', lit: '#57503e', shade: '#14110e' })
+      boulders(ctx, x, y, w, h, { face: '#2f2a20', lit: '#3e3729', shade: '#171310' }, 34)
       ctx.fillStyle = '#0e0b08'
       ctx.fillRect(x + w - 6, y, 6, h)
-      ctx.fillStyle = '#4a4234'
+      ctx.fillStyle = '#3c3529'
       ctx.fillRect(x, y, 3, Math.min(h, 90))
       this.soilCap(x, y, w, g)
-      roots(ctx, x, y + 7, w, { root: '#8a5c30', shade: '#5c3a1c', leaf: g.grass2 }, 13, 108)
+      roots(ctx, x, y + 7, w, { root: '#6f4a26', shade: '#4a2f18', leaf: g.grass2 }, 27, 96)
     } else {
       ctx.fillStyle = g.hi
       ctx.fillRect(x, y, w, 2)
@@ -268,10 +268,11 @@ export class Renderer {
     ctx.fillRect(x, y - 3, w, 6)
     ctx.fillStyle = g.grass2
     ctx.fillRect(x, y - 3, w, 2)
-    for (let i = x + 1; i < x + w - 1; i += 3) {
+    for (let i = x + 1; i < x + w - 1; i += 2) {
       const seed = hash(i, y)
-      const gh = 4 + Math.floor(seed * 9)
-      ctx.fillStyle = seed > 0.62 ? g.grassTip : seed > 0.3 ? g.grass2 : g.grass
+      if (seed < 0.35) continue
+      const gh = 3 + Math.floor(seed * 10)
+      ctx.fillStyle = seed > 0.82 ? g.grassTip : seed > 0.55 ? g.grass2 : g.grass
       ctx.fillRect(i, y - gh, 2, gh)
     }
     for (let i = x + 6; i < x + w - 6; i += 34) {
@@ -291,22 +292,23 @@ export class Renderer {
     const w = Math.floor(p.w)
     const keel = Math.floor(Math.max(46, w * 0.42))
 
+    const cx = x + w / 2
     for (let row = 0; row < keel; row++) {
       const t = row / keel
-      const taper = t * t * (w * 0.42)
-      const wobble = (hash(x, y + row) - 0.5) * 6
-      const sx = Math.round(x + taper * 0.9 + wobble)
-      const sw = Math.round(Math.max(6, w - taper * 1.85))
-      if (sw <= 6) break
-      ctx.fillStyle = t < 0.12 ? '#3c3527' : t < 0.4 ? '#2b2519' : t < 0.7 ? '#201b12' : '#15110b'
+      const round = Math.sqrt(Math.max(0, 1 - t * t))
+      const wobble = (hash(x, y + row) - 0.5) * 5
+      const sw = Math.round(Math.max(4, w * round + wobble))
+      if (sw <= 4) break
+      const sx = Math.round(cx - sw / 2 + wobble * 0.4)
+      ctx.fillStyle = t < 0.1 ? '#3c3527' : t < 0.35 ? '#2b2519' : t < 0.68 ? '#201b12' : '#15110b'
       ctx.fillRect(sx, y + row, sw, 1)
-      ctx.fillStyle = '#4c4433'
+      ctx.fillStyle = '#4a4231'
       ctx.fillRect(sx, y + row, 2, 1)
       ctx.fillStyle = '#0d0a07'
       ctx.fillRect(sx + sw - 3, y + row, 3, 1)
-      if (hash(sx, y + row) > 0.86) {
-        ctx.fillStyle = '#463d2c'
-        ctx.fillRect(sx + 4 + hash(row, x) * (sw - 8), y + row, 3, 2)
+      if (hash(sx, y + row) > 0.9) {
+        ctx.fillStyle = '#443b2a'
+        ctx.fillRect(sx + 4 + hash(row, x) * Math.max(1, sw - 8), y + row, 3, 2)
       }
     }
 
@@ -704,11 +706,13 @@ export class Renderer {
     ctx.imageSmoothingEnabled = false
     for (const s of world.signs) {
       const w = ctx.measureText(s.text).width
-      ctx.globalAlpha = 0.78
-      prect(ctx, s.x - 6, s.y - 12, w + 12, 16, '#0a100c')
-      ctx.globalAlpha = 1
-      ctx.fillStyle = '#b8d898'
+      ctx.globalAlpha = 0.55
+      prect(ctx, s.x - 6, s.y - 11, w + 12, 15, '#070c16')
+      ctx.globalAlpha = 0.85
+      prect(ctx, s.x - 6, s.y - 11, w + 12, 1, '#c9a862')
+      ctx.fillStyle = '#cfe0ff'
       ctx.fillText(s.text, snap(s.x), snap(s.y))
+      ctx.globalAlpha = 1
     }
   }
 
@@ -829,7 +833,7 @@ export class Renderer {
     squish = 1,
   ) {
     const ctx = this.ctx
-    const s = 1
+    const s = 1.3
     const ox = 0.48
     const dx = -Math.floor(spr.width * ox * s)
     const dy = -Math.floor(spr.height * s) + Math.round(S_PAD * s)
