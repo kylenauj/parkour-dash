@@ -565,7 +565,7 @@ export class Renderer {
     ctx.fill()
 
     if (climb) ctx.rotate((player.onWall * Math.PI) / 2)
-    ctx.scale(player.facing * 1.15, 1.15)
+    ctx.scale(player.facing * 1.9, 1.9)
 
     drawRoach(ctx, gait, time, air || player.dashing, player.sliding)
     ctx.restore()
@@ -697,7 +697,7 @@ function drawRoach(
   ctx.fill()
 
   ctx.strokeStyle = '#2a180c'
-  ctx.lineWidth = 1.5
+  ctx.lineWidth = 2.1
   const ant = Math.sin(time * 9) * 0.18
   ctx.beginPath()
   ctx.moveTo(18, -2)
@@ -726,7 +726,7 @@ function drawLeg(
   const footX = x + swing * 9
   const footY = hipY + side * spread
   ctx.strokeStyle = '#1a1008'
-  ctx.lineWidth = 2.2
+  ctx.lineWidth = 2.8
   ctx.beginPath()
   ctx.moveTo(x, y)
   ctx.lineTo(midX, midY)
