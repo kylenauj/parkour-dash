@@ -246,7 +246,7 @@ export class Renderer {
       ctx.fillStyle = '#4a4234'
       ctx.fillRect(x, y, 3, Math.min(h, 90))
       this.soilCap(x, y, w, g)
-      roots(ctx, x, y + 8, w, { root: '#3a2a18', shade: '#241a10', leaf: g.moss }, 15, 54)
+      roots(ctx, x, y + 7, w, { root: '#8a5c30', shade: '#5c3a1c', leaf: g.grass2 }, 13, 108)
     } else {
       ctx.fillStyle = g.hi
       ctx.fillRect(x, y, w, 2)
@@ -315,12 +315,12 @@ export class Renderer {
     this.soilCap(x + 2, y, w - 4, g)
     roots(
       ctx,
-      x + 10,
-      y + keel * 0.45,
-      w - 24,
-      { root: '#33251a', shade: '#1d150e', leaf: g.moss },
-      13,
-      keel * 0.9,
+      x + 8,
+      y + keel * 0.5,
+      w - 20,
+      { root: '#96652f', shade: '#66421f', leaf: g.grass2 },
+      11,
+      keel * 1.5,
     )
   }
 

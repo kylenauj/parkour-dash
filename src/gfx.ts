@@ -230,12 +230,13 @@ export function roots(
 ) {
   for (let i = x + 2; i < x + w - 2; i += density) {
     const seed = hash(i, y)
-    if (seed < 0.25) continue
-    const len = 10 + seed * maxLen
+    if (seed < 0.18) continue
+    const len = 18 + seed * maxLen
     let rx = i
     for (let d = 0; d < len; d++) {
-      if (d % 9 === 0) rx += hash(i + d, y) > 0.5 ? 1 : -1
-      prect(ctx, rx, y + d, d > len * 0.7 ? 1 : 2, 1, d > len * 0.55 ? cols.shade : cols.root)
+      if (d % 7 === 0) rx += hash(i + d, y) > 0.5 ? 1 : -1
+      const thick = d > len * 0.78 ? 1 : d > len * 0.4 ? 2 : 3
+      prect(ctx, rx, y + d, thick, 1, d > len * 0.62 ? cols.shade : cols.root)
     }
     if (cols.leaf && seed > 0.7) {
       prect(ctx, rx - 2, y + len * 0.4, 3, 2, cols.leaf)

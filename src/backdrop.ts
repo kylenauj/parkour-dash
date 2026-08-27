@@ -59,9 +59,9 @@ function woodsFar() {
     fill: '#3c5070',
     lit: '#4e6488',
     dark: '#2c3c58',
-    snow: '#c8d8ee',
-    snowShade: '#8fa4c4',
-    snowLine: 300,
+    snow: '#eef4ff',
+    snowShade: '#a8bcdc',
+    snowLine: 360,
     ridge: 10,
   })
   fog(ctx, 400, 70, w, '#2a3c5c')
@@ -83,9 +83,9 @@ function woodsFar() {
     fill: '#2c3e5c',
     lit: '#3a4e70',
     dark: '#22304a',
-    snow: '#a8bcd8',
-    snowShade: '#7c90b0',
-    snowLine: 366,
+    snow: '#ccd8ee',
+    snowShade: '#8fa2c0',
+    snowLine: 408,
     ridge: 8,
   })
   fog(ctx, 440, 64, w, '#22324e')
