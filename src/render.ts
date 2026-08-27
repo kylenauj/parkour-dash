@@ -327,40 +327,65 @@ export class Renderer {
     }
   }
 
-  /** Mossy floating rock: tapered stone mass, grass lid, trailing roots. */
+  /** Mossy floating rock: irregular mass, grass lid, trailing roots. Collision top stays flat. */
   private rockIsland(p: Platform) {
     const ctx = this.ctx
     const g = this.earth().cols
     const x = Math.floor(p.x)
     const y = Math.floor(p.y)
     const w = Math.floor(p.w)
-    const keel = Math.floor(Math.max(58, w * 0.58))
     const lip = 7
-
-    const cx = x + w / 2
     const span = w + lip * 2
+    const cx = x + w / 2
+    const skew = (hash(x, 1) - 0.5) * 0.9
+    const belly = 0.16 + hash(x, 2) * 0.4
+    const pinch = 0.85 + hash(x, 3) * 1.9
+    const leftS = 0.55 + hash(x, 4) * 0.8
+    const rightS = 0.55 + hash(x, 5) * 0.8
+    const keel = Math.floor(Math.max(50, w * (0.38 + hash(x, 6) * 0.5)))
+    const undercut = 10 + hash(x, 7) * 24
+
     for (let row = 0; row < keel; row++) {
       const t = row / keel
-      const round = Math.sqrt(Math.max(0, 1 - t * t))
-      const leftN = (noise(x, y + row, 18) - 0.5) * 16
-      const rightN = (noise(x + 51, y + row, 15) - 0.5) * 18
-      const bite = noise(x + row, y, 8) > 0.84 ? 10 : 0
-      const sw = Math.round(Math.max(4, span * round + leftN + rightN - bite))
-      if (sw <= 4) break
-      const sx = Math.round(cx - sw / 2 + leftN * 0.55)
-      ctx.fillStyle = t < 0.1 ? '#3c3527' : t < 0.35 ? '#2b2519' : t < 0.68 ? '#201b12' : '#15110b'
+      let env = 0.9
+      if (t < belly) env = 0.86 + (t / belly) * 0.14
+      else {
+        const u = (t - belly) / Math.max(0.08, 1 - belly)
+        env = Math.max(0.05, (1 - u) ** (pinch * 0.55) * (1 - u * 0.18))
+      }
+      const jagL = (noise(x * 0.15, y + row, 9) - 0.5) * 32
+      const jagR = (noise(x * 0.15 + 41, y + row, 8) - 0.5) * 34
+      const biteL = noise(x + row, y, 12) > 0.7 ? undercut * noise(row, x, 6) : 0
+      const biteR = noise(x + row + 17, y, 14) > 0.72 ? undercut * noise(row, x + 3, 7) : 0
+      const half = span * 0.5 * env
+      const left = Math.max(7, half * leftS + jagL - biteL + skew * row * 0.4)
+      const right = Math.max(7, half * rightS + jagR - biteR - skew * row * 0.4)
+      const sx = Math.round(cx - left)
+      const sw = Math.round(left + right)
+      ctx.fillStyle = t < 0.1 ? '#3c3527' : t < 0.32 ? '#2b2519' : t < 0.62 ? '#201b12' : '#15110b'
       ctx.fillRect(sx, y + row, sw, 1)
       ctx.fillStyle = '#0d0a07'
       ctx.fillRect(sx, y + row, 3, 1)
       ctx.fillStyle = '#4a4231'
       ctx.fillRect(sx + sw - 2, y + row, 2, 1)
-      if (hash(sx, y + row) > 0.88) {
+      if (hash(sx, y + row) > 0.86) {
         ctx.fillStyle = '#443b2a'
         ctx.fillRect(sx + 4 + hash(row, x) * Math.max(1, sw - 8), y + row, 3, 2)
       }
     }
 
-    for (let i = 0; i < 7; i++) {
+    if (hash(x, 8) > 0.35) {
+      const ky = y + keel * (0.22 + hash(x, 9) * 0.28)
+      const kw = 12 + hash(x, 10) * 18
+      const kh = 10 + hash(x, 11) * 16
+      const sx = hash(x, 12) > 0.5 ? x + w - 2 : x - lip - 8
+      ctx.fillStyle = '#201b12'
+      ctx.fillRect(sx, ky, kw, kh)
+      ctx.fillStyle = '#2a4030'
+      ctx.fillRect(sx + 2, ky + 2, kw * 0.5, 4)
+    }
+
+    for (let i = 0; i < 8; i++) {
       const lx = x + 4 + hash(x, i + 2) * (w - 10)
       const ly = y + 8 + hash(i, y) * keel * 0.55
       ctx.fillStyle = hash(i, 3) > 0.5 ? '#3a5a38' : '#2a4030'
@@ -373,28 +398,17 @@ export class Renderer {
     ctx.fillRect(x - lip + 2, y + 5, span - 4, 5)
     this.soilCap(x - lip + 3, y, span - 6, g)
     this.mossHangs(x - lip + 3, y, span - 6)
-    const dens = 10 + hash(x, y) * 16
-    const reach = keel * (0.55 + hash(y, x) * 1.05)
+    const dens = 11 + hash(x, y) * 18
+    const reach = keel * (0.7 + hash(y, x) * 1.2)
     roots(
       ctx,
       x + 4,
-      y + keel * 0.36,
+      y + keel * 0.28,
       w - 8,
       { root: '#6d4823', shade: '#452c16', leaf: g.grass2 },
       dens,
       reach,
     )
-    if (hash(x + 3, y) > 0.4) {
-      roots(
-        ctx,
-        x + w * 0.35,
-        y + keel * 0.5,
-        w * 0.4,
-        { root: '#5a3a1c', shade: '#3a2412' },
-        14 + hash(y, 8) * 10,
-        keel * 0.8,
-      )
-    }
     moonRim(ctx, x - lip, y - 8, span, 10)
   }
 
