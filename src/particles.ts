@@ -14,8 +14,21 @@ export class Particles {
   items: Particle[] = []
 
   emit(x: number, y: number, n: number, color: string, speed: number, size = 3) {
+    this.emitDir(x, y, n, color, speed, 0, Math.PI * 2, size)
+  }
+
+  emitDir(
+    x: number,
+    y: number,
+    n: number,
+    color: string,
+    speed: number,
+    angle: number,
+    spread: number,
+    size = 3,
+  ) {
     for (let i = 0; i < n; i++) {
-      const a = Math.random() * Math.PI * 2
+      const a = angle + (Math.random() - 0.5) * spread
       const s = speed * (0.35 + Math.random() * 0.75)
       this.items.push({
         x,

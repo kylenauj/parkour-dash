@@ -1,4 +1,4 @@
-import { VIEW_H, VIEW_W } from './const'
+import { DASH_TIME, VIEW_H, VIEW_W } from './const'
 import { bakePixels, crisp, PX, prect, snap } from './pixel'
 import type { Camera } from './camera'
 import type { Particles } from './particles'
@@ -21,6 +21,9 @@ const PAL = {
   L: '#2a1a10',
   S: '#140e08',
   W: '#5a3010',
+  m: '#8a6828',
+  M: '#f0d878',
+  v: '#fff4c0',
 } as const
 
 export class Renderer {
@@ -29,6 +32,7 @@ export class Renderer {
   private jump: HTMLCanvasElement
   private slide: HTMLCanvasElement
   private wall: HTMLCanvasElement
+  private dash: HTMLCanvasElement
   private layerFar: HTMLCanvasElement
   private layerMid: HTMLCanvasElement
   private layerNear: HTMLCanvasElement
@@ -44,6 +48,7 @@ export class Renderer {
     this.jump = bakeRoach(jumpRows, 3)
     this.slide = bakeRoach(slideRows, 3)
     this.wall = bakeRoach(wallRows, 3)
+    this.dash = bakeRoach(dashRows, 3)
     this.brick = bakeBrick()
     this.layerFar = bakeFar()
     this.layerMid = bakeMid()
@@ -345,14 +350,9 @@ export class Renderer {
   private drawPlayer(player: Player) {
     const ctx = this.ctx
     crisp(ctx)
-    for (const g of player.ghosts) {
-      ctx.globalAlpha = g.life * 1.4
-      prect(ctx, g.x, g.y, player.w, g.h, '#4a6a20')
-    }
-    ctx.globalAlpha = 1
-
     let spr = this.idle
-    if (player.sliding) spr = this.slide
+    if (player.dashing) spr = this.dash
+    else if (player.sliding) spr = this.slide
     else if (player.onWall && !player.onGround) spr = this.wall
     else if (!player.onGround) spr = this.jump
     else if (Math.abs(player.vx) > 40) {
@@ -360,17 +360,93 @@ export class Renderer {
       spr = this.run[f]
     }
 
+    for (const g of player.ghosts) {
+      ctx.globalAlpha = Math.max(0, g.life * 1.6)
+      this.drawDashWingsAt(g.x + player.w / 2, g.y + g.h * 0.42, player, 0.45 + g.life)
+      ctx.save()
+      ctx.translate(snap(g.x + player.w / 2), snap(g.y + g.h))
+      ctx.scale(player.facing, 1)
+      ctx.drawImage(this.dash, -Math.floor(this.dash.width * 0.42), -this.dash.height + 4)
+      ctx.restore()
+    }
+    ctx.globalAlpha = 1
+
+    if (player.dashing) this.drawDashWings(player)
+
     const px = snap(player.cx)
     const py = snap(player.bottom)
     ctx.save()
     ctx.translate(px, py)
     ctx.scale(player.facing, 1)
-    ctx.drawImage(spr, -Math.floor(spr.width * 0.45), -spr.height + 4)
+    const ox = player.dashing ? 0.42 : 0.45
+    ctx.drawImage(spr, -Math.floor(spr.width * ox), -spr.height + 4)
     ctx.restore()
 
     if (!player.sliding) {
       const flicker = Math.sin(player.x * 0.2) > 0
       prect(ctx, player.mouthX, player.mouthY, PX, PX, flicker ? '#ffee66' : '#ff6a20')
+    }
+  }
+
+  private drawDashWings(player: Player) {
+    this.drawDashWingsAt(player.cx, player.cy + 2, player, 1)
+  }
+
+  private drawDashWingsAt(x: number, y: number, player: Player, power: number) {
+    const u = 1 - Math.max(0, player.dashT) / DASH_TIME
+    const shoot = 1 - (1 - Math.min(1, u * 4.4)) ** 3
+    const flap = Math.sin(u * 62) * 0.14
+    const span = shoot * power
+    const mag = Math.hypot(player.vx, player.vy) || 1
+    const back = Math.atan2(player.vy / mag, player.vx / mag) + Math.PI
+
+    this.paintWing(x, y, back - 0.62 + flap, 22 + span * 58, 16 + span * 26, ['#fff4c0', '#f0d878', '#c8a050'], span)
+    this.paintWing(x, y, back + 0.62 - flap, 22 + span * 58, 16 + span * 26, ['#fff4c0', '#f0d878', '#c8a050'], span)
+    this.paintWing(x, y, back - 0.28 + flap * 0.4, 14 + span * 36, 10 + span * 14, ['#f0d878', '#8a6828', '#5a3010'], span)
+    this.paintWing(x, y, back + 0.28 - flap * 0.4, 14 + span * 36, 10 + span * 14, ['#f0d878', '#8a6828', '#5a3010'], span)
+
+    if (u < 0.34 && power >= 0.95) {
+      const burst = (1 - u / 0.34) * power
+      for (let i = 0; i < 6; i++) {
+        const a = back + (i - 2.5) * 0.28
+        const d = 10 + burst * 28
+        prect(
+          this.ctx,
+          x + Math.cos(a) * d,
+          y + Math.sin(a) * d,
+          PX * (i % 2 === 0 ? 2 : 1),
+          PX,
+          i % 2 === 0 ? '#fff4c0' : '#f0d878',
+        )
+      }
+    }
+  }
+
+  private paintWing(
+    ox: number,
+    oy: number,
+    angle: number,
+    length: number,
+    chord: number,
+    colors: string[],
+    open: number,
+  ) {
+    const ctx = this.ctx
+    const segs = 8
+    const px = Math.cos(angle)
+    const py = Math.sin(angle)
+    const nx = Math.cos(angle + Math.PI / 2)
+    const ny = Math.sin(angle + Math.PI / 2)
+    for (let i = 0; i < segs; i++) {
+      const t = i / (segs - 1)
+      const dist = t * length
+      const fan = Math.sin(t * Math.PI) * chord * (0.35 + open * 0.65)
+      const w = Math.max(PX, (1 - t * 0.72) * fan)
+      const col = colors[Math.min(colors.length - 1, Math.floor(t * colors.length))]
+      prect(ctx, ox + px * dist + nx * fan * 0.15 - w / 2, oy + py * dist + ny * fan * 0.15 - PX, w, PX * (t < 0.18 ? 3 : 2), col)
+      if (i % 2 === 0) {
+        prect(ctx, ox + px * dist - PX / 2, oy + py * dist - PX / 2, PX, PX, '#5a3010')
+      }
     }
   }
 
@@ -510,6 +586,24 @@ const wallRows = [
   '..LL..............',
   '..LL..............',
   '..S...............',
+]
+
+const dashRows = [
+  '..........aa................',
+  '.........a..a...............',
+  '........HHHHH...............',
+  '.......HhEoEhHC.............',
+  '....mmHHHEEEHH.F............',
+  '..mMMMWBBBBWMMMm............',
+  '.Mv.v.BBBBBB.v.vM...........',
+  'vM....BbBBBb....Mv..........',
+  '......BBBBB.................',
+  '.....L.BBB.L................',
+  '......PP.PP.................',
+  '.....LL....LL...............',
+  '....LL......L...............',
+  '....S.......S...............',
+  '............................',
 ]
 
 function bakeBrick() {

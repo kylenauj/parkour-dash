@@ -28,7 +28,7 @@ Open the printed local URL (default `http://localhost:43173`). Click **Start run
 
 ## How it feels
 
-The roach uses coyote time, jump buffering, short hops if you tap jump, automatic wall cling, a single air dash, and a slide that fits under low pipes. Touch a vertical pipe and press jump to kick to the other side — you do not have to hold into the wall. Falls send you back to the last valve. Grab optional crumbs for a cleaner score at the drain.
+The roach uses coyote time, jump buffering, short hops if you tap jump, automatic wall cling, a single air dash that shoots the wings out, and a slide that fits under low pipes. Touch a vertical pipe and press jump to kick to the other side — you do not have to hold into the wall. Falls send you back to the last valve. Grab optional crumbs for a cleaner score at the drain.
 
 ## Build
 

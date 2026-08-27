@@ -149,10 +149,26 @@ export class Game {
       else this.audio.jump()
     }
     if (p.justDashed) {
-      this.particles.emit(p.cx, p.cy, 14, '#7cff3a', 220, 4)
+      const behind = Math.atan2(p.vy, p.vx) + Math.PI
+      this.particles.emitDir(p.cx, p.cy, 12, '#f0d878', 280, behind, 1.3, 4)
+      this.particles.emitDir(p.cx, p.cy, 8, '#fff4c0', 340, behind, 0.9, 3)
+      this.particles.emitDir(p.cx, p.cy, 6, '#8a6828', 180, behind, 1.5, 3)
       this.audio.dash()
       this.hitstop = 0.03
       this.camera.bump(0.25)
+    }
+    if (p.dashing && Math.random() < 0.6) {
+      const behind = Math.atan2(p.vy, p.vx) + Math.PI
+      this.particles.emitDir(
+        p.cx,
+        p.cy,
+        1,
+        Math.random() > 0.45 ? '#f0d878' : '#fff4c0',
+        70,
+        behind,
+        0.85,
+        3,
+      )
     }
     if (p.justLanded) {
       this.particles.burstUp(p.cx, p.bottom, 10, '#8a6a48')
