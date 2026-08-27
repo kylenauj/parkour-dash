@@ -31,13 +31,32 @@ function woodsFar() {
   if (!ctx) return c
   const w = c.width
 
-  for (let i = 0; i < 150; i++) {
+  for (let i = 0; i < 90; i++) {
     const x = Math.floor(hash(i, 1) * w)
-    const y = 6 + Math.floor(hash(i, 2) * 300)
-    ctx.globalAlpha = 0.2 + hash(i, 4) * 0.6
-    prect(ctx, x, y, hash(i, 3) > 0.93 ? 2 : 1, 1, hash(i, 7) > 0.75 ? '#fff8e8' : '#c8d8f4')
+    const y = 8 + Math.floor(hash(i, 2) * 280)
+    ctx.globalAlpha = 0.12 + hash(i, 4) * 0.22
+    prect(ctx, x, y, 1, 1, '#8aa0c4')
+  }
+  for (let i = 0; i < 48; i++) {
+    const x = Math.floor(hash(i, 11) * w)
+    const y = 10 + Math.floor(hash(i, 12) * 250)
+    ctx.globalAlpha = 0.4 + hash(i, 14) * 0.35
+    prect(ctx, x, y, 1, 1, '#c8d8f4')
+  }
+  for (let i = 0; i < 16; i++) {
+    const x = Math.floor(hash(i, 21) * w)
+    const y = 12 + Math.floor(hash(i, 22) * 220)
+    ctx.globalAlpha = 0.72 + hash(i, 24) * 0.28
+    prect(ctx, x, y, hash(i, 23) > 0.55 ? 2 : 1, 1, '#fff8e8')
   }
   ctx.globalAlpha = 1
+
+  const hg = ctx.createRadialGradient(w * 0.7, 330, 30, w * 0.52, 410, 460)
+  hg.addColorStop(0, 'rgba(186, 204, 230, 0.18)')
+  hg.addColorStop(0.4, 'rgba(80, 102, 148, 0.1)')
+  hg.addColorStop(1, 'rgba(0,0,0,0)')
+  ctx.fillStyle = hg
+  ctx.fillRect(0, 210, w, 280)
 
   moon(ctx, 1168, 78, 24)
 
@@ -67,7 +86,7 @@ function woodsFar() {
     snowLine: 300,
     ridge: 10,
   })
-  fog(ctx, 400, 70, w, '#2a3c5c')
+  fog(ctx, 386, 84, w, '#33486c')
 
   mountains(ctx, {
     width: w,
@@ -94,7 +113,7 @@ function woodsFar() {
     snowLine: 356,
     ridge: 8,
   })
-  fog(ctx, 440, 64, w, '#22324e')
+  fog(ctx, 428, 76, w, '#2b3e60')
   return c
 }
 
@@ -103,24 +122,26 @@ function woodsMid() {
   const { c, ctx } = sheet()
   if (!ctx) return c
   const w = c.width
-  const rows: { y: number; scale: number; step: number; col: string; dark: string }[] = [
-    { y: 486, scale: 0.24, step: 9, col: '#314562', dark: '#293a54' },
-    { y: 512, scale: 0.3, step: 11, col: '#2b3d58', dark: '#22334c' },
-    { y: 544, scale: 0.38, step: 13, col: '#25354e', dark: '#1c2a40' },
-    { y: 580, scale: 0.46, step: 15, col: '#1f2d43', dark: '#172336' },
-    { y: 620, scale: 0.56, step: 18, col: '#1a2637', dark: '#121c2b' },
-    { y: 664, scale: 0.68, step: 22, col: '#151f2d', dark: '#0e1620' },
-    { y: 714, scale: 0.82, step: 27, col: '#101822', dark: '#0a1018' },
+  const rows: { y: number; scale: number; step: number; col: string; dark: string; mist: number }[] = [
+    { y: 484, scale: 0.22, step: 9, col: '#3a5075', dark: '#334666', mist: 0.95 },
+    { y: 514, scale: 0.3, step: 12, col: '#31456a', dark: '#2a3c5c', mist: 0.8 },
+    { y: 550, scale: 0.42, step: 16, col: '#28395a', dark: '#22314e', mist: 0.66 },
+    { y: 592, scale: 0.6, step: 21, col: '#1f2d49', dark: '#19253c', mist: 0.5 },
+    { y: 640, scale: 0.84, step: 28, col: '#182338', dark: '#121b2c', mist: 0.34 },
+    { y: 696, scale: 1.12, step: 37, col: '#111a29', dark: '#0b121d', mist: 0.2 },
+    { y: 760, scale: 1.45, step: 48, col: '#0c1320', dark: '#070c15', mist: 0.1 },
   ]
   for (const row of rows) {
     for (let pass = 0; pass < 2; pass++) {
-      for (let i = 0; i * row.step < w + 40; i++) {
-        const x = -20 + i * row.step + pass * row.step * 0.5 + (hash(i + pass * 7, row.y) - 0.5) * row.step
-        const h = (30 + hash(i + pass * 3, row.y + 1) * 42) * (0.55 + row.scale)
-        pineLayer(ctx, x, row.y - h, 3 + row.scale * 8, h, pass ? row.dark : row.col, row.col, row.dark)
+      for (let i = 0; i * row.step < w + 60; i++) {
+        const x = -30 + i * row.step + pass * row.step * 0.5 + (hash(i + pass * 7, row.y) - 0.5) * row.step
+        const h = (26 + hash(i + pass * 3, row.y + 1) * 54) * (0.5 + row.scale)
+        pineLayer(ctx, x, row.y - h, 3 + row.scale * 9, h, pass ? row.dark : row.col, row.col, row.dark)
       }
     }
-    fog(ctx, row.y - 26, 44, w, '#33496e')
+    ctx.globalAlpha = row.mist
+    fog(ctx, row.y - 30, 52, w, '#3d5680')
+    ctx.globalAlpha = 1
   }
   return c
 }
@@ -129,14 +150,15 @@ function woodsNear() {
   const { c, ctx } = sheet(220)
   if (!ctx) return c
   const cols = {
-    trunk: '#241a12',
-    bark: '#3a2a1c',
-    mid: '#16281e',
-    lit: '#2a4630',
-    dark: '#0c1610',
+    trunk: '#2a1e14',
+    bark: '#42301e',
+    mid: '#182b1f',
+    lit: '#325238',
+    dark: '#0a1310',
   }
+  /** Anchored inside the sheet so foliage is always on screen with the trunk. */
   for (let i = 0; i < 9; i++) {
-    pineTree(ctx, 60 + i * 180, VIEW_H + 26, 0.62 + (i % 3) * 0.1, cols)
+    pineTree(ctx, 60 + i * 180, VIEW_H - 4, 0.66 + (i % 3) * 0.1, cols)
   }
   return c
 }

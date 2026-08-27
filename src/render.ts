@@ -3,10 +3,10 @@ import { crisp, PX, prect, snap } from './pixel'
 import { lookById, LOOKS, type CosmeticId, type Look } from './cosmetics'
 import { bakeBabe, bakeBank, type SpriteBank } from './sprites'
 
-/** Baked sprites carry one padding cell (2px) below the feet. */
-const S_PAD = 2
+/** Baked sprites carry one padding cell below the feet. */
+const S_PAD = 1
 import { bakePack, type LayerPack } from './backdrop'
-import { boulders, disk, hash, noise, pineTree, roots, stamp } from './gfx'
+import { boulders, disk, hash, moonRim, noise, pineTree, roots, stamp } from './gfx'
 import { bakeGround, type GroundSkin } from './tiles'
 import type { Camera } from './camera'
 import type { Particles } from './particles'
@@ -70,7 +70,7 @@ export class Renderer {
     this.drawOrbs(world, time)
     this.drawCheckpoints(world, time)
     this.drawGoal(world, time)
-    this.drawSigns(world)
+    this.drawSigns(world, player)
     this.drawNpcs(world, time)
     this.drawSmokeList(player.smoke, this.look.smoke)
     this.drawParticles(particles)
@@ -109,6 +109,14 @@ export class Renderer {
     const pack = this.packs.get(this.theme)!
     this.blit(pack.far, -((cam.x * 0.08) % (VIEW_W + 320)), 0, 1)
     this.blit(pack.mid, -((cam.x * 0.2) % (VIEW_W + 320)), 8, 1)
+    if (this.theme === 'woods') {
+      const mist = ctx.createLinearGradient(0, VIEW_H * 0.32, 0, VIEW_H * 0.78)
+      mist.addColorStop(0, 'rgba(40, 58, 88, 0)')
+      mist.addColorStop(0.4, 'rgba(52, 72, 104, 0.16)')
+      mist.addColorStop(1, 'rgba(18, 28, 44, 0.08)')
+      ctx.fillStyle = mist
+      ctx.fillRect(0, 0, VIEW_W, VIEW_H)
+    }
     this.blit(pack.near, -((cam.x * 0.38) % (VIEW_W + 200)), 0, 1)
 
     const bounce = ctx.createLinearGradient(0, VIEW_H * 0.5, 0, VIEW_H)
@@ -240,13 +248,22 @@ export class Renderer {
     stamp(ctx, earth.body, x, y, w, h)
 
     if (earth.grass) {
-      boulders(ctx, x, y, w, h, { face: '#2f2a20', lit: '#3e3729', shade: '#171310' }, 34)
-      ctx.fillStyle = '#0e0b08'
-      ctx.fillRect(x + w - 6, y, 6, h)
-      ctx.fillStyle = '#3c3529'
-      ctx.fillRect(x, y, 3, Math.min(h, 90))
+      const depth = ctx.createLinearGradient(0, y, 0, y + h)
+      depth.addColorStop(0, 'rgba(0,0,0,0)')
+      depth.addColorStop(0.32, 'rgba(10,8,6,0.16)')
+      depth.addColorStop(0.7, 'rgba(6,5,4,0.48)')
+      depth.addColorStop(1, 'rgba(2,2,4,0.72)')
+      ctx.fillStyle = depth
+      ctx.fillRect(x, y, w, h)
+      boulders(ctx, x, y, w, h, { face: '#322c22', lit: '#4a4436', shade: '#16130e' }, 34)
+      ctx.fillStyle = '#0c0a08'
+      ctx.fillRect(x, y, 5, h)
+      ctx.fillStyle = 'rgba(210, 226, 245, 0.12)'
+      ctx.fillRect(x + w - 3, y, 2, Math.min(h, 48))
       this.soilCap(x, y, w, g)
-      roots(ctx, x, y + 7, w, { root: '#5f3f20', shade: '#3d2714', leaf: g.grass2 }, 15, 130)
+      this.mossHangs(x, y, w)
+      roots(ctx, x, y + 7, w, { root: '#5f3f20', shade: '#3d2714', leaf: g.grass2 }, 18, 150)
+      moonRim(ctx, x, y - 10, w, 12)
     } else {
       ctx.fillStyle = g.hi
       ctx.fillRect(x, y, w, 2)
@@ -281,6 +298,33 @@ export class Renderer {
       ctx.fillRect(i, y - 11, 1, 8)
       ctx.fillRect(i + 3, y - 9, 1, 6)
     }
+    for (let i = x + 10; i < x + w - 10; i += 22) {
+      if (hash(i, y + 4) < 0.58) continue
+      ctx.fillStyle = '#2a4020'
+      ctx.fillRect(i, y - 8, 1, 5)
+      ctx.fillStyle = '#d8c45a'
+      ctx.fillRect(i, y - 10, 2, 2)
+      if (hash(i, 3) > 0.7) {
+        ctx.fillStyle = '#e8d878'
+        ctx.fillRect(i + 3, y - 9, 2, 2)
+      }
+    }
+    moonRim(ctx, x, y - 10, w, 4)
+  }
+
+  /** Moss drapes at the left and right lips of a grass ledge. */
+  private mossHangs(x: number, y: number, w: number) {
+    const ctx = this.ctx
+    for (const edge of [x + 2, x + w - 12]) {
+      for (let i = 0; i < 5; i++) {
+        const hx = edge + hash(x + i * 7, y) * 8
+        const len = 6 + hash(y + i, x) * 16
+        ctx.fillStyle = '#243828'
+        ctx.fillRect(hx, y + 2, 3, len)
+        ctx.fillStyle = '#2e4624'
+        ctx.fillRect(hx + 1, y + 2, 1, len * 0.7)
+      }
+    }
   }
 
   /** Mossy floating rock: tapered stone mass, grass lid, trailing roots. */
@@ -298,34 +342,60 @@ export class Renderer {
     for (let row = 0; row < keel; row++) {
       const t = row / keel
       const round = Math.sqrt(Math.max(0, 1 - t * t))
-      const wobble = (hash(x, y + row) - 0.5) * 5
-      const sw = Math.round(Math.max(4, span * round + wobble))
+      const leftN = (noise(x, y + row, 18) - 0.5) * 16
+      const rightN = (noise(x + 51, y + row, 15) - 0.5) * 18
+      const bite = noise(x + row, y, 8) > 0.84 ? 10 : 0
+      const sw = Math.round(Math.max(4, span * round + leftN + rightN - bite))
       if (sw <= 4) break
-      const sx = Math.round(cx - sw / 2 + wobble * 0.4)
+      const sx = Math.round(cx - sw / 2 + leftN * 0.55)
       ctx.fillStyle = t < 0.1 ? '#3c3527' : t < 0.35 ? '#2b2519' : t < 0.68 ? '#201b12' : '#15110b'
       ctx.fillRect(sx, y + row, sw, 1)
-      ctx.fillStyle = '#4a4231'
-      ctx.fillRect(sx, y + row, 2, 1)
       ctx.fillStyle = '#0d0a07'
-      ctx.fillRect(sx + sw - 3, y + row, 3, 1)
-      if (hash(sx, y + row) > 0.9) {
+      ctx.fillRect(sx, y + row, 3, 1)
+      ctx.fillStyle = '#4a4231'
+      ctx.fillRect(sx + sw - 2, y + row, 2, 1)
+      if (hash(sx, y + row) > 0.88) {
         ctx.fillStyle = '#443b2a'
         ctx.fillRect(sx + 4 + hash(row, x) * Math.max(1, sw - 8), y + row, 3, 2)
       }
     }
 
+    for (let i = 0; i < 7; i++) {
+      const lx = x + 4 + hash(x, i + 2) * (w - 10)
+      const ly = y + 8 + hash(i, y) * keel * 0.55
+      ctx.fillStyle = hash(i, 3) > 0.5 ? '#3a5a38' : '#2a4030'
+      ctx.fillRect(lx, ly, 4 + hash(i, 4) * 9, 3 + hash(i, 5) * 6)
+      ctx.fillStyle = '#4a6a40'
+      ctx.fillRect(lx + 1, ly, 2, 2)
+    }
+
     ctx.fillStyle = g.moss
     ctx.fillRect(x - lip + 2, y + 5, span - 4, 5)
     this.soilCap(x - lip + 3, y, span - 6, g)
+    this.mossHangs(x - lip + 3, y, span - 6)
+    const dens = 10 + hash(x, y) * 16
+    const reach = keel * (0.55 + hash(y, x) * 1.05)
     roots(
       ctx,
-      x + 6,
-      y + keel * 0.42,
-      w - 14,
+      x + 4,
+      y + keel * 0.36,
+      w - 8,
       { root: '#6d4823', shade: '#452c16', leaf: g.grass2 },
-      12,
-      keel * 1.3,
+      dens,
+      reach,
     )
+    if (hash(x + 3, y) > 0.4) {
+      roots(
+        ctx,
+        x + w * 0.35,
+        y + keel * 0.5,
+        w * 0.4,
+        { root: '#5a3a1c', shade: '#3a2412' },
+        14 + hash(y, 8) * 10,
+        keel * 0.8,
+      )
+    }
+    moonRim(ctx, x - lip, y - 8, span, 10)
   }
 
   private crumblePlate(x: number, y: number, w: number, shake: boolean) {
@@ -445,13 +515,14 @@ export class Renderer {
   }
 
   private pixelPine() {
-    pineTree(this.ctx, 26, 2, 1.15, {
-      trunk: '#3a2a1c',
-      bark: '#54402c',
-      mid: '#1c3222',
-      lit: '#3a5c38',
-      dark: '#0e1c14',
+    pineTree(this.ctx, 26, 2, 1.55, {
+      trunk: '#4a3422',
+      bark: '#6a4a30',
+      mid: '#1e3524',
+      lit: '#48704a',
+      dark: '#0b1610',
     })
+    moonRim(this.ctx, -8, -360, 70, 40)
   }
 
   private pixelTent() {
@@ -467,18 +538,32 @@ export class Renderer {
       prect(ctx, sx + w * 0.7, -h + r, Math.max(2, w * 0.3), 1, '#3b402c')
       if (r % 9 === 0) prect(ctx, sx, -h + r, w, 1, '#787c56')
     }
+    prect(ctx, 39, -h - 2, 2, h + 6, '#c4c09a')
+    prect(ctx, 40, -h - 3, 1, h + 4, '#efe8c4')
     prect(ctx, 22, -30, 36, 30, '#141a12')
     for (let r = 0; r < 30; r++) {
       const w = Math.round(4 + (r / 30) * 26)
       prect(ctx, 40 - w / 2, -30 + r, w, 1, '#0b0f0a')
     }
-    prect(ctx, 39, -h - 3, 3, 8, '#5a4a30')
+    for (let r = 0; r < 26; r++) {
+      const fw = Math.round(10 + r * 0.7)
+      prect(ctx, 16 - r * 0.2, -28 + r, fw, 1, '#9aa070')
+      prect(ctx, 16, -28 + r, 2, 1, '#c4c890')
+    }
+    prect(ctx, 14, -8, 12, 3, '#b8bc88')
     prect(ctx, 4, -14, 3, 16, '#4a3c28')
     prect(ctx, 74, -14, 3, 16, '#4a3c28')
     prect(ctx, 7, -13, 14, 1, '#5a5040')
     prect(ctx, 60, -13, 14, 1, '#5a5040')
-    prect(ctx, 0, -12, 14, 12, '#2c3422')
-    prect(ctx, 2, -14, 9, 3, '#3c4630')
+    prect(ctx, -20, -16, 16, 16, '#5a4028')
+    prect(ctx, -20, -16, 16, 2, '#7a5a38')
+    prect(ctx, -20, -8, 16, 1, '#3a2818')
+    prect(ctx, -18, -14, 3, 3, '#2a1c10')
+    prect(ctx, 84, -14, 14, 14, '#4a3420')
+    prect(ctx, 84, -14, 14, 2, '#6a4a30')
+    prect(ctx, 84, -7, 14, 1, '#2a1c10')
+    prect(ctx, 86, -12, 3, 3, '#2a1c10')
+    moonRim(ctx, -20, -h - 4, 118, 16)
   }
 
   private pixelRock() {
@@ -514,25 +599,34 @@ export class Renderer {
     prect(ctx, 4, -12, 88, 4, '#222a1a')
     prect(ctx, 10, -52, 56, 24, '#3a4630')
     prect(ctx, 10, -52, 56, 3, '#5a6842')
-    prect(ctx, 14, -48, 22, 14, '#1c2a30')
-    prect(ctx, 15, -47, 8, 5, '#54707c')
-    prect(ctx, 40, -48, 22, 14, '#1c2a30')
-    prect(ctx, 41, -47, 7, 5, '#48646e')
+    prect(ctx, 14, -48, 22, 14, '#1a3040')
+    prect(ctx, 15, -47, 20, 8, '#8bb8c8')
+    prect(ctx, 16, -46, 8, 4, '#d0e8f0')
+    prect(ctx, 40, -48, 22, 14, '#1a3040')
+    prect(ctx, 41, -47, 20, 8, '#7aa8b8')
+    prect(ctx, 42, -46, 7, 4, '#c4dce6')
     prect(ctx, 66, -46, 26, 16, '#38442c')
     prect(ctx, 66, -46, 26, 2, '#5a6842')
     prect(ctx, 8, -56, 60, 3, '#2a3420')
     prect(ctx, 12, -60, 4, 5, '#2a3420')
     prect(ctx, 60, -60, 4, 5, '#2a3420')
-    prect(ctx, 86, -28, 8, 7, '#e8d88a')
-    prect(ctx, 87, -27, 5, 4, '#fff6c8')
+    disk(ctx, 8, -22, 8, '#15170f')
+    disk(ctx, 8, -22, 5, '#2a2c22')
+    disk(ctx, 8, -22, 2, '#6a6e5c')
+    ctx.globalAlpha = 0.3
+    disk(ctx, 92, -24, 11, '#ffe8a0')
+    ctx.globalAlpha = 1
+    disk(ctx, 92, -24, 6, '#e8d080')
+    disk(ctx, 92, -24, 3, '#fff6c8')
     prect(ctx, 4, -26, 4, 6, '#a03828')
     disk(ctx, 24, -6, 10, '#15170f')
     disk(ctx, 24, -6, 5, '#3c4034')
-    disk(ctx, 24, -6, 2, '#6a6e5c')
+    disk(ctx, 24, -6, 2, '#8a8e7a')
     disk(ctx, 74, -6, 10, '#15170f')
     disk(ctx, 74, -6, 5, '#3c4034')
-    disk(ctx, 74, -6, 2, '#6a6e5c')
+    disk(ctx, 74, -6, 2, '#8a8e7a')
     prect(ctx, 30, -44, 2, 14, '#5a6842')
+    moonRim(ctx, 4, -60, 90, 20)
   }
 
   private pixelGrass() {
@@ -702,18 +796,28 @@ export class Renderer {
     }
   }
 
-  private drawSigns(world: World) {
+  private drawSigns(world: World, player: Player) {
     const ctx = this.ctx
     ctx.font = '8px "Press Start 2P", monospace'
     ctx.imageSmoothingEnabled = false
     for (const s of world.signs) {
+      const dist = Math.hypot(player.cx - s.x, player.bottom - 40 - s.y)
+      if (dist > 240) continue
+      const fade = dist < 180 ? 1 : 1 - (dist - 180) / 60
       const w = ctx.measureText(s.text).width
-      ctx.globalAlpha = 0.55
-      prect(ctx, s.x - 6, s.y - 11, w + 12, 15, '#070c16')
-      ctx.globalAlpha = 0.85
-      prect(ctx, s.x - 6, s.y - 11, w + 12, 1, '#c9a862')
-      ctx.fillStyle = '#cfe0ff'
-      ctx.fillText(s.text, snap(s.x), snap(s.y))
+      ctx.globalAlpha = 0.85 * fade
+      ctx.fillStyle = '#3a2818'
+      ctx.fillRect(s.x - 2, s.y - 4, 4, 22)
+      ctx.fillStyle = '#5a4030'
+      ctx.fillRect(s.x - 1, s.y - 4, 1, 22)
+      ctx.fillStyle = '#2a1c12'
+      ctx.fillRect(s.x - 7, s.y - 18, w + 14, 16)
+      ctx.fillStyle = '#6a5040'
+      ctx.fillRect(s.x - 7, s.y - 18, w + 14, 1)
+      ctx.fillStyle = '#c4a070'
+      ctx.fillRect(s.x - 7, s.y - 18, 1, 16)
+      ctx.fillStyle = '#d8c8a0'
+      ctx.fillText(s.text, snap(s.x), snap(s.y - 6))
       ctx.globalAlpha = 1
     }
   }
@@ -835,8 +939,8 @@ export class Renderer {
     squish = 1,
   ) {
     const ctx = this.ctx
-    const s = 1.55
-    const ox = 0.48
+    const s = 1
+    const ox = 0.5
     const dx = -Math.floor(spr.width * ox * s)
     const dy = -Math.floor(spr.height * s) + Math.round(S_PAD * s)
     ctx.save()
@@ -848,6 +952,14 @@ export class Renderer {
       prect(ctx, -6, -Math.floor(spr.height * s) + 28, 4, PX, '#d8f0ff')
     }
     ctx.restore()
+    const sprW = spr.width * s
+    const sprH = spr.height * s * squish
+    const left = x - sprW * ox
+    const top = y - sprH + S_PAD * s
+    ctx.fillStyle = 'rgba(210, 226, 245, 0.28)'
+    ctx.fillRect(Math.round(left + sprW - 2), Math.round(top + 8), 1, Math.round(sprH * 0.4))
+    ctx.fillStyle = 'rgba(210, 226, 245, 0.14)'
+    ctx.fillRect(Math.round(left + sprW * 0.42), Math.round(top + 6), Math.round(sprW * 0.52), 1)
     if (cig) {
       const flicker = Math.sin(x * 0.2) > 0
       const cx = x + facing * 20
@@ -872,23 +984,20 @@ export class Renderer {
     g.addColorStop(1, 'rgba(8, 12, 18, 0.7)')
     ctx.fillStyle = g
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.fillStyle = 'rgba(0,0,0,0.35)'
-    ctx.beginPath()
-    ctx.ellipse(canvas.width / 2, canvas.height - 10, 48, 8, 0, 0, Math.PI * 2)
-    ctx.fill()
-    const scale = Math.min((canvas.width * 0.94) / spr.width, (canvas.height * 0.9) / spr.height)
+    const cropH = Math.floor(spr.height * 0.52)
+    const scale = Math.min((canvas.width * 1.18) / spr.width, (canvas.height * 1.08) / cropH)
     const dw = spr.width * scale
-    const dh = spr.height * scale
+    const dh = cropH * scale
     const dx = (canvas.width - dw) / 2
-    const dy = canvas.height - dh - 6
-    ctx.drawImage(spr, dx, dy, dw, dh)
+    const dy = canvas.height - dh + 6
+    ctx.drawImage(spr, 0, 0, spr.width, cropH, dx, dy, dw, dh)
     ctx.fillStyle = look.cig[0]
-    ctx.fillRect(Math.floor(dx + dw * 0.72), Math.floor(dy + dh * 0.28), 5, 5)
+    ctx.fillRect(Math.floor(dx + dw * 0.78), Math.floor(dy + dh * 0.58), 4, 4)
     ctx.fillStyle = look.smoke[0]
     ctx.globalAlpha = 0.7
-    ctx.fillRect(Math.floor(dx + dw * 0.78), Math.floor(dy + dh * 0.12), 6, 6)
+    ctx.fillRect(Math.floor(dx + dw * 0.84), Math.floor(dy + dh * 0.22), 5, 5)
     ctx.fillStyle = look.smoke[1]
-    ctx.fillRect(Math.floor(dx + dw * 0.86), Math.floor(dy + dh * 0.04), 8, 8)
+    ctx.fillRect(Math.floor(dx + dw * 0.9), Math.floor(dy + dh * 0.08), 6, 6)
     ctx.globalAlpha = 1
   }
 

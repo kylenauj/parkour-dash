@@ -1,8 +1,8 @@
 import { bakePixels, type Pal } from './pixel'
 
-const W = 32
-const H = 36
-const S = 2
+const W = 44
+const H = 56
+const S = 1
 
 function pal(base: Pal): Pal {
   return {
@@ -16,6 +16,7 @@ function pal(base: Pal): Pal {
   }
 }
 
+/** Trailing dots are implied, so only the inked prefix of a row is written. */
 function rows(...lines: string[]) {
   return lines.map((line) => line.replace(/ /g, '.').padEnd(W, '.').slice(0, W))
 }
@@ -28,226 +29,299 @@ function fit(art: string[]) {
   return trimmed.slice(-H)
 }
 
-/** Slim fedora, antennae, glowing eyes. */
-const HEAD = [
-  '..........A.......A.............',
-  '...........a.....a..............',
-  '............a...a...............',
-  '............hHHHh...............',
-  '...........hHHHHHh..............',
-  '...........HHHHHHH..............',
-  '...........2222222..............',
-  '.........hHHHHHHHHHh............',
-  '.........DDDDDDDDDDD............',
-  '...........Eo1E1oE..............',
+const ANTENNAE = [
+  '............A..................A',
+  '.............a................a',
+  '..............a..............a',
+  '...............a............a',
+  '................a..........a',
+  '.................a........a',
 ]
 
-const JAW = ['...........DEEEEED.CCF..........']
-const JAW_PLAIN = ['...........DEEEEED..............']
-
-const NECK = ['............WWWWW...............']
-
-const TORSO = [
-  '............BBBBB...............',
-  '...........PBbBBBbBP............',
-  '...........PBbBBBbBP............',
-  '...........PBb1BBbBP............',
-  '...........PBbBBBbBP............',
-  '............BbBBBbB.............',
-  '............BbBBBbB.............',
-  '............BBBBBBB.............',
-  '............BBBBB...............',
+/** Fedora: crown with a dent, a band, and a wide brim that curls at the tips. */
+const HAT = [
+  '.................hHHHHHHHHh',
+  '................hHHHHHHHHHHh',
+  '...............hHHHHHHHHHHHHh',
+  '...............hHHDDHHHHDDHHh',
+  '...............hHHHHHHHHHHHHh',
+  '..............hHHHHHHHHHHHHHHh',
+  '..............2222222222222222',
+  '..............22DDDDDDDDDD2222',
+  '...........hHHHHHHHHHHHHHHHHHHHHh',
+  '..........hHHHHHHHHHHHHHHHHHHHHHHh',
+  '..........DDDDDDDDDDDDDDDDDDDDDDDD',
 ]
 
-const TORSO_LEAN = [
-  '............BBBBB...............',
-  '..........PBBbBBBbBP............',
-  '.........PBBbBBBBbBP............',
-  '.........PBb1BBBbBP.............',
-  '..........PBbBBBbBP.............',
-  '...........BbBBBbB..............',
-  '...........BbBBBB...............',
-  '...........BBBBB................',
-  '............BBB.................',
+const FACE = [
+  '..........h.....EEEEEEEEEEEE.....h',
+  '................EEoooEEoooEE',
+  '................EEo11oEo11oE',
+  '................EEoooEEoooEE',
+  '................EEEEEEEEEEEE',
 ]
 
-const HIPS = ['............PPPPPPP.............']
+const JAW_CIG = [
+  '.................DEEEEEEEED..CCCCF',
+  '..................DEEEEEED',
+]
 
-/** Legs step one column per row so the limb stays connected. */
+const JAW = [
+  '.................DEEEEEEEED',
+  '..................DEEEEEED',
+]
+
+const COLLAR = [
+  '................WWWWWWWWWWWW',
+  '...............WWbBBBBBBBBbWW',
+]
+
+/** Coat: lapel columns, two button pairs, arms as the outer columns. */
+const COAT = [
+  '..............PBbBBBBBBBBBBbBP',
+  '..............PBbBBBBBBBBBBbBP',
+  '..............PBbBBBB11BBBBbBP',
+  '..............PBbBBBBBBBBBBbBP',
+  '..............PBbBBBBBBBBBBbBP',
+  '..............PBbBBBB11BBBBbBP',
+  '.............PPBbBBBBBBBBBBbBPP',
+  '.............PP.BbBBBBBBBBbB.PP',
+  '................BbBBBBBBBBbB',
+  '................BBBBBBBBBBBB',
+  '.................BBBBBBBBBB',
+  '.................BBBBBBBBBB',
+]
+
+const COAT_LEAN = [
+  '...............PBbBBBBBBBBBBbBP',
+  '..............PBbBBBBBBBBBBBbBP',
+  '.............PBbBBBB11BBBBBbBP',
+  '............PBbBBBBBBBBBBBbBP',
+  '...........PPBbBBBBBBBBBBbBP',
+  '...........PP.BbBBBB11BBbBP',
+  '..............BbBBBBBBBBbB',
+  '..............BBBBBBBBBBBB',
+  '...............BBBBBBBBBB',
+  '...............BBBBBBBBB',
+  '................BBBBBBB',
+  '................BBBBBB',
+]
+
+const HIPS = ['.................PPPPPPPPPP']
+
 const LEGS_STAND = [
-  '............PP...PP.............',
-  '............LL...LL.............',
-  '............LL...LL.............',
-  '...........LL.....LL............',
-  '...........LL.....LL............',
-  '...........SS.....SS............',
-  '..........SSS.....SSS...........',
+  '..................PPP...PPP',
+  '..................LLL...LLL',
+  '..................LLL...LLL',
+  '..................LLL...LLL',
+  '.................LLL.....LLL',
+  '.................LLL.....LLL',
+  '.................LLL.....LLL',
+  '.................LLL.....LLL',
+  '................LLL.......LLL',
+  '................LLL.......LLL',
+  '...............SSSS......SSSS',
+  '..............SSSSS.....SSSSS',
 ]
 
 const LEGS_POSE = [
-  '............PP...PP.............',
-  '............LL...LL.............',
-  '............LL...LL.............',
-  '...........LL....LLL............',
-  '...........LL.....SSS...........',
-  '..........SS....................',
-  '.........SSS....................',
+  '..................PPP...PPP',
+  '..................LLL...LLL',
+  '..................LLL...LLL',
+  '..................LLL...LLL',
+  '.................LLL....LLL',
+  '.................LLL...LLLL',
+  '.................LLL..LLLL',
+  '.................LLL.SSSSS',
+  '................LLL',
+  '................LLL',
+  '...............SSSS',
+  '..............SSSSS',
 ]
 
 const LEGS_STRIDE_A = [
-  '............PP...PP.............',
-  '...........LL.....LL............',
-  '..........LL.......LL...........',
-  '.........LL.........LL..........',
-  '........LL...........LL.........',
-  '.......SS.............SS........',
-  '......SSS.............SSS.......',
+  '..................PPP...PPP',
+  '.................LLL.....LLL',
+  '................LLL.......LLL',
+  '...............LLL.........LLL',
+  '..............LLL...........LLL',
+  '.............LLL.............LLL',
+  '............LLL...............LLL',
+  '...........LLL.................LLL',
+  '..........LLL...................LLL',
+  '.........LLL.....................LLL',
+  '........SSSS.....................SSSS',
+  '.......SSSSS.....................SSSSS',
 ]
 
 const LEGS_STRIDE_B = [
-  '............PP...PP.............',
-  '............LL...LL.............',
-  '...........LL.....LL............',
-  '...........LL.....LL............',
-  '..........LL.......LL...........',
-  '..........SS.......SS...........',
-  '.........SSS.......SSS..........',
+  '..................PPP...PPP',
+  '..................LLL...LLL',
+  '.................LLL.....LLL',
+  '.................LLL.....LLL',
+  '................LLL.......LLL',
+  '...............LLL.........LLL',
+  '..............LLL...........LLL',
+  '..............LLL...........LLL',
+  '.............LLL.............LLL',
+  '.............LLL.............LLL',
+  '............SSSS.............SSSS',
+  '...........SSSSS.............SSSSS',
 ]
 
 const LEGS_STRIDE_C = [
-  '............PP...PP.............',
-  '...........LL.....LL............',
-  '..........LL.......LL...........',
-  '.........LL.........LL..........',
-  '.........LL..........LL.........',
-  '........SS...........SS.........',
-  '.......SSS...........SSS........',
+  '..................PPP...PPP',
+  '.................LLL.....LLL',
+  '................LLL.......LLL',
+  '...............LLL.........LLL',
+  '..............LLL..........LLL',
+  '.............LLL............LLL',
+  '............LLL..............LLL',
+  '...........LLL...............LLL',
+  '..........LLL.................LLL',
+  '..........LLL.................LLL',
+  '.........SSSS.................SSSS',
+  '........SSSSS.................SSSSS',
 ]
 
 const LEGS_TUCK = [
-  '............PP...PP.............',
-  '...........LL.....LL............',
-  '..........LL.......LL...........',
-  '..........LL.......LL...........',
-  '.........LL.........LL..........',
-  '.........SS.........SS..........',
-  '........SSS.........SSS.........',
+  '..................PPP...PPP',
+  '.................LLL.....LLL',
+  '................LLL.......LLL',
+  '................LLL.......LLL',
+  '...............LLL.........LLL',
+  '...............LLL.........LLL',
+  '..............LLL...........LLL',
+  '..............LLL...........LLL',
+  '.............LLL.............LLL',
+  '.............LLL.............LLL',
+  '............SSSS.............SSSS',
+  '...........SSSSS.............SSSSS',
 ]
 
 /** Both legs swept behind for the dash. */
 const LEGS_TRAIL = [
-  '............PP...PP.............',
-  '...........LL.....LL............',
-  '..........LL.....LL.............',
-  '.........LL.....LL..............',
-  '........LL.....LL...............',
-  '.......SS.....SS................',
-  '......SSS.....SSS...............',
+  '..................PPP...PPP',
+  '.................LLL....LLL',
+  '................LLL....LLL',
+  '...............LLL....LLL',
+  '..............LLL....LLL',
+  '.............LLL....LLL',
+  '............LLL....LLL',
+  '...........LLL....LLL',
+  '..........LLL....LLL',
+  '.........LLL....LLL',
+  '........SSSS...SSSS',
+  '.......SSSSS..SSSSS',
 ]
 
 const LEGS_KICK = [
-  '............PP...PP.............',
-  '...........LL.....LL............',
-  '..........LL......LL............',
-  '.........LL.......LL............',
-  '........LL........LL............',
-  '.......SS.........SS............',
-  '......SSS.........SSS...........',
+  '..................PPP...PPP',
+  '.................LLL.....LLL',
+  '................LLL......LLL',
+  '...............LLL.......LLL',
+  '..............LLL........LLL',
+  '.............LLL.........LLL',
+  '............LLL..........LLL',
+  '...........LLL...........LLL',
+  '..........LLL............LLL',
+  '.........LLL.............LLL',
+  '........SSSS............SSSS',
+  '.......SSSSS...........SSSSS',
 ]
 
 const LEGS_CLING = [
-  '............PP...PP.............',
-  '............LL...LL.............',
-  '............LL....LL............',
-  '...........LL.....LL............',
-  '...........LL.....LL............',
-  '..........SS......SS............',
-  '.........SSS......SSS...........',
+  '..................PPP...PPP',
+  '..................LLL...LLL',
+  '..................LLL....LLL',
+  '.................LLL.....LLL',
+  '.................LLL.....LLL',
+  '.................LLL......LLL',
+  '................LLL.......LLL',
+  '................LLL.......LLL',
+  '...............LLL........LLL',
+  '...............LLL........LLL',
+  '..............SSSS.......SSSS',
+  '.............SSSSS......SSSSS',
 ]
 
-const IDLE = fit(rows(...HEAD, ...JAW, ...NECK, ...TORSO, ...HIPS, ...LEGS_STAND))
+const IDLE = fit(rows(...ANTENNAE, ...HAT, ...FACE, ...JAW_CIG, ...COLLAR, ...COAT, ...HIPS, ...LEGS_STAND))
 
 const HERO = fit(
   rows(
-    '.................w..............',
-    '................www.............',
-    '...............ww...............',
-    '...............w................',
-    ...HEAD,
-    ...JAW,
-    ...NECK,
-    ...TORSO,
+    '.....................w',
+    '....................www',
+    '...................ww',
+    '...................w',
+    ...ANTENNAE,
+    ...HAT,
+    ...FACE,
+    ...JAW_CIG,
+    ...COLLAR,
+    ...COAT,
     ...HIPS,
     ...LEGS_POSE,
   ),
 )
 
-const RUN_A = fit(rows(...HEAD, ...JAW, ...NECK, ...TORSO_LEAN, ...HIPS, ...LEGS_STRIDE_A))
-const RUN_B = fit(rows(...HEAD, ...JAW, ...NECK, ...TORSO_LEAN, ...HIPS, ...LEGS_STRIDE_B))
-const RUN_C = fit(rows(...HEAD, ...JAW, ...NECK, ...TORSO_LEAN, ...HIPS, ...LEGS_STRIDE_C))
+const RUN_A = fit(rows(...ANTENNAE, ...HAT, ...FACE, ...JAW_CIG, ...COLLAR, ...COAT_LEAN, ...HIPS, ...LEGS_STRIDE_A))
+const RUN_B = fit(rows(...ANTENNAE, ...HAT, ...FACE, ...JAW_CIG, ...COLLAR, ...COAT_LEAN, ...HIPS, ...LEGS_STRIDE_B))
+const RUN_C = fit(rows(...ANTENNAE, ...HAT, ...FACE, ...JAW_CIG, ...COLLAR, ...COAT_LEAN, ...HIPS, ...LEGS_STRIDE_C))
 
-const JUMP = fit(rows(...HEAD, ...JAW, ...NECK, ...TORSO_LEAN, ...HIPS, ...LEGS_TUCK))
-const WALL = fit(rows(...HEAD, ...JAW, ...NECK, ...TORSO, ...HIPS, ...LEGS_CLING))
-const KICK = fit(rows(...HEAD, ...JAW, ...NECK, ...TORSO_LEAN, ...HIPS, ...LEGS_KICK))
+const JUMP = fit(rows(...ANTENNAE, ...HAT, ...FACE, ...JAW_CIG, ...COLLAR, ...COAT_LEAN, ...HIPS, ...LEGS_TUCK))
+const WALL = fit(rows(...ANTENNAE, ...HAT, ...FACE, ...JAW_CIG, ...COLLAR, ...COAT, ...HIPS, ...LEGS_CLING))
+const KICK = fit(rows(...ANTENNAE, ...HAT, ...FACE, ...JAW_CIG, ...COLLAR, ...COAT_LEAN, ...HIPS, ...LEGS_KICK))
+const DASH = fit(rows(...ANTENNAE, ...HAT, ...FACE, ...JAW_CIG, ...COLLAR, ...COAT_LEAN, ...HIPS, ...LEGS_TRAIL))
 
+/** Low profile: hat tipped forward, body stretched along the ground. */
 const SLIDE = fit(
   rows(
-    '....A.....a.....................',
-    '.....a....a.....................',
-    '.......hHHHHHh..CCF.............',
-    '......hHHHHHHHh.................',
-    '......222222222.................',
-    '....hHHHHHHHHHHHh...............',
-    '....DDDDDDDDDDDDD...............',
-    '......Eo1E1oE...................',
-    '.......WWBBBBBBBBBB.............',
-    '......BBbBBBBBBBBBBBb...........',
-    '.....BBBBBBBBBBPPPPPPP..........',
-    '.....BBBBBBBBLLLLLLLLLL.........',
-    '......SS.............SSS........',
+    '......A.........a',
+    '.......a.......a',
+    '........a.....a',
+    '.........hHHHHHHHHh',
+    '........hHHHHHHHHHHh',
+    '........hHHDDHHHHDDh',
+    '.......hHHHHHHHHHHHHh',
+    '.......222222222222',
+    '....hHHHHHHHHHHHHHHHHh...CCCCF',
+    '....DDDDDDDDDDDDDDDDDD',
+    '.........EEoooEEoooEE',
+    '.........EEo11oEo11oE',
+    '.........EEEEEEEEEEEE',
+    '..........WWWWWWWWWW',
+    '........WWbBBBBBBBBBBBBBBBB',
+    '.......PBbBBBBBBBBBBBBBBBBBBb',
+    '.......PBbBBBBBBBBBBPPPPPPPPPP',
+    '........BBBBBBBBBBLLLLLLLLLLLL',
+    '.........BBBBBBBB..LLLLLLLLLL',
+    '......SSSSS................SSSSS',
   ),
 )
 
-const DASH = fit(rows(...HEAD, ...JAW, ...NECK, ...TORSO_LEAN, ...HIPS, ...LEGS_TRAIL))
-
-const SLIDE_DASH = fit(
-  rows(
-    '....A.....a.....................',
-    '.....a....a.....................',
-    '.......hHHHHHh..CCF.............',
-    '......hHHHHHHHh.................',
-    '......222222222.................',
-    '....hHHHHHHHHHHHh...............',
-    '....DDDDDDDDDDDDD...............',
-    '......Eo1E1oE...................',
-    '.......WWBBBBBBBBBB.............',
-    '.....BBbBBBBBBBBBBBBb...........',
-    '....BBBBBBBBBBPPPPPPPP..........',
-    '....BBBBBBBBLLLLLLLLLLL.........',
-    '.....SS..............SSS........',
-  ),
-)
+const SLIDE_DASH = SLIDE
 
 const BABE = fit(
   rows(
-    '..........M.......M.............',
-    '...........m.....m..............',
-    '...........MMMMMMM..............',
-    '..........MHHHHHHHM.............',
-    '..........HHHHHHHHH.............',
-    '..........MHHHHHHHM.............',
-    '...........Eo1E1oE..............',
-    ...JAW_PLAIN,
-    ...NECK,
-    '............BBBBB...............',
-    '...........PBbBBBbBP............',
-    '...........PBb11BbBP............',
-    '...........PBbBBBbBP............',
-    '...........PBbBBBbBP............',
-    '............BbBBBbB.............',
-    '............BbBBBbB.............',
-    '............BBBBBBB.............',
-    '............BBBBB...............',
+    '............M..................M',
+    '.............m................m',
+    '..............m..............m',
+    '...............m............m',
+    '................mMMMMMMMMMMm',
+    '...............MMMMMMMMMMMMMM',
+    '..............MMHHHHHHHHHHHHMM',
+    '..............MHHHHHHHHHHHHHHM',
+    '.............MMHHHHHHHHHHHHHHMM',
+    '.............MHHHHHHHHHHHHHHHHM',
+    '..............MHHHHHHHHHHHHHHM',
+    '................EEEEEEEEEEEE',
+    '................EEoooEEoooEE',
+    '................EEo11oEo11oE',
+    '................EEoooEEoooEE',
+    '................EEEEEEEEEEEE',
+    ...JAW,
+    ...COLLAR,
+    ...COAT,
     ...HIPS,
     ...LEGS_POSE,
   ),

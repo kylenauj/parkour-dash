@@ -44,10 +44,10 @@ export function disk(
 }
 
 export function moon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  ctx.globalAlpha = 0.07
-  disk(ctx, cx, cy, r + 10, '#b6ccf0')
   ctx.globalAlpha = 0.1
-  disk(ctx, cx, cy, r + 4, '#cfe0ff')
+  disk(ctx, cx, cy, r + 18, '#b6ccf0')
+  ctx.globalAlpha = 0.16
+  disk(ctx, cx, cy, r + 8, '#cfe0ff')
   ctx.globalAlpha = 1
   disk(ctx, cx, cy, r, '#e8e4d0')
   disk(ctx, cx - r * 0.12, cy - r * 0.14, r * 0.86, '#f8f4e4')
@@ -60,8 +60,8 @@ export function moon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: n
     [0.46, 0.3, 0.08],
   ]
   for (const [ox, oy, cr] of craters) {
-    disk(ctx, cx + ox * r, cy + oy * r, Math.max(1, cr * r), '#ded8c4')
-    disk(ctx, cx + ox * r - 1, cy + oy * r - 1, Math.max(1, cr * r * 0.6), '#efe9d8')
+    disk(ctx, cx + ox * r, cy + oy * r, Math.max(1, cr * r), '#b8ae94')
+    disk(ctx, cx + ox * r - 1, cy + oy * r - 1, Math.max(1, cr * r * 0.55), '#f4eee0')
   }
 }
 
@@ -87,7 +87,7 @@ export function pineLayer(
   }
 }
 
-/** Drooping conifer skirt: wide at the bottom, tips flicking outward. */
+/** Drooping conifer skirt: wide at the bottom, needles flicking off the lower edge. */
 function branchTier(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -98,18 +98,46 @@ function branchTier(
 ) {
   for (let r = 0; r < drop; r++) {
     const t = r / Math.max(1, drop - 1)
-    const w = Math.max(1, half * (0.22 + t * 0.78))
+    const w = Math.max(1, half * (0.18 + t * 0.82))
     const y = Math.round(top + r)
-    prect(ctx, x - w, y, w * 2, 1, cols.mid)
-    prect(ctx, x + w * 0.28, y, Math.max(1, w * 0.72), 1, cols.dark)
-    if (r % 2 === 0) prect(ctx, x - w, y, Math.max(1, w * 0.42), 1, cols.lit)
+    ctx.fillStyle = cols.mid
+    ctx.fillRect(Math.round(x - w), y, Math.round(w * 2), 1)
+    /** Moon sits upper-right: shade the left, rim the right. */
+    ctx.fillStyle = cols.dark
+    ctx.fillRect(Math.round(x - w), y, Math.max(1, Math.round(w * 0.38)), 1)
+    if (r % 3 === 0) {
+      ctx.fillStyle = cols.lit
+      ctx.fillRect(Math.round(x + w * 0.42), y, Math.max(1, Math.round(w * 0.5)), 1)
+    }
+    if (r % 4 === 0) {
+      ctx.fillStyle = 'rgba(210, 226, 245, 0.28)'
+      ctx.fillRect(Math.round(x + w - 1), y, 1, 1)
+    }
+    /** Near-black underside on the last rows of the skirt. */
+    if (r > drop - 4) {
+      ctx.fillStyle = '#060a08'
+      ctx.fillRect(Math.round(x - w * 0.72), y, Math.round(w * 1.44), 1)
+    }
   }
-  const tip = Math.round(top + drop)
-  const w = half
+
+  /** Needle spurs break the tier's lower silhouette. */
+  const base = Math.round(top + drop)
+  for (let i = 0; i < 7; i++) {
+    const u = (i + 0.5) / 7
+    const at = x - half + u * half * 2
+    const len = 2 + Math.round(hash(Math.round(at), base) * 4)
+    const outward = at < x ? -1 : 1
+    ctx.fillStyle = outward > 0 ? cols.lit : cols.dark
+    ctx.fillRect(Math.round(at), base - 1, 1, len)
+    if (hash(base, Math.round(at)) > 0.55) {
+      ctx.fillStyle = cols.mid
+      ctx.fillRect(Math.round(at + outward), base - 2, 1, len - 1)
+    }
+  }
   for (const side of [-1, 1]) {
-    const spur = Math.max(2, half * 0.22)
-    prect(ctx, x + side * w - (side < 0 ? spur : 0), tip - 1, spur, 2, cols.mid)
-    prect(ctx, x + side * w - (side < 0 ? spur : 0), tip - 1, spur, 1, side < 0 ? cols.lit : cols.dark)
+    const spur = Math.max(2, Math.round(half * 0.2))
+    ctx.fillStyle = cols.mid
+    ctx.fillRect(Math.round(x + side * half - (side < 0 ? spur : 0)), base - 2, spur, 2)
   }
 }
 
@@ -121,8 +149,8 @@ export function pineTree(
   cols: PineCols,
 ) {
   const s = scale
-  const height = 168 * s
-  const trunkBase = Math.max(3, Math.round(5 * s))
+  const height = 232 * s
+  const trunkBase = Math.max(3, Math.round(6 * s))
 
   prect(ctx, x - trunkBase * 1.6, ground - 3, trunkBase * 3.2, 5, cols.trunk)
   for (const side of [-1, 1]) {
@@ -131,23 +159,34 @@ export function pineTree(
     prect(ctx, side < 0 ? x - rw : x, ground, rw * 0.7, 2, cols.dark)
   }
 
-  for (let i = 0; i < height * 0.92; i++) {
-    const y = ground - i
-    const w = Math.max(trunkBase * 0.42, trunkBase * (1 - i / (height * 1.5)))
-    prect(ctx, x - w / 2, y, Math.max(1, w), 1, cols.trunk)
-    prect(ctx, x + w / 2 - 1, y, 1, 1, cols.dark)
-    if (i % 11 === 0) prect(ctx, x - w / 2, y, Math.max(1, w * 0.4), 1, cols.bark)
+  for (let i = 0; i < height * 0.9; i++) {
+    const y = Math.round(ground - i)
+    const w = Math.max(trunkBase * 0.4, trunkBase * (1 - i / (height * 1.4)))
+    ctx.fillStyle = cols.trunk
+    ctx.fillRect(Math.round(x - w / 2), y, Math.max(1, Math.round(w)), 1)
+    ctx.fillStyle = cols.dark
+    ctx.fillRect(Math.round(x + w / 2 - 1), y, 1, 1)
+    /** 1px bark flecks so the exposed trunk is not a flat bar. */
+    if (hash(i, x) > 0.72) {
+      ctx.fillStyle = cols.bark
+      ctx.fillRect(Math.round(x - w / 2 + hash(x, i) * Math.max(1, w - 1)), y, 1, 1)
+    }
   }
 
-  const tiers = Math.max(9, Math.round(14 * Math.min(1.5, s)))
+  /** Gaps between tiers leave the trunk visible, as in the reference. */
+  const tiers = Math.max(10, Math.round(15 * Math.min(1.5, s)))
   for (let i = 0; i < tiers; i++) {
     const t = i / (tiers - 1)
-    const top = ground - height * (0.93 - t * 0.79)
-    const half = (4 + t * t * 20 + t * 10) * s
-    const drop = (14 + t * 16) * s
+    const top = ground - height * (0.95 - t * 0.83)
+    const half = (4 + t * t * 24 + t * 11) * s
+    const drop = (11 + t * 13) * s
     branchTier(ctx, x, top, half, drop, cols)
   }
-  prect(ctx, x - 1, ground - height - 5 * s, 2, 7 * s, cols.mid)
+
+  /** Spire overlaps the top tier so it never floats free. */
+  const crown = ground - height * 0.95
+  prect(ctx, x - 1, crown - 6 * s, 2, 12 * s, cols.mid)
+  prect(ctx, x - 1, crown - 6 * s, 1, 8 * s, cols.lit)
 }
 
 export function mountains(
@@ -179,7 +218,11 @@ export function mountains(
     const b = pts[seg]
     const t = (x - a.x) / Math.max(1, b.x - a.x)
     const base = a.h + (b.h - a.h) * t
-    heights.push(base + (noise(x, 0, 34) - 0.5) * ridge + (noise(x, 9, 7) - 0.5) * ridge * 0.5)
+    /** Three octaves so the ridge breaks into spurs instead of a clean edge. */
+    const o1 = (noise(x, 0, 120) - 0.5) * ridge * 2.2
+    const o2 = (noise(x, 17, 34) - 0.5) * ridge * 1.1
+    const o3 = (noise(x, 41, 9) - 0.5) * ridge * 0.45
+    heights.push(Math.max(8, base + o1 + o2 + o3))
   }
 
   for (let x = 0; x < width; x++) {
@@ -188,16 +231,28 @@ export function mountains(
     const slope = (heights[Math.min(width - 1, x + 4)] ?? h) - (heights[Math.max(0, x - 4)] ?? h)
     prect(ctx, x, topY, 1, baseY - topY + 10, fill)
 
+    /** Facet planes: broad noise splits each slope into rock faces. */
+    const facet = noise(x, 63, 90)
+    if (facet > 0.62) prect(ctx, x, topY + h * 0.22, 1, h * 0.5, lit)
+    else if (facet < 0.34) prect(ctx, x, topY + h * 0.3, 1, h * 0.55, dark)
+    if (noise(x, 88, 26) > 0.72) prect(ctx, x, topY + h * 0.45, 1, h * 0.35, dark)
+
     /** Moon sits high on the right, so slopes falling to the right catch light. */
-    if (slope < -0.5) prect(ctx, x, topY, 1, Math.min(26, 8 + h * 0.12), lit)
-    else if (slope > 0.5) prect(ctx, x, topY, 1, Math.min(22, 6 + h * 0.1), dark)
+    if (slope < -0.5) prect(ctx, x, topY, 1, Math.min(12, 6 + h * 0.05), lit)
+    else if (slope > 0.5) prect(ctx, x, topY, 1, Math.min(10, 5 + h * 0.04), dark)
 
     if (snow && snowLine !== undefined && topY < snowLine) {
       const above = snowLine - topY
-      const depth = Math.min(h * 0.2, above * (0.22 + noise(x, 3, 16) * 0.26))
+      /** Snow runs down gullies, so depth follows a ragged per-column noise. */
+      const gully = noise(x, 5, 21)
+      const tongue = noise(x, 29, 7)
+      let depth = above * (0.16 + gully * 0.42)
+      if (tongue > 0.78) depth += above * 0.5
+      depth = Math.min(h * 0.62, depth)
       if (depth > 1) {
         prect(ctx, x, topY, 1, depth, snow)
-        if (snowShade && slope > 0.5) prect(ctx, x, topY, 1, depth * 0.6, snowShade)
+        if (snowShade && slope > 0.5) prect(ctx, x, topY, 1, depth * 0.55, snowShade)
+        if (snowShade && gully < 0.3) prect(ctx, x, topY + depth - 2, 1, 2, snowShade)
       }
     }
   }
@@ -212,7 +267,27 @@ export function fog(ctx: CanvasRenderingContext2D, y: number, h: number, w: numb
   ctx.globalAlpha = 1
 }
 
-/** Dangling roots and vines under a soil lip. */
+/** Cool 1–2px rim on the moon-facing (top-right) edge of a surface. */
+export function moonRim(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h = 2,
+) {
+  const rx = Math.round(x + w * 0.52)
+  const rw = Math.max(1, Math.round(w * 0.48))
+  ctx.fillStyle = 'rgba(210, 226, 245, 0.28)'
+  ctx.fillRect(rx, Math.round(y), rw, 1)
+  ctx.fillStyle = 'rgba(210, 226, 245, 0.12)'
+  ctx.fillRect(rx + Math.floor(rw * 0.2), Math.round(y) + 1, Math.max(1, Math.round(rw * 0.7)), 1)
+  if (h > 2) {
+    ctx.fillStyle = 'rgba(210, 226, 245, 0.16)'
+    ctx.fillRect(Math.round(x + w - 2), Math.round(y), 1, Math.min(Math.round(h), 36))
+  }
+}
+
+/** Curved, branching roots in clumps of 2–4. Lengths 20–160px. */
 export function roots(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -222,26 +297,53 @@ export function roots(
   density = 16,
   maxLen = 46,
 ) {
-  for (let i = x + 2; i < x + w - 2; i += density) {
-    const seed = hash(i, y)
-    /** Coarse gate first so roots hang in clumps instead of a picket fence. */
-    if (noise(i, y, 90) < 0.44 || seed < 0.34) continue
-    const len = 24 + seed * maxLen
-    let rx = i
-    const drift = (hash(i, y + 5) - 0.5) * 0.5
-    for (let d = 0; d < len; d++) {
-      rx += drift * (d / len) + (hash(i + d, y) > 0.82 ? 0.6 : 0)
-      const thick = d > len * 0.5 ? 1 : 2
-      prect(ctx, rx, y + d, thick, 1, d > len * 0.6 ? cols.shade : cols.root)
+  let i = x + 4
+  while (i < x + w - 4) {
+    if (noise(i, y, 72) < 0.38) {
+      i += density * 0.7
+      continue
     }
-    if (cols.leaf && seed > 0.7) {
-      prect(ctx, rx - 2, y + len * 0.4, 3, 2, cols.leaf)
-      prect(ctx, rx + 1, y + len * 0.62, 3, 2, cols.leaf)
+    const clump = 2 + Math.floor(hash(i, y) * 3)
+    for (let r = 0; r < clump; r++) {
+      const ox = i + r * (3 + hash(i, r + 2) * 6)
+      const thick = 1 + Math.floor(hash(r, i + 4) * 2.4)
+      const len = Math.min(160, 20 + hash(i + r, y) * Math.max(24, maxLen))
+      let cx = ox
+      let cy = y
+      let dx = (hash(ox, y + 1) - 0.5) * 0.75
+      let branched = false
+      for (let t = 0; t < len; t++) {
+        dx += (hash(ox + t * 0.7, y + 3) - 0.5) * 0.13
+        cx += dx
+        cy += 1
+        ctx.fillStyle = t < 10 ? cols.root : t > len * 0.62 ? cols.shade : cols.root
+        ctx.fillRect(Math.round(cx), Math.round(cy), thick, 1)
+        if (!branched && t > 16 && t < len * 0.7 && hash(ox, t + 9) > 0.84) {
+          branched = true
+          let bx = cx
+          let by = cy
+          let bdx = hash(t, ox) > 0.5 ? 0.65 : -0.65
+          const blen = 12 + hash(t, y + 8) * 40
+          const bt = Math.max(1, thick - 1)
+          for (let b = 0; b < blen; b++) {
+            bdx += (hash(b + ox, t) - 0.5) * 0.1
+            bx += bdx
+            by += 1
+            ctx.fillStyle = cols.shade
+            ctx.fillRect(Math.round(bx), Math.round(by), bt, 1)
+          }
+        }
+      }
+      if (cols.leaf && hash(ox, y) > 0.74) {
+        ctx.fillStyle = cols.leaf
+        ctx.fillRect(Math.round(cx) - 1, Math.round(cy - 5), 3, 2)
+      }
     }
+    i += density * (1.5 + hash(i, y + 1) * 2.4)
   }
 }
 
-/** Embedded stones for cliff faces. */
+/** Stones 3–16px, clustered, grey-brown. Darken toward the cliff base. */
 export function boulders(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -249,18 +351,48 @@ export function boulders(
   w: number,
   h: number,
   cols: { face: string; lit: string; shade: string },
-  step = 26,
+  _step = 26,
 ) {
-  for (let by = y + 10; by < y + h - 6; by += step) {
-    for (let bx = x + 8; bx < x + w - 10; bx += step) {
-      const seed = hash(bx, by)
-      if (seed < 0.6) continue
-      const r = 3 + Math.floor(seed * 10)
-      const ox = bx + (hash(bx, by + 3) - 0.2) * step * 1.4
-      const oy = by + (hash(by, bx + 5) - 0.2) * step * 1.2
-      disk(ctx, ox, oy, r, cols.face)
-      disk(ctx, ox - 1, oy - 1, Math.max(1, r * 0.42), cols.lit)
-      prect(ctx, ox - r + 1, oy + r - 1, r * 2 - 2, 2, cols.shade)
+  void _step
+  const n = Math.floor(w * h * 0.0023)
+  for (let i = 0; i < n; i++) {
+    const gx = x + 5 + hash(x + i * 3.1, y) * Math.max(8, w - 16)
+    const gy = y + 8 + hash(y + i * 5.7, x) * Math.max(6, h - 14)
+    if (noise(gx, gy, 46) < 0.36 && hash(i, x + 2) < 0.5) continue
+    const cluster = hash(i, y + 2) > 0.48 ? 2 + Math.floor(hash(i, 9) * 3) : 1
+    const depth = Math.min(1, Math.max(0, (gy - y) / Math.max(1, h)))
+    for (let k = 0; k < cluster; k++) {
+      const sx = Math.round(gx + (hash(i, k + 3) - 0.5) * 12)
+      const sy = Math.round(gy + (hash(k, i + 7) - 0.5) * 8)
+      const bw = Math.round(3 + hash(i, k + 11) * 13)
+      const bh = Math.round(3 + hash(i, k + 13) * 9)
+      let face = cols.face
+      let lit = cols.lit
+      let shade = cols.shade
+      if (depth > 0.38) {
+        face = '#2a261c'
+        lit = '#3a3428'
+        shade = '#12100c'
+      }
+      if (depth > 0.68) {
+        face = '#1c1812'
+        lit = '#2a241c'
+        shade = '#0a0906'
+      }
+      if (hash(i, k) > 0.55) {
+        face = depth > 0.5 ? '#26241e' : '#3a382e'
+        lit = depth > 0.5 ? '#3c3a32' : '#525044'
+      }
+      ctx.fillStyle = face
+      ctx.fillRect(sx, sy, bw, bh)
+      ctx.fillStyle = lit
+      ctx.fillRect(sx + Math.max(1, bw - 3), sy, Math.min(3, bw), Math.max(1, Math.floor(bh * 0.45)))
+      ctx.fillStyle = shade
+      ctx.fillRect(sx, sy + bh - 1, bw, 1)
+      if (hash(k, sy) > 0.8) {
+        ctx.fillStyle = '#2a4030'
+        ctx.fillRect(sx + 1, sy + bh - 2, Math.max(1, bw * 0.4), 2)
+      }
     }
   }
 }

@@ -132,24 +132,24 @@ function dirtTile(a: string, b: string, c: string, pebble: string, pebble2: stri
       ctx.fillRect(x, y, 1, 1)
     }
   }
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 18; i++) {
     const x = Math.floor(hash(i, 12) * 58)
     const y = Math.floor(hash(i, 21) * 42)
-    const w = 5 + Math.floor(hash(i, 5) * 9)
-    const h = 3 + Math.floor(hash(i, 6) * 5)
+    const pw = 3 + Math.floor(hash(i, 5) * 13)
+    const ph = 3 + Math.floor(hash(i, 6) * 8)
     ctx.fillStyle = c
-    ctx.fillRect(x, y, w, h)
+    ctx.fillRect(x, y, pw, ph)
   }
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 9; i++) {
     const x = Math.floor(hash(i, 2) * 56)
-    const y = 6 + Math.floor(hash(i, 9) * 34)
-    const w = 4 + Math.floor(hash(i, 7) * 5)
+    const y = 4 + Math.floor(hash(i, 9) * 36)
+    const pw = 3 + Math.floor(hash(i, 7) * 10)
     ctx.fillStyle = hash(i, 4) > 0.5 ? pebble : pebble2
-    ctx.fillRect(x, y, w, 3)
+    ctx.fillRect(x, y, pw, 3 + Math.floor(hash(i, 8) * 4))
     ctx.fillStyle = dry
-    ctx.fillRect(x, y, Math.max(1, w - 3), 1)
+    ctx.fillRect(x, y, Math.max(1, pw - 3), 1)
     ctx.fillStyle = c
-    ctx.fillRect(x, y + 3, w, 1)
+    ctx.fillRect(x, y + 3, pw, 1)
   }
   return tile
 }

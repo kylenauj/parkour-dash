@@ -681,7 +681,7 @@ function flues(): World {
   b.k(1120, 780, 240)
   b.s(1120, 798, 240, 40)
   b.s(1360, 640, 180, 360)
-  b.n(950, 560, 'Wings out over the pit, then drop low again.')
+  b.n(950, 560, 'Dash the pit, then drop low again.')
   b.r(1240, 560)
 
   lowPipe(b, 1600, 640, 560)
@@ -790,7 +790,7 @@ function grate(): World {
   b.k(2120, 780, 280)
   b.s(2120, 798, 280, 40)
   b.s(2400, 300, 180, 40)
-  b.n(1970, 220, 'Wings across. Do not walk it.')
+  b.n(1970, 220, 'Dash across. Do not walk it.')
   b.r(2240, 240)
   b.v(2460, 244)
   b.p('shroom', 2420, 300)
