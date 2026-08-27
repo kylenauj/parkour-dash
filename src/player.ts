@@ -31,6 +31,16 @@ import { aabb } from './world'
 
 export type Ghost = { x: number; y: number; h: number; life: number }
 
+export type Smoke = {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  life: number
+  max: number
+  size: number
+}
+
 export class Player {
   x = 0
   y = 0
@@ -55,7 +65,7 @@ export class Player {
   controlLock = 0
   dropT = 0
   ghosts: Ghost[] = []
-  scarf: { x: number; y: number }[] = []
+  smoke: Smoke[] = []
   riding: Platform | null = null
   justLanded = false
   landSpeed = 0
@@ -96,7 +106,7 @@ export class Player {
     this.jumpBuf = 0
     this.dead = false
     this.ghosts = []
-    this.scarf = []
+    this.smoke = []
   }
 
   get cx() {
@@ -159,9 +169,52 @@ export class Player {
     }
     for (const g of this.ghosts) g.life -= dt
     this.ghosts = this.ghosts.filter((g) => g.life > 0)
+    this.updateSmoke(dt)
+  }
 
-    this.scarf.unshift({ x: this.cx - this.facing * 8, y: this.y + 10 })
-    if (this.scarf.length > 10) this.scarf.pop()
+  get mouthX() {
+    return this.cx + this.facing * 16
+  }
+
+  get mouthY() {
+    return this.y + (this.sliding ? this.h * 0.45 : 11)
+  }
+
+  private updateSmoke(dt: number) {
+    const moving = Math.abs(this.vx) > 40 || this.dashing || !this.onGround
+    if (moving) {
+      const n = this.dashing ? 4 : 2
+      for (let i = 0; i < n; i++) {
+        this.smoke.push({
+          x: this.mouthX + (Math.random() - 0.5) * 6,
+          y: this.mouthY + (Math.random() - 0.5) * 4,
+          vx: -this.facing * (18 + Math.random() * 40) + this.vx * 0.12,
+          vy: -20 - Math.random() * 50,
+          life: 0.45 + Math.random() * 0.4,
+          max: 0.7,
+          size: 4 + Math.random() * 6,
+        })
+      }
+    } else if (Math.random() < 0.35) {
+      this.smoke.push({
+        x: this.mouthX,
+        y: this.mouthY,
+        vx: -this.facing * 8,
+        vy: -16,
+        life: 0.5,
+        max: 0.5,
+        size: 3,
+      })
+    }
+    for (const s of this.smoke) {
+      s.life -= dt
+      s.x += s.vx * dt
+      s.y += s.vy * dt
+      s.vy -= 18 * dt
+      s.vx *= 0.96
+      s.size += 10 * dt
+    }
+    this.smoke = this.smoke.filter((s) => s.life > 0).slice(-90)
   }
 
   private handleDash(input: Input) {

@@ -22,7 +22,7 @@ body {
   overflow: hidden;
   background: #000;
   color: var(--text);
-  font-family: Rajdhani, system-ui, sans-serif;
+  font-family: "Press Start 2P", Rajdhani, system-ui, sans-serif;
 }
 
 #game-root {
@@ -40,7 +40,8 @@ body {
   height: 100%;
   object-fit: contain;
   background: #0c120e;
-  image-rendering: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
   display: block;
 }
 
@@ -95,9 +96,9 @@ body {
 
 .hud-stat span:last-child,
 .hud-hint {
-  font-family: Teko, Rajdhani, sans-serif;
-  font-size: 28px;
-  line-height: 1;
+  font-family: "Press Start 2P", monospace;
+  font-size: 12px;
+  line-height: 1.4;
   color: var(--mint);
   text-shadow: 0 0 16px rgba(124, 255, 58, 0.4);
 }
@@ -145,29 +146,30 @@ body {
 
 h1,
 h2 {
-  font-family: Teko, Rajdhani, sans-serif;
-  font-weight: 600;
-  line-height: 0.9;
+  font-family: "Press Start 2P", monospace;
+  font-weight: 400;
+  line-height: 1.15;
   margin: 0 0 12px;
 }
 
 h1 {
-  font-size: clamp(64px, 12vw, 92px);
-  letter-spacing: 0.06em;
+  font-size: clamp(28px, 5vw, 42px);
+  letter-spacing: 0.04em;
   color: #e8f8d8;
-  text-shadow: 0 0 28px rgba(124, 255, 58, 0.35);
+  text-shadow: 4px 4px 0 #0a2a10, 0 0 28px rgba(124, 255, 58, 0.35);
 }
 
 h2 {
-  font-size: 56px;
+  font-size: 28px;
   letter-spacing: 0.04em;
 }
 
 .lede {
   margin: 0 0 22px;
   color: var(--muted);
-  font-size: 18px;
-  line-height: 1.4;
+  font-size: 13px;
+  line-height: 1.7;
+  font-family: Rajdhani, sans-serif;
 }
 
 .controls {
@@ -195,13 +197,13 @@ kbd {
 }
 
 button {
-  font-family: Teko, Rajdhani, sans-serif;
-  font-size: 22px;
-  letter-spacing: 0.08em;
+  font-family: "Press Start 2P", monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   border: 0;
   cursor: pointer;
-  padding: 10px 22px;
+  padding: 12px 16px;
 }
 
 .primary {
@@ -250,8 +252,8 @@ button {
 }
 
 .win-stats .v {
-  font-family: Teko, sans-serif;
-  font-size: 32px;
+  font-family: "Press Start 2P", monospace;
+  font-size: 14px;
   color: var(--mint);
 }
 

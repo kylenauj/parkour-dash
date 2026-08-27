@@ -1,10 +1,10 @@
 # Pipe Roach
 
-A short cockroach parkour game. Skitter through plumbing, wall-kick pipe stacks, slide under valves, and dash the open drains.
+Pixel-art cockroach parkour. Play a roach-man with a cigarette, smoke the rusted pipes, and dash the toxic drains.
 
 ## Play
 
-After a push to `main`, GitHub Pages builds the game automatically. Play it here:
+After a push to `main`, GitHub Pages builds the game automatically:
 
 **https://kylenauj.github.io/parkour-dash/**
 

@@ -280,6 +280,7 @@ export class Game {
     this.canvas.height = VIEW_H * dpr
     const ctx = this.canvas.getContext('2d')
     if (!ctx) return
+    ctx.imageSmoothingEnabled = false
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   }
 
