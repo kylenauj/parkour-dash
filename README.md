@@ -4,9 +4,9 @@ A short rooftop parkour platformer you play in the browser. Sprint dusk-lit ledg
 
 ## Play
 
-After a push to `main`, GitHub Pages builds the game automatically. The live URL is:
+After a push to `main`, GitHub Pages builds the game automatically. Play it here:
 
-`https://<your-github-username>.github.io/parkour-dash/`
+**https://kylenauj.github.io/parkour-dash/**
 
 To run it on your machine:
 
