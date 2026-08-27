@@ -129,9 +129,12 @@ function ridge(): World {
   b.p('barrel', 360, 620)
   b.p('barrelTip', 430, 620)
   b.p('pole', 520, 620)
-  b.p('pine', 40, 620)
-  b.p('pine', 580, 620)
+  b.p('pine', 10, 620)
+  b.p('pine', 150, 620)
+  b.p('pine', 540, 620)
+  b.p('pine', 610, 620)
   b.p('grass', 160, 620)
+  b.p('grass', 250, 620)
   b.p('grass', 480, 620)
   b.p('rock', 300, 620)
   b.npc(
@@ -417,7 +420,7 @@ function filterBeds(): World {
   b.v(3040, 504)
 
   b.s(3000, 560, 200, 40)
-  b.s(3180, 470, 330, 40)
+  b.s(3180, 470, 280, 40)
   shaft(b, 3480, 470, 150, 'right', 280)
   b.n(3188, 410, 'Walk under the rust. Hold into a pipe, jump, kick the other. Grate at the top.')
   b.r(3570, 400)

@@ -56,10 +56,20 @@ body {
   display: grid;
   place-items: center;
   background:
-    radial-gradient(ellipse at 50% 120%, rgba(80, 180, 255, 0.16), transparent 50%),
-    radial-gradient(ellipse at 50% 10%, rgba(255, 120, 160, 0.08), transparent 45%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.62));
+    radial-gradient(ellipse at 18% 80%, rgba(224, 144, 112, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(4, 8, 14, 0.45), rgba(4, 8, 14, 0.62));
   padding: 24px;
+}
+
+#title-screen.panel-screen {
+  justify-items: start;
+  align-items: center;
+  background: linear-gradient(
+    90deg,
+    rgba(6, 10, 18, 0.82) 0%,
+    rgba(6, 10, 18, 0.38) 42%,
+    rgba(6, 10, 18, 0.05) 100%
+  );
 }
 
 .hidden {
@@ -78,10 +88,14 @@ body {
   display: flex;
   gap: 12px;
   align-items: stretch;
-  padding: 8px 12px 8px 8px;
-  border: 2px solid #8a9aaa;
-  background: linear-gradient(180deg, rgba(18, 22, 28, 0.92), rgba(8, 10, 14, 0.92));
-  box-shadow: 0 0 0 1px #1a2028, 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 0 20px rgba(126, 224, 255, 0.06);
+  padding: 10px 14px 10px 10px;
+  border: 3px solid #d8c090;
+  background: linear-gradient(180deg, rgba(28, 24, 20, 0.94), rgba(8, 10, 14, 0.94));
+  box-shadow:
+    0 0 0 1px #3a2a14,
+    0 0 0 5px #121014,
+    inset 0 1px 0 rgba(255, 244, 192, 0.35),
+    0 14px 40px rgba(0, 0, 0, 0.5);
 }
 
 #hud-portrait {
@@ -89,8 +103,8 @@ body {
   height: 88px;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  background: radial-gradient(ellipse at 50% 70%, rgba(126, 224, 255, 0.18), #080c10);
-  border: 2px solid #c8d0d8;
+  background: radial-gradient(ellipse at 50% 70%, rgba(224, 144, 112, 0.35), #080c14);
+  border: 2px solid #f0e0b8;
 }
 
 .hud-meta {
@@ -158,29 +172,29 @@ body {
   max-height: min(92vh, 920px);
   overflow: auto;
   padding: 32px 28px 28px;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), 0 0 40px rgba(80, 255, 50, 0.12);
+  border: 2px solid rgba(216, 192, 144, 0.45);
+  background: linear-gradient(180deg, rgba(12, 16, 24, 0.82), rgba(8, 10, 16, 0.78));
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 244, 192, 0.18),
+    0 0 0 1px rgba(8, 8, 12, 0.8);
 }
 
 .title-panel {
-  width: min(920px, 100%);
-  padding: 24px 22px 22px;
+  width: min(560px, 100%);
+  padding: 22px 20px 20px;
 }
 
 .title-grid {
   display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 28px;
+  grid-template-columns: 1fr;
+  gap: 12px;
   align-items: start;
 }
 
 .hero-col {
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  padding-top: 8px;
+  display: none;
 }
 
 #hero-art {
@@ -252,10 +266,10 @@ h2 {
 }
 
 h1 {
-  font-size: clamp(28px, 5vw, 42px);
+  font-size: clamp(26px, 4.4vw, 40px);
   letter-spacing: 0.04em;
-  color: #e8f0f8;
-  text-shadow: 4px 4px 0 #0a1420, 0 0 28px rgba(126, 224, 255, 0.35);
+  color: #f4ead8;
+  text-shadow: 4px 4px 0 #0a1420, 0 0 28px rgba(224, 144, 112, 0.45);
 }
 
 h2 {
@@ -307,9 +321,9 @@ button {
 }
 
 .primary {
-  background: var(--cyan);
+  background: #e8c878;
   color: #081018;
-  box-shadow: 0 0 24px rgba(126, 224, 255, 0.45);
+  box-shadow: 0 0 24px rgba(232, 200, 120, 0.4);
 }
 
 .primary:hover {
@@ -467,7 +481,7 @@ button {
   }
 }
 
-@media (max-width: 700px) {
+  @media (max-width: 700px) {
   #hud {
     padding: 10px 12px;
   }
@@ -492,9 +506,8 @@ button {
     grid-template-columns: 1fr 1fr;
   }
 
-  .title-grid {
-    grid-template-columns: 1fr;
-    justify-items: center;
+  .title-panel {
+    width: min(100%, 560px);
   }
 
   .copy-col {

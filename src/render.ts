@@ -1,8 +1,10 @@
 import { DASH_TIME, VIEW_H, VIEW_W } from './const'
-import { bakePixels, crisp, PX, prect, snap } from './pixel'
+import { crisp, PX, prect, snap } from './pixel'
 import { lookById, LOOKS, type CosmeticId, type Look } from './cosmetics'
 import { bakeBabe, bakeBank, type SpriteBank } from './sprites'
 import { bakePack, type LayerPack } from './backdrop'
+import { disk, hash, pineTree, stamp } from './gfx'
+import { bakeGround, type GroundSkin } from './tiles'
 import type { Camera } from './camera'
 import type { Particles } from './particles'
 import type { Player } from './player'
@@ -13,10 +15,8 @@ type Skin = SpriteBank
 export class Renderer {
   private skins = new Map<CosmeticId, Skin>()
   private packs = new Map<Theme, LayerPack>()
+  private grounds = new Map<Theme, GroundSkin>()
   private babe: HTMLCanvasElement
-  private brick: HTMLCanvasElement
-  private rustBrick: HTMLCanvasElement
-  private rockBrick: HTMLCanvasElement
   private ctx: CanvasRenderingContext2D
   private theme: Theme = 'gutter'
   private look: Look = LOOKS[0]
@@ -27,11 +27,15 @@ export class Renderer {
     crisp(ctx)
     for (const look of LOOKS) this.skins.set(look.id, bakeBank(look.pal))
     this.babe = bakeBabe(lookById('babe').pal)
-    this.brick = bakeBrick('#1a1814', '#4a4034', '#3a342c', '#141210')
-    this.rustBrick = bakeBrick('#24140c', '#8a4a22', '#5a3018', '#180c08')
-    this.rockBrick = bakeBrick('#12161a', '#3a4248', '#2a3238', '#0c1014')
     const themes: Theme[] = ['woods', 'gutter', 'filter', 'overflow', 'flue', 'street']
-    for (const t of themes) this.packs.set(t, bakePack(t))
+    for (const t of themes) {
+      this.packs.set(t, bakePack(t))
+      this.grounds.set(t, bakeGround(t))
+    }
+  }
+
+  private earth() {
+    return this.grounds.get(this.theme)!
   }
 
   draw(
@@ -84,21 +88,30 @@ export class Renderer {
   private drawLayers(cam: Camera, time: number) {
     const ctx = this.ctx
     const sky = this.sky()
-    ctx.fillStyle = sky[0]
-    ctx.fillRect(0, 0, VIEW_W, VIEW_H)
+    if (this.theme === 'woods') {
+      const dusk = ctx.createLinearGradient(0, 0, 0, VIEW_H)
+      dusk.addColorStop(0, '#152038')
+      dusk.addColorStop(0.32, '#3a5078')
+      dusk.addColorStop(0.5, '#e09070')
+      dusk.addColorStop(0.6, '#8a5868')
+      dusk.addColorStop(1, '#1c2838')
+      ctx.fillStyle = dusk
+      ctx.fillRect(0, 0, VIEW_W, VIEW_H)
+    } else {
+      ctx.fillStyle = sky[0]
+      ctx.fillRect(0, 0, VIEW_W, VIEW_H)
+      const g = ctx.createLinearGradient(0, 0, 0, VIEW_H)
+      g.addColorStop(0, sky[1])
+      g.addColorStop(0.55, sky[2])
+      g.addColorStop(1, sky[3])
+      ctx.fillStyle = g
+      ctx.fillRect(0, 0, VIEW_W, VIEW_H)
+    }
 
-    const g = ctx.createLinearGradient(0, 0, 0, VIEW_H)
-    g.addColorStop(0, sky[1])
-    g.addColorStop(0.6, sky[2])
-    g.addColorStop(1, sky[3])
-    ctx.fillStyle = g
-    ctx.fillRect(0, 0, VIEW_W, VIEW_H)
-
-    this.dither()
     const pack = this.packs.get(this.theme)!
-    this.blit(pack.far, -((cam.x * 0.08) % (VIEW_W + 320)), 40, 0.7)
-    this.blit(pack.mid, -((cam.x * 0.18) % (VIEW_W + 320)), 20, 0.85)
-    this.blit(pack.near, -((cam.x * 0.32) % (VIEW_W + 200)), 0, 1)
+    this.blit(pack.far, -((cam.x * 0.08) % (VIEW_W + 320)), 0, 1)
+    this.blit(pack.mid, -((cam.x * 0.2) % (VIEW_W + 320)), 8, 1)
+    this.blit(pack.near, -((cam.x * 0.38) % (VIEW_W + 200)), 0, 1)
 
     const bounce = ctx.createLinearGradient(0, VIEW_H * 0.5, 0, VIEW_H)
     bounce.addColorStop(0, 'rgba(0,0,0,0)')
@@ -111,21 +124,21 @@ export class Renderer {
 
   private sky(): [string, string, string, string, string] {
     if (this.theme === 'woods') {
-      return ['#6a7a88', '#4a5868', '#2a3848', '#1a242e', 'rgba(20,30,50,0.32)']
+      return ['#1a2438', '#3a4868', '#c87868', '#2a3848', 'rgba(20,24,40,0.18)']
     }
     if (this.theme === 'filter') {
-      return ['#120a06', '#1a0e08', '#2a140c', '#3a1808', 'rgba(255,120,30,0.16)']
+      return ['#1a0804', '#2a1008', '#5a2010', '#3a1408', 'rgba(255,100,30,0.18)']
     }
     if (this.theme === 'overflow') {
-      return ['#060b12', '#071018', '#0a1c24', '#063038', 'rgba(40,220,200,0.14)']
+      return ['#041018', '#072030', '#0a3848', '#063038', 'rgba(40,220,200,0.16)']
     }
     if (this.theme === 'flue') {
-      return ['#140806', '#1c0a06', '#2a1008', '#3a1408', 'rgba(255,80,20,0.18)']
+      return ['#180604', '#2a0c06', '#5a1808', '#3a1008', 'rgba(255,70,20,0.2)']
     }
     if (this.theme === 'street') {
-      return ['#080610', '#0c0a16', '#141028', '#1a1830', 'rgba(180,140,255,0.14)']
+      return ['#080610', '#140c28', '#2a1848', '#1a1830', 'rgba(180,140,255,0.16)']
     }
-    return ['#070b08', '#0b100e', '#102014', '#0a2a10', 'rgba(80,255,50,0.16)']
+    return ['#06100a', '#0c1c12', '#143018', '#0a2a10', 'rgba(80,255,50,0.16)']
   }
 
   private blit(sheet: HTMLCanvasElement, x: number, y: number, alpha: number) {
@@ -137,21 +150,11 @@ export class Renderer {
     ctx.globalAlpha = 1
   }
 
-  private dither() {
-    const ctx = this.ctx
-    ctx.fillStyle = 'rgba(0,0,0,0.22)'
-    for (let y = 0; y < VIEW_H; y += PX * 2) {
-      for (let x = y % (PX * 4) === 0 ? 0 : PX; x < VIEW_W; x += PX * 2) {
-        ctx.fillRect(x, y, PX, PX)
-      }
-    }
-  }
-
   private sporeField(cam: Camera, time: number) {
     const ctx = this.ctx
-    ctx.fillStyle =
+    const core =
       this.theme === 'woods'
-        ? '#c8d8e8'
+        ? '#ffe8a0'
         : this.theme === 'filter' || this.theme === 'flue'
         ? '#ffb040'
         : this.theme === 'overflow'
@@ -159,11 +162,16 @@ export class Renderer {
           : this.theme === 'street'
             ? '#c8b0ff'
             : '#7cff3a'
-    for (let i = 0; i < 36; i++) {
-      const x = snap(((i * 97 + time * 18 - cam.x * 0.25) % (VIEW_W + 20) + VIEW_W + 20) % (VIEW_W + 20))
-      const y = snap((i * 53 + Math.sin(time + i) * 20) % VIEW_H)
-      ctx.globalAlpha = 0.25 + (i % 3) * 0.12
-      ctx.fillRect(x, y, PX, PX)
+    const halo = this.theme === 'woods' ? 'rgba(255, 220, 120, 0.16)' : `${core}33`
+    for (let i = 0; i < 22; i++) {
+      const x = snap(((i * 97 + time * 22 - cam.x * 0.22) % (VIEW_W + 20) + VIEW_W + 20) % (VIEW_W + 20))
+      const y = snap((i * 53 + Math.sin(time * 0.8 + i) * 28) % VIEW_H)
+      const pulse = 0.45 + Math.sin(time * 3 + i) * 0.25
+      ctx.globalAlpha = pulse
+      ctx.fillStyle = halo
+      ctx.fillRect(x - 3, y - 3, 8, 8)
+      ctx.fillStyle = core
+      ctx.fillRect(x, y, 2, 2)
     }
     ctx.globalAlpha = 1
   }
@@ -215,95 +223,101 @@ export class Renderer {
       if (p.type === 'oneway') this.pipe(x, p.y, p.w, 12, true)
       else if (p.type === 'crumble') this.crumblePlate(x, p.y, p.w, p.crumble === 'shake')
       else if (p.h > p.w * 1.35) this.riser({ ...p, x })
-      else if (p.h > 36 && p.w > 70) this.brickLedge({ ...p, x })
-      else this.pipe(x, p.y, p.w, 20, false)
+      else this.groundFace({ ...p, x })
+    }
+  }
+
+  private groundFace(p: Platform) {
+    const ctx = this.ctx
+    const earth = this.earth()
+    const g = earth.cols
+    const x = Math.floor(p.x)
+    const y = Math.floor(p.y)
+    const w = Math.floor(p.w)
+    const h = Math.floor(p.h)
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
+    ctx.fillRect(x + 8, y + h, w - 10, 12)
+
+    stamp(ctx, earth.body, x, y, w, h)
+
+    ctx.fillStyle = g.hi
+    ctx.fillRect(x, y, w, 2)
+    ctx.fillStyle = g.rim
+    ctx.fillRect(x, y, 3, Math.min(h, 56))
+    ctx.fillStyle = g.shade
+    ctx.fillRect(x + w - 4, y, 4, h)
+
+    if (earth.grass) {
+      ctx.fillStyle = g.grass
+      ctx.fillRect(x, y - 3, w, 4)
+      for (let i = x + 2; i < x + w - 1; i += 3) {
+        const gh = 5 + Math.floor(hash(i, y) * 11)
+        ctx.fillStyle = hash(i, y + 1) > 0.45 ? g.grass2 : g.grass
+        ctx.fillRect(i, y - gh, 2, gh)
+        ctx.fillStyle = g.grassTip
+        ctx.fillRect(i, y - gh, 1, 2)
+      }
+      for (let i = x + 10; i < x + w - 8; i += 22) {
+        if (hash(i, y) < 0.4) continue
+        ctx.fillStyle = g.moss
+        ctx.fillRect(i, y + h - 6, 10, 6)
+        ctx.fillRect(i + 2, y + h, 2, 6 + Math.floor(hash(i, 3) * 8))
+        ctx.fillRect(i + 6, y + h, 2, 4 + Math.floor(hash(i, 5) * 6))
+      }
+    } else {
+      for (let i = x + 16; i < x + w - 6; i += 28) {
+        ctx.fillStyle = g.rivet
+        ctx.fillRect(i, y + 4, 4, 4)
+        ctx.fillStyle = g.hi
+        ctx.fillRect(i, y + 4, 1, 1)
+      }
     }
   }
 
   private crumblePlate(x: number, y: number, w: number, shake: boolean) {
-    const body =
-      this.theme === 'filter' || this.theme === 'flue'
-        ? '#6a3a18'
-        : this.theme === 'overflow'
-          ? '#2a4a48'
-          : this.theme === 'street'
-            ? '#3a3648'
-            : '#4a4e42'
-    const hi = shake ? '#f0d878' : '#c4b48a'
-    prect(this.ctx, x, y, w, 18, body)
-    prect(this.ctx, x, y, w, PX, hi)
-    for (let i = x + 10; i < x + w; i += 22) prect(this.ctx, i, y + 6, PX, 10, '#1a1208')
-  }
-
-  private brickLedge(p: Platform) {
-    const ctx = this.ctx
-    const tile =
-      this.theme === 'woods' ? this.rockBrick : this.theme === 'filter' || this.theme === 'flue' ? this.rustBrick : this.brick
-    const tw = tile.width
-    const th = tile.height
-    for (let y = snap(p.y + 16); y < p.y + p.h; y += th) {
-      const row = Math.floor((y - p.y) / th)
-      const ox = row % 2 === 0 ? 0 : tw / 2
-      for (let x = snap(p.x) - ox; x < p.x + p.w; x += tw) {
-        ctx.save()
-        ctx.beginPath()
-        ctx.rect(snap(p.x), snap(p.y + 16), snap(p.w), snap(p.h - 16))
-        ctx.clip()
-        ctx.drawImage(tile, x, y)
-        ctx.restore()
-      }
-    }
-    this.pipe(p.x, p.y, p.w, 20, false)
-    if (this.theme === 'woods') {
-      prect(ctx, p.x, p.y - 6, p.w, 8, '#1a2818')
-      for (let i = p.x + 8; i < p.x + p.w; i += 18) {
-        prect(ctx, i, p.y - 12, PX, 8, i % 36 === 0 ? '#3a5a30' : '#2a3a24')
-      }
-    }
-    const glow =
-      this.theme === 'woods'
-        ? 'rgba(80,120,90,0.12)'
-        : this.theme === 'filter' ? 'rgba(255,140,40,0.12)' : this.theme === 'overflow' ? 'rgba(40,220,200,0.12)' : 'rgba(80,255,50,0.12)'
-    prect(ctx, p.x, p.y + p.h - 16, p.w, 16, glow)
+    const earth = this.earth()
+    const g = earth.cols
+    const hi = shake ? '#fff0a0' : g.hi
+    stamp(this.ctx, earth.body, x, y, w, 16)
+    prect(this.ctx, x, y, w, 2, hi)
+    prect(this.ctx, x, y, 2, 16, g.rim)
+    prect(this.ctx, x + w - 2, y, 2, 16, g.shade)
+    for (let i = x + 8; i < x + w; i += 14) prect(this.ctx, i, y + 5, 2, 8, g.shade)
   }
 
   private pipe(x: number, y: number, w: number, h: number, hang: boolean) {
-    const cols =
-      this.theme === 'woods'
-        ? ['#3a4248', '#8a9aaa', '#5a646c', '#1a2024', '#2a3238']
-        : this.theme === 'filter'
-        ? ['#6a4a3a', '#d4b090', '#a07858', '#3a2418', '#4a3028']
-        : this.theme === 'overflow'
-          ? ['#3a5a5c', '#b0d4d4', '#6a9090', '#1a3030', '#2a4040']
-          : ['#5a626a', '#c4ccd4', '#8a929a', '#2a2e32', '#3a3e44']
-    prect(this.ctx, x, y, w, h, cols[0])
-    prect(this.ctx, x, y, w, PX, cols[1])
-    prect(this.ctx, x, y + PX, w, PX, cols[2])
-    prect(this.ctx, x, y + h - PX, w, PX, cols[3])
-    for (let i = x + 24; i < x + w - 8; i += 56) {
-      prect(this.ctx, i, y - PX, PX * 2, h + PX * 2, cols[4])
-      prect(this.ctx, i, y + PX, PX * 2, PX, cols[1])
-    }
-    for (let i = 0; i < 5; i++) {
-      const rx = x + 16 + ((hash(x, y) * 80 + i * 37) % Math.max(8, w - 32))
-      prect(this.ctx, rx, y + PX * (1 + (i % 2)), PX * 2, PX, this.theme === 'overflow' ? '#1aa090' : '#8a3a18')
+    const earth = this.earth()
+    const g = earth.cols
+    stamp(this.ctx, earth.pipe, x, y, w, Math.max(h, 12))
+    prect(this.ctx, x, y, w, 2, g.hi)
+    prect(this.ctx, x, y, 2, h, g.rim)
+    prect(this.ctx, x + w - 2, y, 2, h, g.shade)
+    for (let i = x + 16; i < x + w - 6; i += 26) {
+      prect(this.ctx, i, y - 2, 6, h + 4, g.shade)
+      prect(this.ctx, i, y + 2, 6, 2, g.hi)
+      prect(this.ctx, i + 2, y + 5, 2, 2, g.rivet)
     }
     if (hang) {
-      for (let i = x + 12; i < x + w; i += 20) prect(this.ctx, i, y + h, PX, 12, '#4a4038')
+      for (let i = x + 10; i < x + w; i += 14) {
+        prect(this.ctx, i, y + h, 2, 16, g.shade)
+        prect(this.ctx, i, y + h, 2, 2, g.rivet)
+      }
     }
   }
 
   private riser(p: Platform) {
-    const body = this.theme === 'filter' ? '#5a3a2a' : this.theme === 'overflow' ? '#2e4a4c' : '#4a5258'
-    const hi = this.theme === 'filter' ? '#d4b090' : this.theme === 'overflow' ? '#b0d4d4' : '#c4ccd4'
-    prect(this.ctx, p.x, p.y, p.w, p.h, body)
-    prect(this.ctx, p.x, p.y, PX, p.h, hi)
-    prect(this.ctx, p.x + p.w - PX, p.y, PX, p.h, '#1c2024')
-    for (let y = p.y + 16; y < p.y + p.h - 8; y += 40) {
-      prect(this.ctx, p.x - PX, y, p.w + PX * 2, PX * 2, '#2e3238')
-      prect(this.ctx, p.x, y, PX, PX, hi)
+    const earth = this.earth()
+    const g = earth.cols
+    stamp(this.ctx, earth.wall, p.x, p.y, p.w, p.h)
+    prect(this.ctx, p.x, p.y, 4, p.h, g.rim)
+    prect(this.ctx, p.x + 4, p.y, 2, p.h, g.hi)
+    prect(this.ctx, p.x + p.w - 5, p.y, 5, p.h, g.shade)
+    for (let y = p.y + 16; y < p.y + p.h - 8; y += 32) {
+      prect(this.ctx, p.x - 3, y, p.w + 6, 6, g.moss)
+      prect(this.ctx, p.x, y, 4, 2, g.hi)
+      prect(this.ctx, p.x + 8, y + 1, 3, 3, g.rivet)
     }
-    prect(this.ctx, p.x + PX * 2, p.y + p.h * 0.4, PX * 3, PX * 4, this.theme === 'overflow' ? '#1aa090' : '#8a3a18')
   }
 
   private drawProps(world: World, time: number) {
@@ -378,59 +392,93 @@ export class Renderer {
   }
 
   private pixelPine() {
-    prect(this.ctx, 18, -110, 10, 110, '#2a2018')
-    prect(this.ctx, 0, -70, 48, 28, '#152018')
-    prect(this.ctx, 6, -92, 36, 24, '#1a2818')
-    prect(this.ctx, 12, -110, 24, 22, '#203020')
-    prect(this.ctx, 16, -108, PX, 8, '#4a6a40')
+    pineTree(this.ctx, 24, 0, 1.05, {
+      trunk: '#2a2018',
+      bark: '#4a3828',
+      mid: '#1a2818',
+      lit: '#3a5a32',
+      dark: '#0c140c',
+    })
   }
 
   private pixelTent() {
-    prect(this.ctx, 4, -52, 72, 52, '#1a2a18')
-    prect(this.ctx, 8, -48, 64, 44, '#2a4a28')
-    prect(this.ctx, 36, -52, 8, 52, '#142014')
-    prect(this.ctx, 28, -20, 20, 20, '#0c140c')
-    prect(this.ctx, 10, -44, 16, PX, '#7cff3a')
+    const ctx = this.ctx
+    for (let r = 0; r < 52; r++) {
+      const w = 8 + (r / 52) * 64
+      prect(ctx, 40 - w / 2, -52 + r, w, 1, r < 6 ? '#3a5a30' : '#243c24')
+      prect(ctx, 40 - w / 2, -52 + r, Math.max(2, w * 0.18), 1, '#4a6a40')
+      prect(ctx, 40 + w * 0.28, -52 + r, w * 0.22, 1, '#142018')
+    }
+    prect(ctx, 36, -52, 8, 52, '#1a2818')
+    prect(ctx, 28, -22, 18, 22, '#0a100a')
+    prect(ctx, 8, -8, 4, 10, '#3a3428')
+    prect(ctx, 68, -8, 4, 10, '#3a3428')
+    prect(ctx, 12, -40, 10, 2, '#7cff3a')
   }
 
   private pixelRock() {
-    prect(this.ctx, 0, -28, 40, 28, '#2a3238')
-    prect(this.ctx, 8, -36, 24, 12, '#3a444c')
-    prect(this.ctx, 4, -24, 12, PX, '#8a9aaa')
+    const ctx = this.ctx
+    prect(ctx, 2, -22, 46, 22, '#2a3238')
+    prect(ctx, 8, -34, 28, 16, '#3a444c')
+    prect(ctx, 18, -42, 16, 12, '#4a5660')
+    prect(ctx, 4, -20, 14, 3, '#8a9aaa')
+    prect(ctx, 36, -18, 10, 18, '#1a2026')
+    prect(ctx, 12, -8, 18, 2, '#12161a')
+    prect(ctx, 10, -36, 8, 2, '#3a5a32')
   }
 
   private pixelPole(time: number, seed: number) {
     prect(this.ctx, 10, -96, 8, 96, '#3a4048')
+    prect(this.ctx, 12, -96, 2, 96, '#8a9aaa')
     prect(this.ctx, 8, -100, 12, 8, '#5a626a')
     prect(this.ctx, 18, -92, 28, 6, '#2a3038')
     const on = Math.sin(time * 7 + seed) > -0.5
-    prect(this.ctx, 38, -90, 12, 10, on ? '#d8f0ff' : '#6a8090')
+    prect(this.ctx, 38, -90, 12, 10, on ? '#e8f4ff' : '#6a8090')
     if (on) {
-      this.ctx.globalAlpha = 0.16
-      prect(this.ctx, 20, -88, 48, 70, '#c8e0ff')
+      this.ctx.globalAlpha = 0.18
+      prect(this.ctx, 20, -88, 56, 80, '#c8e0ff')
       this.ctx.globalAlpha = 1
     }
   }
 
   private pixelTruck() {
     prect(this.ctx, 0, -36, 88, 28, '#3a4a28')
+    prect(this.ctx, 4, -34, 80, 4, '#5a6a40')
     prect(this.ctx, 48, -52, 36, 20, '#2a3820')
+    prect(this.ctx, 52, -48, 18, 10, '#7a9080')
     prect(this.ctx, 8, -12, 16, 12, '#1a1c18')
     prect(this.ctx, 60, -12, 16, 12, '#1a1c18')
+    prect(this.ctx, 11, -9, 8, 6, '#4a4c48')
+    prect(this.ctx, 63, -9, 8, 6, '#4a4c48')
     prect(this.ctx, 54, -70, 10, 18, '#5a6260')
     prect(this.ctx, 52, -78, 14, 8, '#8a9088')
     prect(this.ctx, 20, -30, 20, 8, '#111')
+    prect(this.ctx, 72, -28, 10, 6, '#d8c84a')
   }
 
   private pixelGrass() {
-    for (let i = 0; i < 7; i++) prect(this.ctx, i * 6, -10 - (i % 3) * 6, PX, 10 + (i % 3) * 6, i % 2 === 0 ? '#3a5a30' : '#2a4024')
+    for (let i = 0; i < 9; i++) {
+      const h = 8 + (i % 4) * 5
+      prect(this.ctx, i * 5, -h, 2, h, i % 2 === 0 ? '#4a6e32' : '#2a4024')
+      prect(this.ctx, i * 5, -h, 1, 2, '#8cbc58')
+    }
   }
 
   private pixelMouth() {
-    prect(this.ctx, 0, -140, 140, 140, '#1a1c20')
-    prect(this.ctx, 16, -124, 108, 108, '#0a0c10')
-    prect(this.ctx, 32, -108, 76, 92, '#050608')
-    prect(this.ctx, 20, -124, 100, PX, '#8a9aaa')
+    prect(this.ctx, 0, -140, 140, 140, '#2a3038')
+    prect(this.ctx, 0, -140, 140, 6, '#8a9aaa')
+    prect(this.ctx, 0, -140, 6, 140, '#c8d4e0')
+    prect(this.ctx, 134, -140, 6, 140, '#12161a')
+    for (let i = 0; i < 8; i++) {
+      prect(this.ctx, 10 + i * 16, -136, 5, 5, '#6a7068')
+      prect(this.ctx, 10 + i * 16, -12, 5, 5, '#6a7068')
+    }
+    disk(this.ctx, 70, -70, 52, '#0a0c10')
+    disk(this.ctx, 70, -70, 40, '#050608')
+    disk(this.ctx, 70, -66, 26, '#020304')
+    this.ctx.globalAlpha = 0.2
+    disk(this.ctx, 70, -58, 10, '#7ee0ff')
+    this.ctx.globalAlpha = 1
   }
 
   private pixelCrane() {
@@ -686,6 +734,12 @@ export class Renderer {
       this.drawDashWings(player)
       this.drawDashAura(player)
     }
+    if (player.onGround && !player.dead) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.38)'
+      ctx.beginPath()
+      ctx.ellipse(player.cx, player.bottom + 3, 18, 5, 0, 0, Math.PI * 2)
+      ctx.fill()
+    }
     this.drawRoach(spr, player.cx, player.bottom, player.facing, this.look, !player.sliding, player.squish)
   }
 
@@ -718,33 +772,27 @@ export class Renderer {
     squish = 1,
   ) {
     const ctx = this.ctx
-    const s = 1.22
+    const s = 1.42
     const ox = 0.48
     const dx = -Math.floor(spr.width * ox * s)
-    const dy = -Math.floor(spr.height * s) + 4
+    const dy = -Math.floor(spr.height * s) + 6
     ctx.save()
     ctx.translate(snap(x), snap(y))
     ctx.scale(facing, squish)
-    ctx.globalAlpha = 0.55
-    ctx.filter = 'brightness(2.2)'
-    ctx.drawImage(spr, dx - 1, dy, spr.width * s, spr.height * s)
-    ctx.drawImage(spr, dx + 1, dy, spr.width * s, spr.height * s)
-    ctx.filter = 'none'
-    ctx.globalAlpha = 1
     ctx.drawImage(spr, dx, dy, spr.width * s, spr.height * s)
     if (look.glasses) {
-      prect(ctx, -8, -Math.floor(spr.height * s) + 22, 18, 6, '#111')
-      prect(ctx, -6, -Math.floor(spr.height * s) + 24, 4, PX, '#d8f0ff')
+      prect(ctx, -8, -Math.floor(spr.height * s) + 26, 18, 6, '#111')
+      prect(ctx, -6, -Math.floor(spr.height * s) + 28, 4, PX, '#d8f0ff')
     }
     ctx.restore()
     if (cig) {
       const flicker = Math.sin(x * 0.2) > 0
-      const cx = x + facing * 14
-      const cy = y - (squish < 0.95 ? 16 : 34)
-      this.ctx.globalAlpha = 0.28
-      prect(this.ctx, cx - 4, cy - 4, 12, 12, look.cig[0])
+      const cx = x + facing * 16
+      const cy = y - (squish < 0.95 ? 18 : 40)
+      this.ctx.globalAlpha = 0.32
+      prect(this.ctx, cx - 5, cy - 5, 14, 14, look.cig[0])
       this.ctx.globalAlpha = 1
-      prect(this.ctx, cx, cy, PX, PX, flicker ? look.cig[0] : look.cig[1])
+      prect(this.ctx, cx, cy, 3, 3, flicker ? look.cig[0] : look.cig[1])
     }
   }
 
@@ -757,18 +805,23 @@ export class Renderer {
     ctx.imageSmoothingEnabled = false
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     const g = ctx.createLinearGradient(0, 0, 0, canvas.height)
-    g.addColorStop(0, 'rgba(12, 20, 14, 0)')
-    g.addColorStop(1, 'rgba(8, 14, 10, 0.55)')
+    g.addColorStop(0, 'rgba(58, 72, 104, 0.35)')
+    g.addColorStop(0.55, 'rgba(200, 120, 104, 0.18)')
+    g.addColorStop(1, 'rgba(8, 12, 18, 0.7)')
     ctx.fillStyle = g
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    const scale = Math.min((canvas.width * 0.92) / spr.width, (canvas.height * 0.88) / spr.height)
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'
+    ctx.beginPath()
+    ctx.ellipse(canvas.width / 2, canvas.height - 10, 48, 8, 0, 0, Math.PI * 2)
+    ctx.fill()
+    const scale = Math.min((canvas.width * 0.94) / spr.width, (canvas.height * 0.9) / spr.height)
     const dw = spr.width * scale
     const dh = spr.height * scale
     const dx = (canvas.width - dw) / 2
-    const dy = canvas.height - dh - 8
+    const dy = canvas.height - dh - 6
     ctx.drawImage(spr, dx, dy, dw, dh)
     ctx.fillStyle = look.cig[0]
-    ctx.fillRect(Math.floor(dx + dw * 0.72), Math.floor(dy + dh * 0.28), 4, 4)
+    ctx.fillRect(Math.floor(dx + dw * 0.72), Math.floor(dy + dh * 0.28), 5, 5)
     ctx.fillStyle = look.smoke[0]
     ctx.globalAlpha = 0.7
     ctx.fillRect(Math.floor(dx + dw * 0.78), Math.floor(dy + dh * 0.12), 6, 6)
@@ -856,38 +909,16 @@ export class Renderer {
 
   private scanlines() {
     const ctx = this.ctx
-    ctx.fillStyle = 'rgba(0,0,0,0.18)'
-    for (let y = 0; y < VIEW_H; y += PX * 2) ctx.fillRect(0, y, VIEW_W, PX)
+    ctx.fillStyle = 'rgba(0,0,0,0.05)'
+    for (let y = 0; y < VIEW_H; y += 4) ctx.fillRect(0, y, VIEW_W, 1)
   }
 
   private vignette() {
     const ctx = this.ctx
-    const g = ctx.createRadialGradient(VIEW_W / 2, VIEW_H / 2, 80, VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.85)
+    const g = ctx.createRadialGradient(VIEW_W / 2, VIEW_H * 0.42, 160, VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.92)
     g.addColorStop(0, 'rgba(0,0,0,0)')
-    g.addColorStop(1, 'rgba(0,0,0,0.55)')
+    g.addColorStop(1, 'rgba(0,0,0,0.32)')
     ctx.fillStyle = g
     ctx.fillRect(0, 0, VIEW_W, VIEW_H)
   }
-}
-
-
-function bakeBrick(edge: string, h: string, H: string, D: string) {
-  return bakePixels(
-    [
-      '############',
-      '#hhhhhhhhhD#',
-      '#hHHHHHHHHD#',
-      '#hHHHHHHHHD#',
-      '#hHHHHHHHHD#',
-      '#DDDDDDDDDD#',
-    ],
-    { '#': edge, h, H, D },
-    PX,
-  )
-}
-
-
-function hash(x: number, y: number) {
-  const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
-  return n - Math.floor(n)
 }

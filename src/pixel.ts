@@ -1,4 +1,4 @@
-export const PX = 4
+export const PX = 2
 
 export function snap(n: number) {
   return Math.floor(n / PX) * PX
@@ -13,7 +13,7 @@ export function prect(
   color: string,
 ) {
   ctx.fillStyle = color
-  ctx.fillRect(snap(x), snap(y), Math.max(PX, snap(w + PX - 1)), Math.max(PX, snap(h + PX - 1)))
+  ctx.fillRect(Math.floor(x), Math.floor(y), Math.max(1, Math.floor(w)), Math.max(1, Math.floor(h)))
 }
 
 export function crisp(ctx: CanvasRenderingContext2D) {
@@ -25,19 +25,44 @@ export type Pal = Record<string, string>
 export function bakePixels(rows: string[], palette: Pal, scale: number) {
   const h = rows.length
   const w = rows[0]?.length ?? 0
+  const pad = 1
   const c = document.createElement('canvas')
-  c.width = w * scale
-  c.height = h * scale
+  c.width = (w + pad * 2) * scale
+  c.height = (h + pad * 2) * scale
   const ctx = c.getContext('2d')
   if (!ctx) return c
   ctx.imageSmoothingEnabled = false
+  const filled = (x: number, y: number) => {
+    if (y < 0 || y >= h || x < 0 || x >= w) return false
+    return Boolean(palette[rows[y][x]])
+  }
+  const ink = '#07090c'
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const ch = rows[y][x]
-      const color = palette[ch]
+      if (!filled(x, y)) continue
+      for (const [ox, oy] of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+        [-1, -1],
+        [1, -1],
+        [-1, 1],
+        [1, 1],
+      ]) {
+        if (!filled(x + ox, y + oy)) {
+          ctx.fillStyle = ink
+          ctx.fillRect((x + pad + ox) * scale, (y + pad + oy) * scale, scale, scale)
+        }
+      }
+    }
+  }
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const color = palette[rows[y][x]]
       if (!color) continue
       ctx.fillStyle = color
-      ctx.fillRect(x * scale, y * scale, scale, scale)
+      ctx.fillRect((x + pad) * scale, (y + pad) * scale, scale, scale)
     }
   }
   return c
