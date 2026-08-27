@@ -72,6 +72,7 @@ export class Player {
   justJumped = false
   jumpedFromWall = false
   justDashed = false
+  busy = false
   dead = false
   spawnX = 0
   spawnY = 0
@@ -177,7 +178,7 @@ export class Player {
     }
 
     if (this.dashing) {
-      this.ghosts.push({ x: this.x, y: this.y, h: this.h, life: 0.16 })
+      this.ghosts.push({ x: this.x, y: this.y, h: this.h, life: 0.24 })
     }
     for (const g of this.ghosts) g.life -= dt
     this.ghosts = this.ghosts.filter((g) => g.life > 0)
@@ -230,6 +231,7 @@ export class Player {
   }
 
   private handleDash(input: Input) {
+    if (this.busy) return
     if (!input.dashPressed || !this.canDash || this.dashing) return
     let dx = input.x
     let dy = input.up ? -1 : input.down ? 1 : 0
@@ -261,6 +263,10 @@ export class Player {
   }
 
   private accelerate(input: Input, dt: number) {
+    if (this.busy) {
+      if (this.onGround) this.vx = approach(this.vx, 0, FRICTION * dt)
+      return
+    }
     const target = input.x * RUN_SPEED
     if (input.x !== 0) this.facing = input.x > 0 ? 1 : -1
     const accel = this.onGround ? ACCEL_GROUND : ACCEL_AIR
@@ -285,7 +291,7 @@ export class Player {
   }
 
   private tryJump(input: Input) {
-    if (this.jumpBuf <= 0 || this.dashing) return
+    if (this.jumpBuf <= 0 || this.dashing || this.busy) return
 
     if (this.onGround && input.down) {
       const ridingOneWay = this.riding?.type === 'oneway'

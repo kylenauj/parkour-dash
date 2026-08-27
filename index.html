@@ -77,8 +77,11 @@
             <li><kbd>Space</kbd> / <kbd>W</kbd> / <kbd>↑</kbd> — jump · wall jump</li>
             <li><kbd>Shift</kbd> / <kbd>J</kbd> — dash (wings out)</li>
             <li><kbd>S</kbd> / <kbd>↓</kbd> — slide · drop through</li>
+            <li><kbd>E</kbd> — talk to a smoking roach</li>
             <li><kbd>Esc</kbd> / <kbd>P</kbd> — pause · <kbd>R</kbd> — last valve</li>
           </ul>
+          <p class="eyebrow looks-label">Looks</p>
+          <div id="title-looks" class="looks"></div>
         </div>
       </div>
 
@@ -92,6 +95,8 @@
             <button id="btn-retry" type="button" class="ghost">Checkpoint</button>
             <button id="btn-quit" type="button" class="ghost">Title</button>
           </div>
+          <p class="eyebrow looks-label">Looks</p>
+          <div id="pause-looks" class="looks"></div>
         </div>
       </div>
 
@@ -109,6 +114,17 @@
         </div>
       </div>
 
+      <div id="talk" class="talk hidden">
+        <p id="talk-who" class="who"></p>
+        <p id="talk-line" class="line"></p>
+        <p class="next">E / Space</p>
+      </div>
+
+      <div id="unlock" class="unlock hidden">
+        <span class="k">Look unlocked</span>
+        <span id="unlock-name">Ash</span>
+      </div>
+
       <div id="touch" class="touch hidden">
         <div class="touch-move">
           <button type="button" data-touch="left" aria-label="Move left">◀</button>
@@ -117,6 +133,7 @@
         <div class="touch-actions">
           <button type="button" data-touch="slide" aria-label="Slide">SLIDE</button>
           <button type="button" data-touch="dash" aria-label="Dash">DASH</button>
+          <button type="button" data-touch="talk" aria-label="Talk">TALK</button>
           <button type="button" data-touch="jump" class="jump" aria-label="Jump">JUMP</button>
         </div>
       </div>

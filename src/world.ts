@@ -1,3 +1,5 @@
+import type { CosmeticId } from './cosmetics'
+
 export type PlatType = 'solid' | 'oneway' | 'moving' | 'crumble'
 export type Theme = 'gutter' | 'filter' | 'overflow'
 export type LevelId = 0 | 1 | 2
@@ -52,6 +54,56 @@ export type Crusher = Rect & {
   phase: number
 }
 
+export type Smoke = {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  life: number
+  max: number
+  size: number
+}
+
+export type Npc = {
+  id: string
+  x: number
+  y: number
+  facing: 1 | -1
+  name: string
+  lines: string[]
+  gift?: CosmeticId
+  look: CosmeticId
+  talked: boolean
+  smoke: Smoke[]
+}
+
+export type Secret = {
+  id: CosmeticId
+  x: number
+  y: number
+  w: number
+  h: number
+  got: boolean
+}
+
+export type Pop = {
+  x: number
+  y: number
+  text: string
+  life: number
+  max: number
+  color: string
+}
+
+export type Ring = {
+  x: number
+  y: number
+  r: number
+  life: number
+  max: number
+  color: string
+}
+
 export type World = {
   id: LevelId
   name: string
@@ -72,6 +124,8 @@ export type World = {
   spouts: DripSpout[]
   drips: Drip[]
   crushers: Crusher[]
+  npcs: Npc[]
+  secrets: Secret[]
 }
 
 export const LEVELS: { id: LevelId; name: string; subtitle: string }[] = [
@@ -135,6 +189,50 @@ export function aabb(a: Rect, b: Rect) {
 
 export function platActive(p: Platform) {
   return p.crumble !== 'gone'
+}
+
+export function npc(
+  id: string,
+  x: number,
+  y: number,
+  facing: 1 | -1,
+  name: string,
+  lines: string[],
+  look: CosmeticId,
+  gift?: CosmeticId,
+): Npc {
+  return { id, x, y, facing, name, lines, look, gift, talked: false, smoke: [] }
+}
+
+export function stash(id: CosmeticId, x: number, y: number): Secret {
+  return { id, x, y, w: 28, h: 24, got: false }
+}
+
+export function updateNpcSmoke(npcs: Npc[], dt: number) {
+  for (const n of npcs) {
+    const mouthX = n.x + n.facing * 16
+    const mouthY = n.y - 27
+    if (Math.random() < 0.45) {
+      n.smoke.push({
+        x: mouthX + (Math.random() - 0.5) * 4,
+        y: mouthY + (Math.random() - 0.5) * 3,
+        vx: -n.facing * (10 + Math.random() * 22),
+        vy: -14 - Math.random() * 28,
+        life: 0.55 + Math.random() * 0.4,
+        max: 0.8,
+        size: 3 + Math.random() * 5,
+      })
+    }
+    for (const s of n.smoke) {
+      s.life -= dt
+      s.x += s.vx * dt
+      s.y += s.vy * dt
+      s.vy -= 14 * dt
+      s.vx *= 0.97
+      s.size += 8 * dt
+    }
+    n.smoke = n.smoke.filter((s) => s.life > 0).slice(-40)
+  }
 }
 
 export function resetCollectibles(world: World) {
@@ -252,6 +350,8 @@ export function makeWorld(
     fans?: Fan[]
     spouts?: DripSpout[]
     crushers?: Crusher[]
+    npcs?: Npc[]
+    secrets?: Secret[]
   },
 ): World {
   return {
@@ -274,5 +374,7 @@ export function makeWorld(
     spouts: bits.spouts ?? [],
     drips: [],
     crushers: bits.crushers ?? [],
+    npcs: bits.npcs ?? [],
+    secrets: bits.secrets ?? [],
   }
 }

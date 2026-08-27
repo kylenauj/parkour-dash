@@ -7,11 +7,13 @@ export class Input {
   jumpPressed = false
   dashPressed = false
   pausePressed = false
+  talkPressed = false
   retryPressed = false
 
   private jumpQueued = false
   private dashQueued = false
   private pauseQueued = false
+  private talkQueued = false
   private retryQueued = false
   private held = new Set<string>()
 
@@ -43,7 +45,7 @@ export class Input {
       if (action === 'right') bind(btn, 'ArrowRight')
       if (action === 'jump') bind(btn, 'Space')
       if (action === 'dash') bind(btn, 'ShiftLeft')
-      if (action === 'slide') bind(btn, 'ArrowDown')
+      if (action === 'talk') bind(btn, 'KeyE')
     })
   }
 
@@ -51,10 +53,12 @@ export class Input {
     this.jumpPressed = this.jumpQueued
     this.dashPressed = this.dashQueued
     this.pausePressed = this.pauseQueued
+    this.talkPressed = this.talkQueued
     this.retryPressed = this.retryQueued
     this.jumpQueued = false
     this.dashQueued = false
     this.pauseQueued = false
+    this.talkQueued = false
     this.retryQueued = false
   }
 
@@ -101,6 +105,7 @@ export class Input {
         this.dashQueued = true
       }
       if (code === 'Escape' || code === 'KeyP') this.pauseQueued = true
+      if (code === 'KeyE' || code === 'KeyF' || code === 'Enter') this.talkQueued = true
       if (code === 'KeyR') this.retryQueued = true
     }
   }

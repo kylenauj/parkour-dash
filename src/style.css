@@ -130,6 +130,8 @@ body {
 
 .panel {
   width: min(640px, 100%);
+  max-height: min(92vh, 920px);
+  overflow: auto;
   padding: 32px 28px 28px;
   border: 1px solid var(--line);
   background: var(--panel);
@@ -392,4 +394,111 @@ button {
   .level-picks {
     grid-template-columns: 1fr;
   }
+}
+
+.looks-label {
+  margin: 18px 0 8px;
+}
+
+.looks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.look-btn {
+  text-align: left;
+  padding: 10px 8px;
+  background: rgba(124, 255, 58, 0.06);
+  color: var(--text);
+  border: 1px solid var(--line);
+  min-height: 64px;
+}
+
+.look-btn.on {
+  background: rgba(124, 255, 58, 0.22);
+  box-shadow: 0 0 12px rgba(124, 255, 58, 0.3);
+}
+
+.look-btn.locked {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.look-btn .nm {
+  display: block;
+  font-size: 9px;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.look-btn .how {
+  display: block;
+  font-family: Rajdhani, sans-serif;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.talk {
+  position: absolute;
+  left: 50%;
+  bottom: 88px;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 32px));
+  padding: 16px 18px 14px;
+  background: rgba(8, 14, 10, 0.92);
+  border: 2px solid var(--cyan);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.talk .who {
+  margin: 0 0 8px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+.talk .line {
+  margin: 0 0 10px;
+  font-family: Rajdhani, sans-serif;
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.talk .next {
+  margin: 0;
+  font-size: 9px;
+  color: var(--muted);
+  text-align: right;
+}
+
+.unlock {
+  position: absolute;
+  left: 50%;
+  top: 18%;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.unlock .k {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 8px;
+}
+
+.unlock #unlock-name {
+  font-family: "Press Start 2P", monospace;
+  font-size: clamp(16px, 3vw, 26px);
+  color: #e8f8d8;
+  text-shadow: 4px 4px 0 #0a2a10;
 }

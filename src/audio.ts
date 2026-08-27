@@ -41,6 +41,15 @@ export class AudioBus {
     this.noise(0.07, 0.08)
   }
 
+  talk() {
+    this.blip(280, 420, 0.05, 'square', 0.04)
+  }
+
+  unlock() {
+    this.blip(520, 780, 0.1, 'triangle', 0.07)
+    this.blip(780, 1180, 0.14, 'sine', 0.06, 0.08)
+  }
+
   nextLevel() {
     this.blip(400, 640, 0.1, 'square', 0.06)
     this.blip(640, 880, 0.12, 'square', 0.07, 0.08)

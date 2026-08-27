@@ -32,7 +32,7 @@ Open the printed local URL (default `http://localhost:43173`). **Full crawl** pl
 2. **The Filter** — rust, collapsing plates, timed presses, and tighter stacks. Do not linger.
 3. **The Overflow** — currents, acid drips, an updraft shaft, and a last hop to the street grate.
 
-Dash unfurls a burst of roach wings. Land to refresh it. Touch a vertical pipe and press jump to kick — you do not have to hold into the wall. Falls send you back to the last valve. Optional crumbs score a cleaner run.
+Pick crumbs, talk to the other smoking roaches, and hunt stashes for secret looks. Unlocks save in the browser. Equip them from the title screen or pause.
 
 ## Build
 

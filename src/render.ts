@@ -1,38 +1,22 @@
 import { DASH_TIME, VIEW_H, VIEW_W } from './const'
 import { bakePixels, crisp, PX, prect, snap } from './pixel'
+import { lookById, LOOKS, type CosmeticId, type Look } from './cosmetics'
 import type { Camera } from './camera'
 import type { Particles } from './particles'
 import type { Player } from './player'
-import type { Platform, Theme, World } from './world'
+import type { Npc, Platform, Pop, Secret, Theme, World } from './world'
 
-const PAL = {
-  a: '#2a1a0c',
-  A: '#4a3020',
-  H: '#6b3a18',
-  h: '#9a5a28',
-  D: '#3a1e0c',
-  E: '#f0e8c8',
-  o: '#111008',
-  C: '#efe4c8',
-  F: '#ff6a20',
-  B: '#1a2418',
-  b: '#314838',
-  P: '#4a3020',
-  L: '#2a1a10',
-  S: '#140e08',
-  W: '#5a3010',
-  m: '#8a6828',
-  M: '#f0d878',
-  v: '#fff4c0',
-} as const
+type Skin = {
+  idle: HTMLCanvasElement
+  run: HTMLCanvasElement[]
+  jump: HTMLCanvasElement
+  slide: HTMLCanvasElement
+  wall: HTMLCanvasElement
+  dash: HTMLCanvasElement
+}
 
 export class Renderer {
-  private idle: HTMLCanvasElement
-  private run: HTMLCanvasElement[]
-  private jump: HTMLCanvasElement
-  private slide: HTMLCanvasElement
-  private wall: HTMLCanvasElement
-  private dash: HTMLCanvasElement
+  private skins = new Map<CosmeticId, Skin>()
   private layerFar: HTMLCanvasElement
   private layerMid: HTMLCanvasElement
   private layerNear: HTMLCanvasElement
@@ -41,16 +25,12 @@ export class Renderer {
   private rustBrick: HTMLCanvasElement
   private ctx: CanvasRenderingContext2D
   private theme: Theme = 'gutter'
+  private look: Look = LOOKS[0]
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx
     crisp(ctx)
-    this.idle = bakeRoach(idleRows, 3)
-    this.run = [runA, runB, runC, runB].map((rows) => bakeRoach(rows, 3))
-    this.jump = bakeRoach(jumpRows, 3)
-    this.slide = bakeRoach(slideRows, 3)
-    this.wall = bakeRoach(wallRows, 3)
-    this.dash = bakeRoach(dashRows, 3)
+    for (const look of LOOKS) this.skins.set(look.id, bakeSkin(look.pal))
     this.brick = bakeBrick('#1a1814', '#4a4034', '#3a342c', '#141210')
     this.rustBrick = bakeBrick('#24140c', '#8a4a22', '#5a3018', '#180c08')
     this.layerFar = bakeFar()
@@ -59,11 +39,20 @@ export class Renderer {
     this.layerFore = bakeFore()
   }
 
-  draw(world: World, player: Player, cam: Camera, particles: Particles, time: number) {
+  draw(
+    world: World,
+    player: Player,
+    cam: Camera,
+    particles: Particles,
+    time: number,
+    lookId: CosmeticId,
+    pops: Pop[],
+    nearNpc: Npc | null,
+  ) {
     const ctx = this.ctx
     crisp(ctx)
     ctx.clearRect(0, 0, VIEW_W, VIEW_H)
-
+    this.look = lookById(lookId)
     this.theme = world.theme
     this.drawLayers(cam, time)
 
@@ -73,19 +62,24 @@ export class Renderer {
     this.drawFans(world, time)
     this.drawPlatforms(world, cam)
     this.drawCrushers(world)
-    this.drawProps(world)
+    this.drawProps(world, time)
     this.drawSpikes(world)
     this.drawDrips(world)
+    this.drawSecrets(world.secrets)
     this.drawOrbs(world, time)
     this.drawCheckpoints(world, time)
     this.drawGoal(world, time)
     this.drawSigns(world)
-    this.drawSmoke(player)
+    this.drawNpcs(world, time)
+    this.drawSmokeList(player.smoke, this.look.smoke)
     this.drawParticles(particles)
+    this.drawPops(pops)
     this.drawPlayer(player)
+    if (nearNpc) this.drawPrompt(nearNpc, time)
     ctx.restore()
 
     this.blit(this.layerFore, -((cam.x * 1.12) % (VIEW_W + 200)), 0, 0.55)
+    if (player.dashing) this.speedLines(player)
     this.scanlines()
     this.vignette()
   }
@@ -170,6 +164,11 @@ export class Renderer {
       prect(ctx, x, y + wave, PX, 28, slime[1])
       prect(ctx, x, y + wave + 16, PX, 80, slime[2])
     }
+    for (let i = 0; i < 14; i++) {
+      const bx = start + ((i * 97 + Math.floor(time * 40)) % (VIEW_W + 40))
+      const wave = Math.floor(Math.sin(bx * 0.04 + time * 2.4) * 2) * PX
+      prect(ctx, bx, y + wave - 16 - (i % 3) * 8, PX * (1 + (i % 2)), PX, slime[0])
+    }
   }
 
   private drawPlatforms(world: World, cam: Camera) {
@@ -253,7 +252,7 @@ export class Renderer {
     prect(this.ctx, p.x + PX * 2, p.y + p.h * 0.4, PX * 3, PX * 4, this.theme === 'overflow' ? '#1aa090' : '#8a3a18')
   }
 
-  private drawProps(world: World) {
+  private drawProps(world: World, time: number) {
     for (const prop of world.props) {
       const ctx = this.ctx
       ctx.save()
@@ -264,7 +263,7 @@ export class Renderer {
       else if (prop.kind === 'vent') this.pixelVent()
       else if (prop.kind === 'tank') this.pixelTank()
       else if (prop.kind === 'antenna') this.pixelStack()
-      else if (prop.kind === 'lamp') this.pixelLamp()
+      else if (prop.kind === 'lamp') this.pixelLamp(time, prop.x)
       else if (prop.kind === 'nest') this.pixelNest()
       else if (prop.kind === 'grate') this.pixelGrate()
       else if (prop.kind === 'chain') this.pixelChain()
@@ -323,10 +322,16 @@ export class Renderer {
     prect(this.ctx, -4, -72, 78, 4, '#8a9098')
   }
 
-  private pixelLamp() {
+  private pixelLamp(time: number, seed: number) {
     prect(this.ctx, 8, -36, 8, 20, '#3a3e38')
     prect(this.ctx, 2, -48, 20, 14, '#2a2e28')
-    prect(this.ctx, 6, -44, 12, 8, '#ffe080')
+    const on = Math.sin(time * 9 + seed) > -0.6
+    prect(this.ctx, 6, -44, 12, 8, on ? '#ffe080' : '#8a7030')
+    if (on) {
+      this.ctx.globalAlpha = 0.18
+      prect(this.ctx, -8, -40, 40, 48, '#ffe080')
+      this.ctx.globalAlpha = 1
+    }
   }
 
   private pixelNest() {
@@ -406,6 +411,11 @@ export class Renderer {
       prect(this.ctx, o.x, o.y + bob, 16, 12, '#c49a30')
       prect(this.ctx, o.x + 4, o.y + bob + 4, 8, 4, '#ffe08a')
       prect(this.ctx, o.x + 4, o.y + bob, 4, 4, '#fff6c8')
+      const ang = time * 4 + o.x * 0.02
+      for (let i = 0; i < 4; i++) {
+        const a = ang + i * (Math.PI / 2)
+        prect(this.ctx, o.x + 6 + Math.cos(a) * 12, o.y + bob + 4 + Math.sin(a) * 8, PX, PX, '#fff6c8')
+      }
     }
   }
 
@@ -415,7 +425,12 @@ export class Renderer {
       const on = c.armed || Math.sin(time * 3) > 0
       const lit = this.theme === 'filter' ? '#ffb040' : this.theme === 'overflow' ? '#5ef0d8' : '#7cff3a'
       prect(this.ctx, c.x + 4, c.y + 4, 16, 16, c.armed || on ? lit : '#4a5a30')
-      prect(this.ctx, c.x + 8, c.y + 8, 8, 8, '#111')
+      if (c.armed) {
+        const pulse = 8 + Math.abs(Math.sin(time * 5)) * 10
+        this.ctx.globalAlpha = 0.35
+        prect(this.ctx, c.x + 12 - pulse, c.y + 8, pulse * 2, PX, lit)
+        this.ctx.globalAlpha = 1
+      }
     }
   }
 
@@ -440,12 +455,12 @@ export class Renderer {
     }
   }
 
-  private drawSmoke(player: Player) {
+  private drawSmokeList(smoke: { x: number; y: number; life: number; max: number; size: number }[], cols: [string, string, string]) {
     const ctx = this.ctx
-    for (const s of player.smoke) {
+    for (const s of smoke) {
       const a = Math.max(0, s.life / s.max)
-      ctx.globalAlpha = a * 0.7
-      const col = a > 0.55 ? '#efe8dc' : a > 0.3 ? '#9a968c' : '#5a5854'
+      ctx.globalAlpha = a * 0.72
+      const col = a > 0.55 ? cols[0] : a > 0.3 ? cols[1] : cols[2]
       prect(ctx, s.x, s.y, s.size, s.size, col)
     }
     ctx.globalAlpha = 1
@@ -455,51 +470,124 @@ export class Renderer {
     const ctx = this.ctx
     for (const p of particles.items) {
       ctx.globalAlpha = Math.max(0, p.life / p.max)
-      prect(ctx, p.x, p.y, Math.max(PX, p.size), Math.max(PX, p.size), p.color)
+      if (p.ring) {
+        const r = p.size
+        prect(ctx, p.x - r, p.y - r, r * 2, PX, p.color)
+        prect(ctx, p.x - r, p.y + r, r * 2, PX, p.color)
+        prect(ctx, p.x - r, p.y - r, PX, r * 2, p.color)
+        prect(ctx, p.x + r, p.y - r, PX, r * 2, p.color)
+      } else {
+        prect(ctx, p.x, p.y, Math.max(PX, p.size), Math.max(PX, p.size), p.color)
+      }
     }
     ctx.globalAlpha = 1
+  }
+
+  private drawPops(pops: Pop[]) {
+    const ctx = this.ctx
+    ctx.font = '10px "Press Start 2P", monospace'
+    ctx.imageSmoothingEnabled = false
+    for (const p of pops) {
+      ctx.globalAlpha = Math.max(0, p.life / p.max)
+      ctx.fillStyle = p.color
+      ctx.fillText(p.text, snap(p.x), snap(p.y - (1 - p.life / p.max) * 28))
+    }
+    ctx.globalAlpha = 1
+  }
+
+  private drawSecrets(secrets: Secret[]) {
+    for (const s of secrets) {
+      if (s.got) continue
+      prect(this.ctx, s.x, s.y, s.w, s.h, '#3a2a10')
+      prect(this.ctx, s.x, s.y, s.w, PX, '#f0d878')
+      prect(this.ctx, s.x + 8, s.y + 6, s.w - 16, 10, '#8a6828')
+      prect(this.ctx, s.x + 12, s.y + 8, 4, 6, '#fff4c0')
+    }
+  }
+
+  private drawNpcs(world: World, time: number) {
+    for (const n of world.npcs) {
+      const look = lookById(n.look)
+      const skin = this.skins.get(n.look) ?? this.skins.get('stock')!
+      const idle = Math.abs(Math.sin(time * 2 + n.x)) < 0.12 ? skin.jump : skin.idle
+      this.drawSmokeList(n.smoke, look.smoke)
+      this.drawRoach(idle, n.x, n.y, n.facing, look, true)
+    }
+  }
+
+  private drawPrompt(npc: Npc, time: number) {
+    const bob = Math.sin(time * 6) * 3
+    prect(this.ctx, npc.x - 10, npc.y - 78 + bob, 28, 16, '#0c140c')
+    this.ctx.font = '10px "Press Start 2P", monospace'
+    this.ctx.fillStyle = '#c8ff90'
+    this.ctx.fillText('E', snap(npc.x - 2), snap(npc.y - 66 + bob))
   }
 
   private drawPlayer(player: Player) {
     const ctx = this.ctx
     crisp(ctx)
-    let spr = this.idle
-    if (player.dashing) spr = this.dash
-    else if (player.sliding) spr = this.slide
-    else if (player.onWall && !player.onGround) spr = this.wall
-    else if (!player.onGround) spr = this.jump
+    const skin = this.skins.get(this.look.id) ?? this.skins.get('stock')!
+    let spr = skin.idle
+    if (player.dashing) spr = skin.dash
+    else if (player.sliding) spr = skin.slide
+    else if (player.onWall && !player.onGround) spr = skin.wall
+    else if (!player.onGround) spr = skin.jump
     else if (Math.abs(player.vx) > 40) {
-      const f = Math.floor(Math.abs(player.x) / 14) % this.run.length
-      spr = this.run[f]
+      const f = Math.floor(Math.abs(player.x) / 14) % skin.run.length
+      spr = skin.run[f]
     }
 
     for (const g of player.ghosts) {
       ctx.globalAlpha = Math.max(0, g.life * 1.6)
       this.drawDashWingsAt(g.x + player.w / 2, g.y + g.h * 0.42, player, 0.45 + g.life)
-      ctx.save()
-      ctx.translate(snap(g.x + player.w / 2), snap(g.y + g.h))
-      ctx.scale(player.facing, 1)
-      ctx.drawImage(this.dash, -Math.floor(this.dash.width * 0.42 * 1.95), -Math.floor(this.dash.height * 1.95) + 8, this.dash.width * 1.95, this.dash.height * 1.95)
-      ctx.restore()
+      this.drawRoach(skin.dash, g.x + player.w / 2, g.y + g.h, player.facing, this.look, false)
     }
     ctx.globalAlpha = 1
 
     if (player.dashing) this.drawDashWings(player)
+    this.drawRoach(spr, player.cx, player.bottom, player.facing, this.look, !player.sliding, player.squish)
+  }
 
-    const px = snap(player.cx)
-    const py = snap(player.bottom)
+  private drawRoach(
+    spr: HTMLCanvasElement,
+    x: number,
+    y: number,
+    facing: number,
+    look: Look,
+    cig: boolean,
+    squish = 1,
+  ) {
+    const ctx = this.ctx
     const s = 1.95
+    const ox = spr === (this.skins.get(look.id)?.dash ?? spr) ? 0.42 : 0.45
     ctx.save()
-    ctx.translate(px, py)
-    ctx.scale(player.facing, 1)
-    const ox = player.dashing ? 0.42 : 0.45
+    ctx.translate(snap(x), snap(y))
+    ctx.scale(facing, squish)
     ctx.drawImage(spr, -Math.floor(spr.width * ox * s), -Math.floor(spr.height * s) + 8, spr.width * s, spr.height * s)
-    ctx.restore()
-
-    if (!player.sliding) {
-      const flicker = Math.sin(player.x * 0.2) > 0
-      prect(ctx, player.mouthX, player.mouthY, PX, PX, flicker ? '#ffee66' : '#ff6a20')
+    if (look.glasses) {
+      prect(ctx, -6, -Math.floor(spr.height * s) + 28, 16, 6, '#111')
+      prect(ctx, -4, -Math.floor(spr.height * s) + 30, 4, PX, '#d8f0ff')
     }
+    ctx.restore()
+    if (cig) {
+      const flicker = Math.sin(x * 0.2) > 0
+      prect(ctx, x + facing * 16, y - (squish < 0.95 ? 18 : 27), PX, PX, flicker ? look.cig[0] : look.cig[1])
+    }
+  }
+
+  private speedLines(player: Player) {
+    const ctx = this.ctx
+    const mag = Math.hypot(player.vx, player.vy) || 1
+    const ax = -player.vx / mag
+    const ay = -player.vy / mag
+    ctx.globalAlpha = 0.35
+    for (let i = 0; i < 12; i++) {
+      const x = VIEW_W * 0.35 + (i * 73) % 420
+      const y = 80 + ((i * 97) % (VIEW_H - 160))
+      prect(ctx, x, y, 18 + (i % 3) * 10, PX, this.look.wings[1])
+      prect(ctx, x + ax * 8, y + ay * 6, 10, PX, this.look.wings[0])
+    }
+    ctx.globalAlpha = 1
   }
 
   private drawDashWings(player: Player) {
@@ -514,10 +602,10 @@ export class Renderer {
     const mag = Math.hypot(player.vx, player.vy) || 1
     const back = Math.atan2(player.vy / mag, player.vx / mag) + Math.PI
 
-    this.paintWing(x, y, back - 0.62 + flap, 28 + span * 70, 18 + span * 30, ['#fff4c0', '#f0d878', '#c8a050'], span)
-    this.paintWing(x, y, back + 0.62 - flap, 28 + span * 70, 18 + span * 30, ['#fff4c0', '#f0d878', '#c8a050'], span)
-    this.paintWing(x, y, back - 0.28 + flap * 0.4, 18 + span * 44, 12 + span * 16, ['#f0d878', '#8a6828', '#5a3010'], span)
-    this.paintWing(x, y, back + 0.28 - flap * 0.4, 18 + span * 44, 12 + span * 16, ['#f0d878', '#8a6828', '#5a3010'], span)
+    this.paintWing(x, y, back - 0.62 + flap, 28 + span * 70, 18 + span * 30, [this.look.wings[0], this.look.wings[1], this.look.wings[2]], span)
+    this.paintWing(x, y, back + 0.62 - flap, 28 + span * 70, 18 + span * 30, [this.look.wings[0], this.look.wings[1], this.look.wings[2]], span)
+    this.paintWing(x, y, back - 0.28 + flap * 0.4, 18 + span * 44, 12 + span * 16, [this.look.wings[1], this.look.wings[2], this.look.wings[3]], span)
+    this.paintWing(x, y, back + 0.28 - flap * 0.4, 18 + span * 44, 12 + span * 16, [this.look.wings[1], this.look.wings[2], this.look.wings[3]], span)
 
     if (u < 0.34 && power >= 0.95) {
       const burst = (1 - u / 0.34) * power
@@ -530,7 +618,7 @@ export class Renderer {
           y + Math.sin(a) * d,
           PX * (i % 2 === 0 ? 2 : 1),
           PX,
-          i % 2 === 0 ? '#fff4c0' : '#f0d878',
+          i % 2 === 0 ? this.look.wings[0] : this.look.wings[1],
         )
       }
     }
@@ -559,7 +647,7 @@ export class Renderer {
       const col = colors[Math.min(colors.length - 1, Math.floor(t * colors.length))]
       prect(ctx, ox + px * dist + nx * fan * 0.15 - w / 2, oy + py * dist + ny * fan * 0.15 - PX, w, PX * (t < 0.18 ? 3 : 2), col)
       if (i % 2 === 0) {
-        prect(ctx, ox + px * dist - PX / 2, oy + py * dist - PX / 2, PX, PX, '#5a3010')
+        prect(ctx, ox + px * dist - PX / 2, oy + py * dist - PX / 2, PX, PX, this.look.wings[3])
       }
     }
   }
@@ -580,8 +668,19 @@ export class Renderer {
   }
 }
 
-function bakeRoach(rows: string[], scale: number) {
-  return bakePixels(rows, PAL, scale)
+function bakeSkin(pal: Record<string, string>): Skin {
+  return {
+    idle: bakeRoach(idleRows, 3, pal),
+    run: [runA, runB, runC, runB].map((rows) => bakeRoach(rows, 3, pal)),
+    jump: bakeRoach(jumpRows, 3, pal),
+    slide: bakeRoach(slideRows, 3, pal),
+    wall: bakeRoach(wallRows, 3, pal),
+    dash: bakeRoach(dashRows, 3, pal),
+  }
+}
+
+function bakeRoach(rows: string[], scale: number, pal: Record<string, string>) {
+  return bakePixels(rows, pal, scale)
 }
 
 const idleRows = [

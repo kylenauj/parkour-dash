@@ -5,8 +5,17 @@ import { Input } from './input'
 import { Particles } from './particles'
 import { Player } from './player'
 import { Renderer } from './render'
-import { aabb, LEVELS, resetCollectibles, updateHazards, updateMovers, type LevelId, type World } from './world'
+import { aabb, LEVELS, resetCollectibles, updateHazards, updateMovers, updateNpcSmoke, type LevelId, type Npc, type Pop, type World } from './world'
 import { createWorld } from './levels'
+import {
+  LOOKS,
+  loadLooks,
+  lookById,
+  saveLooks,
+  unlockLook,
+  type CosmeticId,
+  type LookSave,
+} from './cosmetics'
 
 type Mode = 'title' | 'play' | 'pause' | 'win'
 
@@ -28,6 +37,13 @@ type GameUI = {
   toast: HTMLElement
   toastNum: HTMLElement
   toastName: HTMLElement
+  talk: HTMLElement
+  talkWho: HTMLElement
+  talkLine: HTMLElement
+  unlock: HTMLElement
+  unlockName: HTMLElement
+  titleLooks: HTMLElement
+  pauseLooks: HTMLElement
   touch: HTMLElement
 }
 
@@ -54,6 +70,11 @@ export class Game {
   private runOrbMax = 0
   private toastT = 0
   private lastCrumble = false
+  private looks: LookSave = loadLooks()
+  private talk: { npc: Npc; i: number } | null = null
+  private pops: Pop[] = []
+  private dashFlash = 0
+  private unlockT = 0
 
   constructor(canvas: HTMLCanvasElement, ui: GameUI) {
     this.canvas = canvas
@@ -68,6 +89,7 @@ export class Game {
     this.fitCanvas()
     window.addEventListener('resize', () => this.fitCanvas())
     this.showTouchIfNeeded()
+    this.refreshLooks()
   }
 
   start() {
@@ -143,15 +165,34 @@ export class Game {
       else this.simulate(dt)
 
       this.respawnFlash = Math.max(0, this.respawnFlash - dt)
-      this.elapsed += dt
+      this.elapsed += this.talk ? 0 : dt
       this.toastT = Math.max(0, this.toastT - dt)
+      this.unlockT = Math.max(0, this.unlockT - dt)
+      this.dashFlash = Math.max(0, this.dashFlash - dt)
       this.ui.toast.classList.toggle('hidden', this.toastT <= 0)
+      this.ui.unlock.classList.toggle('hidden', this.unlockT <= 0)
       this.syncHud()
     } else if (this.mode === 'pause' && this.input.pausePressed) {
       this.setMode('play')
     }
 
-    this.renderer.draw(this.world, this.player, this.camera, this.particles, this.clock)
+    this.renderer.draw(
+      this.world,
+      this.player,
+      this.camera,
+      this.particles,
+      this.clock,
+      this.looks.equipped,
+      this.pops,
+      this.talk ? null : this.nearNpc(),
+    )
+    if (this.dashFlash > 0) {
+      const ctx = this.canvas.getContext('2d')
+      if (ctx) {
+        ctx.fillStyle = `rgba(255, 244, 192, ${this.dashFlash * 1.4})`
+        ctx.fillRect(0, 0, VIEW_W, VIEW_H)
+      }
+    }
     if (this.respawnFlash > 0) {
       const ctx = this.canvas.getContext('2d')
       if (ctx) {
@@ -162,7 +203,15 @@ export class Game {
   }
 
   private simulate(dt: number) {
+    this.handleTalk(dt)
+    updateNpcSmoke(this.world.npcs, dt)
+    this.updatePops(dt)
+    if (this.talk) {
+      this.particles.update(dt)
+      return
+    }
     updateMovers(this.world, dt)
+    this.player.busy = false
     if (!this.player.dead) this.player.update(dt, this.input, this.world)
     updateHazards(this.world, dt, this.player.riding, this.player)
     this.particles.update(dt)
@@ -185,18 +234,21 @@ export class Game {
 
   private fx() {
     const p = this.player
+    const look = lookById(this.looks.equipped)
     if (p.justJumped) {
-      this.particles.burstUp(p.cx, p.bottom, 8, '#9fff5a')
+      this.particles.burstUp(p.cx, p.bottom, 8, look.wings[1])
+      this.particles.ring(p.cx, p.bottom, look.wings[2], 6)
       if (p.jumpedFromWall) this.audio.wallJump()
       else this.audio.jump()
     }
     if (p.justDashed) {
       const behind = Math.atan2(p.vy, p.vx) + Math.PI
-      this.particles.emitDir(p.cx, p.cy, 12, '#f0d878', 280, behind, 1.3, 4)
-      this.particles.emitDir(p.cx, p.cy, 8, '#fff4c0', 340, behind, 0.9, 3)
-      this.particles.emitDir(p.cx, p.cy, 6, '#8a6828', 180, behind, 1.5, 3)
+      this.particles.emitDir(p.cx, p.cy, 12, look.wings[1], 280, behind, 1.3, 4)
+      this.particles.emitDir(p.cx, p.cy, 8, look.wings[0], 340, behind, 0.9, 3)
+      this.particles.emitDir(p.cx, p.cy, 6, look.wings[3], 180, behind, 1.5, 3)
       this.audio.dash()
-      this.hitstop = 0.03
+      this.hitstop = 0.04
+      this.dashFlash = 0.07
       this.camera.bump(0.25)
     }
     if (p.dashing && Math.random() < 0.6) {
@@ -205,7 +257,7 @@ export class Game {
         p.cx,
         p.cy,
         1,
-        Math.random() > 0.45 ? '#f0d878' : '#fff4c0',
+        Math.random() > 0.45 ? look.wings[1] : look.wings[0],
         70,
         behind,
         0.85,
@@ -213,15 +265,19 @@ export class Game {
       )
     }
     if (p.justLanded) {
-      this.particles.burstUp(p.cx, p.bottom, 10, '#8a6a48')
+      this.particles.burstUp(p.cx, p.bottom, 12, '#8a6a48')
+      this.particles.ring(p.cx, p.bottom, '#c4b48a', p.landSpeed > 700 ? 14 : 8)
       this.audio.land(p.landSpeed > 700)
       if (p.landSpeed > 700) this.camera.bump(0.2)
     }
     if (p.sliding && p.onGround && Math.random() < 0.4) {
       this.particles.emit(p.cx, p.bottom, 1, '#6b5344', 40, 2)
     }
-    if (p.onGround && Math.abs(p.vx) > 220 && Math.random() < 0.35) {
-      this.particles.emit(p.x + (p.facing < 0 ? p.w : 0), p.bottom, 1, '#5a4634', 30, 2)
+    if (p.onGround && Math.abs(p.vx) > 220 && Math.random() < 0.45) {
+      this.particles.emitDir(p.x + (p.facing < 0 ? p.w : 0), p.bottom, 1, '#5a4634', 50, Math.PI / 2, 0.6, 3)
+    }
+    if (p.onWall && !p.onGround && p.vy > 40 && Math.random() < 0.5) {
+      this.particles.emit(p.facing > 0 ? p.x + p.w : p.x, p.cy, 1, '#c4ccd4', 30, 2)
     }
     const shaking = this.player.riding?.type === 'crumble' && this.player.riding.crumble === 'shake'
     if (shaking && !this.lastCrumble) this.audio.crumble()
@@ -233,8 +289,11 @@ export class Game {
     for (const orb of this.world.orbs) {
       if (!orb.got && aabb(p, orb)) {
         orb.got = true
-        this.particles.emit(orb.x + 8, orb.y + 8, 16, '#e0b15a', 160, 3)
+        this.particles.sparkle(orb.x + 8, orb.y + 8, '#ffe08a')
+        this.particles.ring(orb.x + 8, orb.y + 8, '#fff6c8', 6)
+        this.pop(orb.x, orb.y, '+1', '#ffe08a')
         this.audio.orb()
+        if (this.world.orbs.every((o) => o.got) && this.world.id === 0) this.grant('blush')
       }
     }
     for (const c of this.world.checkpoints) {
@@ -242,7 +301,16 @@ export class Game {
         c.armed = true
         this.player.setSpawn(c.x, c.y - 8)
         this.audio.checkpoint()
-        this.particles.emit(c.x + 14, c.y + 16, 12, '#d2b56a', 120, 3)
+        this.particles.sparkle(c.x + 14, c.y + 16, '#d2b56a')
+        this.particles.ring(c.x + 14, c.y + 20, '#7cff3a', 10)
+        this.pop(c.x, c.y, 'VALVE', '#7cff3a')
+      }
+    }
+    for (const s of this.world.secrets) {
+      if (!s.got && aabb(p, s)) {
+        s.got = true
+        this.particles.sparkle(s.x + 12, s.y + 8, '#f0d878')
+        this.grant(s.id)
       }
     }
     if (aabb(p, this.world.goal)) this.finish()
@@ -282,7 +350,8 @@ export class Game {
   private die() {
     this.player.dead = true
     this.deaths += 1
-    this.particles.emit(this.player.cx, this.player.cy, 22, '#7cff3a', 240, 4)
+    this.particles.emit(this.player.cx, this.player.cy, 22, lookById(this.looks.equipped).wings[1], 240, 4)
+    this.particles.ring(this.player.cx, this.player.cy, lookById(this.looks.equipped).wings[0], 12)
     this.audio.death()
     this.camera.bump(0.55)
     this.hitstop = 0.08
@@ -357,6 +426,116 @@ export class Game {
     this.ui.toastName.textContent = this.world.name
     this.ui.toast.classList.remove('hidden')
     this.ui.level.textContent = `${id + 1} / 3`
+    this.closeTalk()
+    this.pops = []
+  }
+
+  private nearNpc(): Npc | null {
+    let best: Npc | null = null
+    let bestD = 56
+    for (const n of this.world.npcs) {
+      const dx = n.x - this.player.cx
+      const dy = n.y - this.player.bottom
+      const d = Math.hypot(dx, dy)
+      if (d < bestD) {
+        best = n
+        bestD = d
+      }
+    }
+    return best
+  }
+
+  private handleTalk(_dt: number) {
+    if (this.talk) {
+      this.player.busy = true
+      this.player.vx = 0
+      if (this.input.talkPressed || this.input.jumpPressed || this.input.dashPressed) this.advanceTalk()
+      return
+    }
+    const n = this.nearNpc()
+    if (!n || this.player.dead) return
+    const still = this.player.onGround && this.input.x === 0
+    if (this.input.talkPressed || (still && this.input.jumpPressed)) this.openTalk(n)
+  }
+
+  private openTalk(n: Npc) {
+    this.talk = { npc: n, i: 0 }
+    this.player.busy = true
+    this.player.vx = 0
+    this.showTalkLine()
+    this.audio.talk()
+  }
+
+  private advanceTalk() {
+    if (!this.talk) return
+    this.talk.i += 1
+    if (this.talk.i >= this.talk.npc.lines.length) {
+      const gift = this.talk.npc.gift
+      this.talk.npc.talked = true
+      this.closeTalk()
+      if (gift) this.grant(gift)
+      return
+    }
+    this.showTalkLine()
+    this.audio.talk()
+  }
+
+  private showTalkLine() {
+    if (!this.talk) return
+    this.ui.talk.classList.remove('hidden')
+    this.ui.talkWho.textContent = this.talk.npc.name
+    this.ui.talkLine.textContent = this.talk.npc.lines[this.talk.i]
+  }
+
+  private closeTalk() {
+    this.talk = null
+    this.player.busy = false
+    this.ui.talk.classList.add('hidden')
+  }
+
+  private grant(id: CosmeticId) {
+    if (!unlockLook(this.looks, id)) return
+    this.looks.equipped = id
+    saveLooks(this.looks)
+    this.ui.unlockName.textContent = lookById(id).name
+    this.unlockT = 2.2
+    this.ui.unlock.classList.remove('hidden')
+    this.audio.unlock()
+    this.refreshLooks()
+  }
+
+  equipLook(id: CosmeticId) {
+    if (!this.looks.unlocked.includes(id)) return
+    this.looks.equipped = id
+    saveLooks(this.looks)
+    this.refreshLooks()
+  }
+
+  refreshLooks() {
+    this.paintLooks(this.ui.titleLooks)
+    this.paintLooks(this.ui.pauseLooks)
+  }
+
+  private paintLooks(root: HTMLElement) {
+    root.innerHTML = ''
+    for (const look of LOOKS) {
+      const open = this.looks.unlocked.includes(look.id)
+      const btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = `look-btn${open && this.looks.equipped === look.id ? ' on' : ''}${open ? '' : ' locked'}`
+      btn.innerHTML = `<span class="nm">${open ? look.name : '????'}</span><span class="how">${look.how}</span>`
+      if (open) btn.addEventListener('click', () => this.equipLook(look.id))
+      root.appendChild(btn)
+    }
+  }
+
+  private pop(x: number, y: number, text: string, color: string) {
+    this.pops.push({ x, y, text, life: 0.7, max: 0.7, color })
+  }
+
+  private updatePops(dt: number) {
+    for (const p of this.pops) p.life -= dt
+    this.pops = this.pops.filter((p) => p.life > 0)
   }
 
   private setMode(mode: Mode) {
@@ -368,6 +547,7 @@ export class Game {
     this.ui.touch.classList.toggle('hidden', mode !== 'play')
     if (mode === 'title' || mode === 'win') this.ui.toast.classList.add('hidden')
     else if (mode === 'play' && this.toastT > 0) this.ui.toast.classList.remove('hidden')
+    if (mode !== 'play') this.closeTalk()
     this.showTouchIfNeeded()
   }
 

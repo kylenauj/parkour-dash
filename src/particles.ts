@@ -8,6 +8,9 @@ export type Particle = {
   size: number
   color: string
   drag: number
+  grav: number
+  grow: number
+  ring: boolean
 }
 
 export class Particles {
@@ -40,6 +43,9 @@ export class Particles {
         size: size * (0.6 + Math.random() * 0.8),
         color,
         drag: 2.4,
+        grav: 420,
+        grow: 0,
+        ring: false,
       })
     }
   }
@@ -56,8 +62,32 @@ export class Particles {
         size: 2 + Math.random() * 2,
         color,
         drag: 3,
+        grav: 420,
+        grow: 0,
+        ring: false,
       })
     }
+  }
+
+  ring(x: number, y: number, color: string, size = 10) {
+    this.items.push({
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      life: 0.28,
+      max: 0.28,
+      size,
+      color,
+      drag: 0,
+      grav: 0,
+      grow: 140,
+      ring: true,
+    })
+  }
+
+  sparkle(x: number, y: number, color: string) {
+    this.emit(x, y, 10, color, 140, 3)
   }
 
   update(dt: number) {
@@ -65,9 +95,10 @@ export class Particles {
       p.life -= dt
       p.vx *= Math.max(0, 1 - p.drag * dt)
       p.vy *= Math.max(0, 1 - p.drag * dt)
-      p.vy += 420 * dt
+      p.vy += p.grav * dt
       p.x += p.vx * dt
       p.y += p.vy * dt
+      p.size += p.grow * dt
     }
     this.items = this.items.filter((p) => p.life > 0)
   }

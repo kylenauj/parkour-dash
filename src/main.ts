@@ -20,6 +20,13 @@ const game = new Game(canvas, {
   toast: el('#level-toast'),
   toastNum: el('#toast-num'),
   toastName: el('#toast-name'),
+  talk: el('#talk'),
+  talkWho: el('#talk-who'),
+  talkLine: el('#talk-line'),
+  unlock: el('#unlock'),
+  unlockName: el('#unlock-name'),
+  titleLooks: el('#title-looks'),
+  pauseLooks: el('#pause-looks'),
   touch: el('#touch'),
 })
 

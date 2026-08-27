@@ -2,16 +2,20 @@ import {
   crumble,
   makeWorld,
   moving,
+  npc,
   oneway,
   solid,
+  stash,
   type Crusher,
   type DripSpout,
   type Fan,
   type LevelId,
+  type Npc,
   type Orb,
   type Platform,
   type Prop,
   type Rect,
+  type Secret,
   type Sign,
   type World,
 } from './world'
@@ -32,6 +36,8 @@ function kit() {
   const fans: Fan[] = []
   const spouts: DripSpout[] = []
   const crushers: Crusher[] = []
+  const npcs: Npc[] = []
+  const secrets: Secret[] = []
 
   return {
     platforms,
@@ -43,6 +49,8 @@ function kit() {
     fans,
     spouts,
     crushers,
+    npcs,
+    secrets,
     s: (x: number, y: number, w: number, h: number) => platforms.push(solid(x, y, w, h)),
     o: (x: number, y: number, w: number) => platforms.push(oneway(x, y, w)),
     m: (
@@ -66,6 +74,8 @@ function kit() {
     d: (x: number, y: number, every: number, t = 0) => spouts.push({ x, y, every, t }),
     x: (x: number, y: number, w: number, h: number, range: number, speed: number, phase = 0) =>
       crushers.push({ x, y, w, h, originY: y, range, speed, phase }),
+    npc: (n: Npc) => npcs.push(n),
+    stash: (s: Secret) => secrets.push(s),
   }
 }
 
@@ -87,6 +97,27 @@ function gutters(): World {
   b.p('web', 16, 640)
   b.p('lamp', 880, 600)
   b.p('nest', 1280, 640)
+  b.npc(
+    npc(
+      'nix',
+      390,
+      640,
+      -1,
+      'Nix',
+      [
+        'Hey. Got a light? Nah, keep yours. That one is lucky.',
+        'You dash with the wings out. Looks stupid. Looks fast.',
+        'Take the ash stain. Wear the crawl.',
+      ],
+      'ash',
+      'ash',
+    ),
+  )
+
+  b.s(20, 520, 120, 24)
+  b.s(8, 430, 110, 24)
+  b.r(40, 390)
+  b.n(24, 390, 'Someone stashed a crumb up here')
 
   b.s(1800, 500, 160, 40)
   b.s(2040, 430, 160, 40)
@@ -168,6 +199,20 @@ function gutters(): World {
   b.r(7700, 250)
   b.v(8340, 144)
   b.n(8300, 140, 'Filter gate — crawl on')
+  b.npc(
+    npc(
+      'soot',
+      8480,
+      200,
+      -1,
+      'Soot',
+      [
+        'Gate’s open if you are. I am not. Break is eternal.',
+        'If you pick the place clean, the shell blushes. Pride thing.',
+      ],
+      'stock',
+    ),
+  )
 
   return makeWorld(
     0,
@@ -197,6 +242,26 @@ function filterBeds(): World {
   b.p('barrelTip', 260, 700)
   b.p('lamp', 400, 700)
   b.p('vent', 660, 680)
+  b.npc(
+    npc(
+      'gilt',
+      320,
+      700,
+      1,
+      'Gilt',
+      [
+        'Presses keep time. I keep smoke. Fair trade.',
+        'Goldleaf is rust that learned manners. Yours if you want it.',
+      ],
+      'goldleaf',
+      'goldleaf',
+    ),
+  )
+  b.s(16, 560, 130, 24)
+  b.s(8, 418, 130, 24)
+  b.stash(stash('midnight', 28, 394))
+  b.r(70, 378)
+  b.n(20, 390, 'A stash nobody claimed')
 
   b.c(980, 640, 120)
   b.c(1160, 640, 120)
@@ -309,6 +374,21 @@ function overflow(): World {
   b.p('nest', 240, 760)
   b.p('lamp', 700, 760)
   b.p('shroom', 800, 760)
+  b.npc(
+    npc(
+      'brine',
+      140,
+      760,
+      1,
+      'Brine',
+      [
+        'Current’s a liar. It carries you until it doesn’t.',
+        'You’re already wet. Might as well look it.',
+      ],
+      'wet',
+      'wet',
+    ),
+  )
 
   b.s(960, 720, 180, 40)
   b.s(1220, 680, 160, 40)
@@ -341,6 +421,22 @@ function overflow(): World {
   b.v(2660, 144)
   b.p('antenna', 2480, 52)
   b.p('lamp', 2680, 200)
+  b.npc(
+    npc(
+      'vex',
+      2488,
+      52,
+      -1,
+      'Vex',
+      [
+        'Took you long enough. Most of us stop at the sludge.',
+        'Ruby’s a warning color. Predators hate a cocky bug.',
+        'Wear it. Then get out. I like the quiet.',
+      ],
+      'ruby',
+      'ruby',
+    ),
+  )
 
   b.s(2880, 240, 160, 40)
   b.s(3200, 280, 140, 40)
