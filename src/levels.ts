@@ -298,7 +298,7 @@ function gutters(): World {
   b.k(5720, 780, 320)
   b.s(5240, 798, 300, 40)
   b.s(5720, 798, 320, 40)
-  b.n(5030, 440, 'Dash (Shift / J) — wings out, across the drain')
+  b.n(5030, 440, 'Dash (Shift / J) across the drain')
   b.r(5380, 430)
   b.r(5880, 390)
   b.v(6160, 404)

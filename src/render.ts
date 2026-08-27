@@ -1,4 +1,4 @@
-import { DASH_TIME, VIEW_H, VIEW_W } from './const'
+import { VIEW_H, VIEW_W } from './const'
 import { crisp, PX, prect, snap } from './pixel'
 import { lookById, LOOKS, type CosmeticId, type Look } from './cosmetics'
 import { bakeBabe, bakeBank, type SpriteBank } from './sprites'
@@ -810,7 +810,6 @@ export class Renderer {
     }
     ctx.globalAlpha = 1
 
-    if (player.dashing) this.drawDashAura(player)
     if (player.onGround && !player.dead) {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.38)'
       ctx.beginPath()
@@ -818,24 +817,6 @@ export class Renderer {
       ctx.fill()
     }
     this.drawRoach(spr, player.cx, player.bottom, player.facing, this.look, !player.sliding, player.squish)
-  }
-
-  private drawDashAura(player: Player) {
-    const ctx = this.ctx
-    const u = 1 - Math.max(0, player.dashT) / DASH_TIME
-    const col = player.slideDash ? '#ffe080' : '#7ef0ff'
-    ctx.globalAlpha = 0.7
-    for (let i = 0; i < 6; i++) {
-      prect(
-        ctx,
-        player.cx - player.facing * (10 + i * 7 + u * 8),
-        player.cy - 6 + (i % 3) * 5,
-        3,
-        2,
-        i % 2 === 0 ? col : '#c090ff',
-      )
-    }
-    ctx.globalAlpha = 1
   }
 
   private drawRoach(

@@ -75,7 +75,6 @@ export class Game {
   private looks: LookSave = loadLooks()
   private talk: { npc: Npc; i: number } | null = null
   private pops: Pop[] = []
-  private dashFlash = 0
   private unlockT = 0
 
   constructor(canvas: HTMLCanvasElement, ui: GameUI) {
@@ -171,7 +170,6 @@ export class Game {
       this.elapsed += this.talk ? 0 : dt
       this.toastT = Math.max(0, this.toastT - dt)
       this.unlockT = Math.max(0, this.unlockT - dt)
-      this.dashFlash = Math.max(0, this.dashFlash - dt)
       this.ui.toast.classList.toggle('hidden', this.toastT <= 0)
       this.ui.unlock.classList.toggle('hidden', this.unlockT <= 0)
       this.syncHud()
@@ -189,13 +187,6 @@ export class Game {
       this.pops,
       this.talk ? null : this.nearNpc(),
     )
-    if (this.dashFlash > 0) {
-      const ctx = this.canvas.getContext('2d')
-      if (ctx) {
-        ctx.fillStyle = `rgba(255, 244, 192, ${this.dashFlash * 1.4})`
-        ctx.fillRect(0, 0, VIEW_W, VIEW_H)
-      }
-    }
     if (this.respawnFlash > 0) {
       const ctx = this.canvas.getContext('2d')
       if (ctx) {
@@ -247,30 +238,13 @@ export class Game {
     if (p.justDashed) {
       const behind = Math.atan2(p.vy, p.vx) + Math.PI
       if (p.slideDash) {
-        this.particles.emitDir(p.cx, p.bottom - 4, 14, look.wings[1], 320, Math.PI, 1.1, 3)
-        this.particles.emitDir(p.cx, p.bottom, 10, '#8a6a48', 220, Math.PI / 2, 0.8, 4)
+        this.particles.emitDir(p.cx, p.bottom, 8, '#8a6a48', 200, Math.PI, 0.5, 3)
       } else {
-        this.particles.emitDir(p.cx, p.cy, 12, look.wings[1], 280, behind, 1.3, 4)
-        this.particles.emitDir(p.cx, p.cy, 8, look.wings[0], 340, behind, 0.9, 3)
-        this.particles.emitDir(p.cx, p.cy, 6, look.wings[3], 180, behind, 1.5, 3)
+        this.particles.emitDir(p.cx, p.cy, 6, '#9a8a70', 170, behind, 0.4, 2)
       }
       this.audio.dash()
       this.hitstop = 0.04
-      this.dashFlash = 0.07
       this.camera.bump(0.25)
-    }
-    if (p.dashing && Math.random() < 0.6) {
-      const behind = Math.atan2(p.vy, p.vx) + Math.PI
-      this.particles.emitDir(
-        p.cx,
-        p.cy,
-        1,
-        Math.random() > 0.45 ? look.wings[1] : look.wings[0],
-        70,
-        behind,
-        0.85,
-        3,
-      )
     }
     if (p.justLanded) {
       this.particles.burstUp(p.cx, p.bottom, 12, '#8a6a48')
