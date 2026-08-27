@@ -4,23 +4,19 @@ import type { Particles } from './particles'
 import type { Player } from './player'
 import type { Platform, Prop, World } from './world'
 
-const SKY_TOP = '#0a1224'
-const SKY_HORIZON = '#1b1140'
-const SKY_GLOW = '#ff5a7a'
-
-type Building = { x: number; w: number; h: number; windows: { x: number; y: number }[] }
+type PipeDeco = { x: number; w: number; h: number; rust: number }
 
 export class Renderer {
-  private buildingsBack: Building[]
-  private buildingsMid: Building[]
-  private stars: { x: number; y: number; r: number }[]
+  private bricks: { x: number; y: number; w: number; h: number }[]
+  private farPipes: PipeDeco[]
+  private drips: { x: number; delay: number }[]
   private ctx: CanvasRenderingContext2D
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx
-    this.stars = makeStars()
-    this.buildingsBack = makeSkyline(0.55, 90, 280, 1)
-    this.buildingsMid = makeSkyline(0.85, 140, 420, 2)
+    this.bricks = makeBricks()
+    this.farPipes = makeFarPipes()
+    this.drips = makeDrips()
   }
 
   draw(world: World, player: Player, cam: Camera, particles: Particles, time: number) {
@@ -28,14 +24,11 @@ export class Renderer {
     const shake = cam.offset()
     ctx.clearRect(0, 0, VIEW_W, VIEW_H)
 
-    this.drawSky(time)
-    this.drawStars()
-    this.drawSkyline(this.buildingsBack, cam.x * 0.12, '#10182c', time)
-    this.drawSkyline(this.buildingsMid, cam.x * 0.28, '#152038', time)
+    this.drawSewer(time)
+    this.drawFarPipes(cam.x)
 
     ctx.save()
     ctx.translate(-cam.x + shake.x, -cam.y + shake.y)
-    this.drawGrid(world)
     this.drawPlatforms(world)
     this.drawProps(world)
     this.drawSpikes(world)
@@ -50,99 +43,125 @@ export class Renderer {
     this.drawVignette()
   }
 
-  private drawSky(time: number) {
+  private drawSewer(time: number) {
     const ctx = this.ctx
     const g = ctx.createLinearGradient(0, 0, 0, VIEW_H)
-    g.addColorStop(0, SKY_TOP)
-    g.addColorStop(0.55, SKY_HORIZON)
-    g.addColorStop(1, SKY_GLOW)
+    g.addColorStop(0, '#1a1410')
+    g.addColorStop(0.45, '#2a2118')
+    g.addColorStop(1, '#3a2a1c')
     ctx.fillStyle = g
     ctx.fillRect(0, 0, VIEW_W, VIEW_H)
 
-    const sunX = VIEW_W * 0.72
-    const sunY = VIEW_H * 0.62
-    const sun = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 220 + Math.sin(time) * 8)
-    sun.addColorStop(0, 'rgba(255, 196, 120, 0.85)')
-    sun.addColorStop(0.2, 'rgba(255, 90, 122, 0.35)')
-    sun.addColorStop(1, 'rgba(255, 90, 122, 0)')
-    ctx.fillStyle = sun
-    ctx.fillRect(0, 0, VIEW_W, VIEW_H)
-  }
+    ctx.fillStyle = '#241c16'
+    for (const b of this.bricks) ctx.fillRect(b.x, b.y, b.w, b.h)
 
-  private drawStars() {
-    const ctx = this.ctx
-    ctx.fillStyle = 'rgba(255,255,255,0.7)'
-    for (const s of this.stars) {
+    ctx.fillStyle = 'rgba(80, 140, 90, 0.08)'
+    ctx.fillRect(0, VIEW_H * 0.72, VIEW_W, VIEW_H * 0.28)
+
+    ctx.strokeStyle = 'rgba(180, 210, 170, 0.18)'
+    ctx.lineWidth = 1.5
+    for (const d of this.drips) {
+      const y = ((time * 90 + d.delay) % (VIEW_H + 40)) - 20
       ctx.beginPath()
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
-      ctx.fill()
-    }
-  }
-
-  private drawSkyline(list: Building[], scroll: number, color: string, time: number) {
-    const ctx = this.ctx
-    ctx.fillStyle = color
-    for (const b of list) {
-      const x = ((b.x - scroll) % (VIEW_W + 400)) - 80
-      const y = VIEW_H - b.h + 40
-      ctx.fillRect(x, y, b.w, b.h)
-      ctx.fillStyle = 'rgba(255, 210, 140, 0.35)'
-      for (const w of b.windows) {
-        if ((Math.sin(time * 0.8 + w.x) + 1) * 0.5 < 0.25) continue
-        ctx.fillRect(x + w.x, y + w.y, 4, 6)
-      }
-      ctx.fillStyle = color
-    }
-  }
-
-  private drawGrid(world: World) {
-    const ctx = this.ctx
-    ctx.strokeStyle = 'rgba(62, 224, 255, 0.04)'
-    ctx.lineWidth = 1
-    for (let x = 0; x < world.w; x += 80) {
-      ctx.beginPath()
-      ctx.moveTo(x, 0)
-      ctx.lineTo(x, world.h)
+      ctx.moveTo(d.x, y)
+      ctx.lineTo(d.x, y + 10)
       ctx.stroke()
+    }
+  }
+
+  private drawFarPipes(scroll: number) {
+    const ctx = this.ctx
+    for (const p of this.farPipes) {
+      const x = ((p.x - scroll * 0.2) % (VIEW_W + 260)) - 80
+      ctx.fillStyle = p.rust > 0.5 ? '#4a3728' : '#3d4a42'
+      roundRect(ctx, x, VIEW_H - p.h + 30, p.w, p.h, Math.min(12, p.w / 2))
+      ctx.fill()
+      ctx.fillStyle = 'rgba(255,220,160,0.08)'
+      ctx.fillRect(x + 4, VIEW_H - p.h + 38, 5, p.h - 50)
     }
   }
 
   private drawPlatforms(world: World) {
-    const ctx = this.ctx
     for (const p of world.platforms) {
-      if (p.type === 'oneway') {
-        this.girder(p)
-        continue
-      }
-      ctx.fillStyle = p.type === 'moving' ? '#1c3054' : '#17263f'
-      ctx.fillRect(p.x, p.y, p.w, p.h)
-      ctx.fillStyle = p.type === 'moving' ? '#ff3d8a' : '#3ee0ff'
-      ctx.shadowColor = ctx.fillStyle
-      ctx.shadowBlur = 12
-      ctx.fillRect(p.x, p.y, p.w, 5)
-      ctx.shadowBlur = 0
-      ctx.fillStyle = 'rgba(255,255,255,0.06)'
-      ctx.fillRect(p.x, p.y + 5, p.w, 8)
+      if (p.type === 'oneway') this.drawHangingPipe(p)
+      else if (p.h > p.w * 1.35) this.drawRiser(p)
+      else this.drawPipe(p)
     }
   }
 
-  private girder(p: Platform) {
+  private drawPipe(p: Platform) {
     const ctx = this.ctx
-    ctx.fillStyle = '#2a3d5c'
-    ctx.fillRect(p.x, p.y, p.w, 8)
-    ctx.fillStyle = '#7dffce'
-    ctx.shadowColor = '#7dffce'
-    ctx.shadowBlur = 10
-    ctx.fillRect(p.x, p.y, p.w, 3)
-    ctx.shadowBlur = 0
-    ctx.strokeStyle = 'rgba(125, 255, 206, 0.35)'
+    const moving = p.type === 'moving'
+    const body = moving ? '#6a3d2a' : '#7a5a3a'
+    const lip = moving ? '#c45a2a' : '#c4a15a'
+    ctx.fillStyle = '#2c2118'
+    ctx.fillRect(p.x, p.y + 8, p.w, Math.max(12, p.h - 8))
+    ctx.fillStyle = body
+    roundRect(ctx, p.x, p.y, p.w, 18, 9)
+    ctx.fill()
+    ctx.fillStyle = lip
+    ctx.fillRect(p.x + 2, p.y + 3, p.w - 4, 4)
+    ctx.fillStyle = 'rgba(255,230,180,0.18)'
+    ctx.fillRect(p.x + 8, p.y + 5, Math.max(12, p.w * 0.35), 3)
+    this.rivets(p.x, p.y + 10, p.w)
+    this.pipeCap(p.x, p.y + 9)
+    this.pipeCap(p.x + p.w, p.y + 9)
+  }
+
+  private drawRiser(p: Platform) {
+    const ctx = this.ctx
+    ctx.fillStyle = '#6e5340'
+    roundRect(ctx, p.x, p.y, p.w, p.h, Math.min(10, p.w / 2))
+    ctx.fill()
+    ctx.fillStyle = '#c4a15a'
+    ctx.fillRect(p.x + 3, p.y + 4, 4, p.h - 8)
+    ctx.fillStyle = 'rgba(255,230,180,0.14)'
+    ctx.fillRect(p.x + 8, p.y + 6, 3, p.h - 12)
+    for (let y = p.y + 16; y < p.y + p.h - 10; y += 36) {
+      ctx.fillStyle = '#4a3828'
+      ctx.fillRect(p.x - 3, y, p.w + 6, 6)
+      ctx.fillStyle = '#c4a15a'
+      ctx.fillRect(p.x - 2, y + 1, p.w + 4, 2)
+    }
+  }
+
+  private drawHangingPipe(p: Platform) {
+    const ctx = this.ctx
+    ctx.fillStyle = '#5a4634'
+    roundRect(ctx, p.x, p.y, p.w, 12, 6)
+    ctx.fill()
+    ctx.fillStyle = '#d2b56a'
+    ctx.fillRect(p.x + 2, p.y + 2, p.w - 4, 3)
+    ctx.strokeStyle = 'rgba(180, 150, 90, 0.45)'
     ctx.lineWidth = 2
-    for (let x = p.x + 10; x < p.x + p.w; x += 18) {
+    for (let x = p.x + 12; x < p.x + p.w; x += 22) {
       ctx.beginPath()
-      ctx.moveTo(x, p.y + 8)
-      ctx.lineTo(x - 6, p.y + 16)
+      ctx.moveTo(x, p.y + 12)
+      ctx.lineTo(x, p.y + 22)
       ctx.stroke()
     }
+  }
+
+  private rivets(x: number, y: number, w: number) {
+    const ctx = this.ctx
+    ctx.fillStyle = '#d8c090'
+    for (let i = x + 14; i < x + w - 8; i += 28) {
+      ctx.beginPath()
+      ctx.arc(i, y, 2.2, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+
+  private pipeCap(x: number, y: number) {
+    const ctx = this.ctx
+    ctx.fillStyle = '#c4a15a'
+    ctx.beginPath()
+    ctx.arc(x, y, 10, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#3a2a1c'
+    ctx.beginPath()
+    ctx.arc(x, y, 5, 0, Math.PI * 2)
+    ctx.fill()
   }
 
   private drawProps(world: World) {
@@ -154,48 +173,39 @@ export class Renderer {
     ctx.save()
     ctx.translate(prop.x, prop.y)
     if (prop.kind === 'vent') {
-      ctx.fillStyle = '#22344f'
-      ctx.fillRect(0, -22, 46, 22)
-      ctx.fillStyle = '#3ee0ff'
-      ctx.fillRect(6, -16, 10, 4)
-      ctx.fillRect(22, -16, 10, 4)
+      ctx.fillStyle = '#6a5340'
+      ctx.fillRect(0, -26, 50, 26)
+      ctx.fillStyle = '#c4a15a'
+      ctx.fillRect(8, -18, 12, 8)
+      ctx.fillRect(28, -18, 12, 8)
     } else if (prop.kind === 'tank') {
-      ctx.fillStyle = '#1b2c44'
-      ctx.fillRect(4, -50, 44, 50)
-      ctx.strokeStyle = '#3ee0ff'
-      ctx.lineWidth = 2
-      ctx.strokeRect(4, -50, 44, 50)
-      ctx.beginPath()
-      ctx.arc(26, -50, 22, Math.PI, 0)
+      ctx.fillStyle = '#5a4636'
+      roundRect(ctx, 0, -56, 52, 56, 10)
       ctx.fill()
-      ctx.stroke()
-    } else if (prop.kind === 'antenna') {
-      ctx.strokeStyle = '#9ad8ff'
+      ctx.strokeStyle = '#c4a15a'
       ctx.lineWidth = 3
+      ctx.strokeRect(6, -48, 40, 40)
+    } else if (prop.kind === 'antenna') {
+      ctx.fillStyle = '#6e5340'
+      ctx.fillRect(2, -96, 14, 96)
+      ctx.fillStyle = '#c4a15a'
+      ctx.fillRect(0, -20, 18, 8)
       ctx.beginPath()
-      ctx.moveTo(8, 0)
-      ctx.lineTo(8, -90)
-      ctx.stroke()
-      ctx.strokeStyle = '#ff3d8a'
+      ctx.arc(9, -100, 8, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#2a2118'
       ctx.beginPath()
-      ctx.moveTo(8, -40)
-      ctx.lineTo(28, -58)
-      ctx.moveTo(8, -40)
-      ctx.lineTo(-12, -58)
-      ctx.stroke()
-      ctx.fillStyle = '#7dffce'
-      ctx.beginPath()
-      ctx.arc(8, -92, 5, 0, Math.PI * 2)
+      ctx.arc(9, -100, 4, 0, Math.PI * 2)
       ctx.fill()
     } else {
-      ctx.fillStyle = '#22344f'
-      ctx.fillRect(0, -18, 90, 18)
-      ctx.fillRect(70, -70, 12, 70)
-      ctx.strokeStyle = '#ff3d8a'
-      ctx.lineWidth = 4
+      ctx.fillStyle = '#5a4634'
+      ctx.fillRect(0, -16, 86, 16)
+      ctx.fillRect(64, -64, 14, 64)
+      ctx.strokeStyle = '#c45a2a'
+      ctx.lineWidth = 5
       ctx.beginPath()
-      ctx.moveTo(76, -70)
-      ctx.lineTo(-10, -70)
+      ctx.moveTo(71, -64)
+      ctx.lineTo(-6, -64)
       ctx.stroke()
     }
     ctx.restore()
@@ -203,9 +213,7 @@ export class Renderer {
 
   private drawSpikes(world: World) {
     const ctx = this.ctx
-    ctx.fillStyle = '#ff5c7a'
-    ctx.shadowColor = '#ff3d8a'
-    ctx.shadowBlur = 8
+    ctx.fillStyle = '#7a8a7a'
     for (const s of world.spikes) {
       const n = Math.max(1, Math.floor(s.w / 14))
       const w = s.w / n
@@ -219,7 +227,6 @@ export class Renderer {
         ctx.fill()
       }
     }
-    ctx.shadowBlur = 0
   }
 
   private drawOrbs(world: World, time: number) {
@@ -229,20 +236,17 @@ export class Renderer {
       const bob = Math.sin(time * 3 + o.x) * 4
       const x = o.x + o.w / 2
       const y = o.y + o.h / 2 + bob
-      ctx.fillStyle = 'rgba(255, 209, 102, 0.22)'
+      ctx.fillStyle = 'rgba(210, 160, 70, 0.22)'
       ctx.beginPath()
-      ctx.arc(x, y, 14, 0, Math.PI * 2)
+      ctx.arc(x, y, 13, 0, Math.PI * 2)
       ctx.fill()
-      ctx.fillStyle = '#ffd166'
-      ctx.shadowColor = '#ffd166'
-      ctx.shadowBlur = 16
+      ctx.fillStyle = '#e0b15a'
       ctx.beginPath()
-      ctx.arc(x, y, 7, 0, Math.PI * 2)
+      ctx.ellipse(x, y, 7, 5, 0.4, 0, Math.PI * 2)
       ctx.fill()
-      ctx.shadowBlur = 0
-      ctx.fillStyle = '#fff6d5'
+      ctx.fillStyle = '#f3e0a8'
       ctx.beginPath()
-      ctx.arc(x - 2, y - 2, 2.4, 0, Math.PI * 2)
+      ctx.arc(x - 2, y - 1.5, 2, 0, Math.PI * 2)
       ctx.fill()
     }
   }
@@ -251,46 +255,47 @@ export class Renderer {
     const ctx = this.ctx
     for (const c of world.checkpoints) {
       const lit = c.armed
-      ctx.fillStyle = '#1a2740'
-      ctx.fillRect(c.x + 10, c.y, 6, c.h)
-      ctx.fillStyle = lit ? '#7dffce' : '#3ee0ff'
-      ctx.globalAlpha = lit ? 0.9 : 0.45 + Math.sin(time * 2) * 0.1
-      ctx.shadowColor = ctx.fillStyle
-      ctx.shadowBlur = lit ? 18 : 8
+      ctx.fillStyle = '#4a3828'
+      ctx.fillRect(c.x + 8, c.y, 10, c.h)
+      ctx.fillStyle = lit ? '#d2b56a' : '#7a8a6a'
+      ctx.globalAlpha = lit ? 0.95 : 0.5 + Math.sin(time * 2) * 0.12
       ctx.beginPath()
-      ctx.moveTo(c.x + 16, c.y + 4)
-      ctx.lineTo(c.x + 16, c.y + 28)
-      ctx.lineTo(c.x + 42, c.y + 16)
-      ctx.closePath()
+      ctx.arc(c.x + 13, c.y + 10, 9, 0, Math.PI * 2)
       ctx.fill()
       ctx.globalAlpha = 1
-      ctx.shadowBlur = 0
+      ctx.fillStyle = '#2a2118'
+      ctx.beginPath()
+      ctx.arc(c.x + 13, c.y + 10, 4, 0, Math.PI * 2)
+      ctx.fill()
     }
   }
 
   private drawGoal(world: World, time: number) {
     const ctx = this.ctx
     const g = world.goal
-    const pulse = 0.55 + Math.sin(time * 3) * 0.2
+    const pulse = 0.5 + Math.sin(time * 3) * 0.2
     ctx.save()
     ctx.translate(g.x, g.y)
-    ctx.strokeStyle = `rgba(125, 255, 206, ${pulse})`
+    ctx.fillStyle = '#5a4634'
+    roundRect(ctx, 0, 0, g.w, g.h, 12)
+    ctx.fill()
+    ctx.strokeStyle = `rgba(196, 161, 90, ${pulse})`
     ctx.lineWidth = 4
-    ctx.shadowColor = '#7dffce'
-    ctx.shadowBlur = 18
-    ctx.strokeRect(0, 0, g.w, g.h)
-    ctx.fillStyle = `rgba(62, 224, 255, ${0.12 + pulse * 0.08})`
-    ctx.fillRect(8, 8, g.w - 16, g.h - 16)
-    ctx.fillStyle = '#e8f4ff'
-    ctx.font = '700 14px Rajdhani, sans-serif'
-    ctx.fillText('END', 18, g.h / 2 + 4)
+    ctx.strokeRect(6, 6, g.w - 12, g.h - 12)
+    ctx.fillStyle = `rgba(20, 16, 12, ${0.35 + pulse * 0.2})`
+    ctx.beginPath()
+    ctx.arc(g.w / 2, g.h / 2, 18, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#f0e0c0'
+    ctx.font = '700 13px Rajdhani, sans-serif'
+    ctx.fillText('OUT', 22, g.h / 2 + 4)
     ctx.restore()
   }
 
   private drawSigns(world: World) {
     const ctx = this.ctx
     ctx.font = '600 16px Rajdhani, sans-serif'
-    ctx.fillStyle = 'rgba(232, 244, 255, 0.72)'
+    ctx.fillStyle = 'rgba(232, 214, 180, 0.78)'
     for (const s of world.signs) ctx.fillText(s.text, s.x, s.y)
   }
 
@@ -306,20 +311,10 @@ export class Renderer {
 
   private drawPlayer(player: Player, time: number) {
     const ctx = this.ctx
-    if (player.scarf.length > 1) {
-      ctx.strokeStyle = '#ff3d8a'
-      ctx.lineWidth = 4
-      ctx.lineCap = 'round'
-      ctx.beginPath()
-      ctx.moveTo(player.scarf[0].x, player.scarf[0].y)
-      for (const p of player.scarf) ctx.lineTo(p.x, p.y)
-      ctx.stroke()
-    }
-
     for (const g of player.ghosts) {
-      ctx.globalAlpha = g.life * 2.2
-      ctx.fillStyle = '#3ee0ff'
-      roundRect(ctx, g.x, g.y, player.w, g.h, 6)
+      ctx.globalAlpha = g.life * 1.8
+      ctx.fillStyle = '#6b4423'
+      roundRect(ctx, g.x, g.y, player.w, g.h, 8)
       ctx.fill()
     }
     ctx.globalAlpha = 1
@@ -327,28 +322,76 @@ export class Renderer {
     const h = player.h * player.squish
     const y = player.y + player.h - h
     const run = player.onGround && Math.abs(player.vx) > 40
-    const bob = run ? Math.sin(time * 18) * 1.5 : 0
+    const climb = player.onWall !== 0 && !player.onGround
+    const bob = run ? Math.sin(time * 20) * 1.4 : 0
+    const gait = time * (run ? 22 : climb ? 16 : 6)
 
     ctx.save()
     ctx.translate(player.cx, y + h / 2 + bob)
+    if (climb) ctx.rotate((player.onWall * Math.PI) / 2)
     ctx.scale(player.facing, 1)
 
-    ctx.fillStyle = '#7dffce'
-    ctx.shadowColor = '#7dffce'
-    ctx.shadowBlur = player.dashing ? 22 : 10
-    roundRect(ctx, -player.w / 2, -h / 2, player.w, h, 7)
-    ctx.fill()
-    ctx.shadowBlur = 0
+    const bw = player.w
+    const bh = h
 
-    ctx.fillStyle = '#041018'
-    ctx.fillRect(2, -h / 2 + 8, 5, 5)
-    ctx.fillStyle = '#e8f4ff'
-    ctx.fillRect(3, -h / 2 + 9, 2, 2)
-
-    if (player.sliding) {
-      ctx.fillStyle = '#3ee0ff'
-      ctx.fillRect(-player.w / 2, h / 2 - 4, player.w, 4)
+    ctx.strokeStyle = '#1a120c'
+    ctx.lineWidth = 2
+    ctx.lineCap = 'round'
+    const legs = [
+      { x: -bw * 0.18, base: Math.PI * 0.2 },
+      { x: 0, base: Math.PI * 0.12 },
+      { x: bw * 0.2, base: Math.PI * 0.22 },
+    ]
+    for (let i = 0; i < legs.length; i++) {
+      const swing = Math.sin(gait + i * 1.1) * 0.45
+      const lx = legs[i].x
+      ctx.beginPath()
+      ctx.moveTo(lx, 2)
+      ctx.quadraticCurveTo(lx - 10, bh * 0.15, lx - 14, bh * 0.42 + swing * 6)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(lx, 2)
+      ctx.quadraticCurveTo(lx + 10, bh * 0.15, lx + 14, bh * 0.42 - swing * 6)
+      ctx.stroke()
     }
+
+    ctx.fillStyle = '#5a3a1c'
+    ctx.beginPath()
+    ctx.ellipse(2, 4, bw * 0.42, bh * 0.38, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#6e4624'
+    ctx.beginPath()
+    ctx.ellipse(-2, -2, bw * 0.34, bh * 0.3, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#7a522c'
+    ctx.beginPath()
+    ctx.ellipse(bw * 0.22, -bh * 0.08, bw * 0.22, bh * 0.22, 0, 0, Math.PI * 2)
+    ctx.fill()
+
+    ctx.strokeStyle = '#4a3018'
+    ctx.lineWidth = 1.4
+    ctx.beginPath()
+    ctx.ellipse(2, 4, bw * 0.28, bh * 0.18, 0, 0.2, Math.PI - 0.2)
+    ctx.stroke()
+
+    ctx.strokeStyle = '#2a1a10'
+    ctx.lineWidth = 1.6
+    const ant = Math.sin(time * 8) * 0.15
+    ctx.beginPath()
+    ctx.moveTo(bw * 0.28, -bh * 0.18)
+    ctx.quadraticCurveTo(bw * 0.42, -bh * 0.55, bw * 0.55, -bh * 0.62 + ant * 8)
+    ctx.moveTo(bw * 0.22, -bh * 0.2)
+    ctx.quadraticCurveTo(bw * 0.3, -bh * 0.58, bw * 0.38, -bh * 0.7 - ant * 8)
+    ctx.stroke()
+
+    ctx.fillStyle = '#120c08'
+    ctx.beginPath()
+    ctx.arc(bw * 0.3, -bh * 0.1, 2.1, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#f2e6c8'
+    ctx.beginPath()
+    ctx.arc(bw * 0.32, -bh * 0.12, 0.8, 0, Math.PI * 2)
+    ctx.fill()
 
     ctx.restore()
   }
@@ -358,13 +401,13 @@ export class Renderer {
     const g = ctx.createRadialGradient(
       VIEW_W / 2,
       VIEW_H / 2,
-      VIEW_H * 0.2,
+      VIEW_H * 0.18,
       VIEW_W / 2,
       VIEW_H / 2,
-      VIEW_H * 0.78,
+      VIEW_H * 0.82,
     )
     g.addColorStop(0, 'rgba(0,0,0,0)')
-    g.addColorStop(1, 'rgba(0,0,0,0.42)')
+    g.addColorStop(1, 'rgba(12, 8, 6, 0.55)')
     ctx.fillStyle = g
     ctx.fillRect(0, 0, VIEW_W, VIEW_H)
   }
@@ -388,31 +431,38 @@ function roundRect(
   ctx.closePath()
 }
 
-function makeStars() {
-  const rng = mulberry(7)
-  const stars = []
-  for (let i = 0; i < 70; i++) {
-    stars.push({ x: rng() * VIEW_W, y: rng() * VIEW_H * 0.5, r: rng() * 1.4 + 0.3 })
+function makeBricks() {
+  const rng = mulberry(3)
+  const list: { x: number; y: number; w: number; h: number }[] = []
+  for (let y = 0; y < VIEW_H; y += 22) {
+    const offset = (y / 22) % 2 === 0 ? 0 : 18
+    for (let x = -20 + offset; x < VIEW_W; x += 36) {
+      if (rng() > 0.72) list.push({ x, y, w: 32, h: 16 })
+    }
   }
-  return stars
+  return list
 }
 
-function makeSkyline(density: number, minH: number, maxH: number, seed: number): Building[] {
-  const rng = mulberry(seed * 99)
-  const list: Building[] = []
+function makeFarPipes(): PipeDeco[] {
+  const rng = mulberry(11)
+  const list: PipeDeco[] = []
   let x = -40
-  while (x < VIEW_W + 500) {
-    const w = 28 + rng() * 70
-    const h = minH + rng() * (maxH - minH) * density
-    const windows: { x: number; y: number }[] = []
-    for (let wx = 6; wx < w - 6; wx += 10) {
-      for (let wy = 12; wy < h - 20; wy += 14) {
-        if (rng() > 0.55) windows.push({ x: wx, y: wy })
-      }
-    }
-    list.push({ x, w, h, windows })
-    x += w + 6 + rng() * 18
+  while (x < VIEW_W + 400) {
+    list.push({
+      x,
+      w: 22 + rng() * 40,
+      h: 120 + rng() * 280,
+      rust: rng(),
+    })
+    x += 36 + rng() * 50
   }
+  return list
+}
+
+function makeDrips() {
+  const rng = mulberry(21)
+  const list: { x: number; delay: number }[] = []
+  for (let i = 0; i < 18; i++) list.push({ x: rng() * VIEW_W, delay: rng() * 400 })
   return list
 }
 

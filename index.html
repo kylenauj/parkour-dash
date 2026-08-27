@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Skyline — Rooftop Parkour</title>
+    <title>Pipe Roach — Cockroach Parkour</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,7 +14,7 @@
   </head>
   <body>
     <div id="game-root">
-      <canvas id="game" width="1280" height="720" aria-label="Skyline parkour game"></canvas>
+      <canvas id="game" width="1280" height="720" aria-label="Pipe Roach parkour game"></canvas>
 
       <div id="hud" class="overlay hidden" aria-live="polite">
         <div class="hud-left">
@@ -23,7 +23,7 @@
             <span id="hud-time">0:00.00</span>
           </div>
           <div class="hud-stat">
-            <span class="hud-label">Orbs</span>
+            <span class="hud-label">Crumbs</span>
             <span id="hud-orbs">0 / 10</span>
           </div>
           <div class="hud-stat">
@@ -40,10 +40,10 @@
 
       <div id="title-screen" class="overlay panel-screen">
         <div class="panel">
-          <p class="eyebrow">Rooftop parkour</p>
-          <h1>SKYLINE</h1>
+          <p class="eyebrow">Cockroach parkour</p>
+          <h1>PIPE ROACH</h1>
           <p class="lede">
-            Race the dusk across neon ledges. Jump, wall-kick, slide, and dash your way to the last antenna.
+            Skitter the plumbing. Jump the gaps, kick from pipe to pipe, and dash the open drains.
           </p>
           <button id="btn-play" type="button" class="primary">Start run</button>
           <ul class="controls">
@@ -60,7 +60,7 @@
         <div class="panel">
           <p class="eyebrow">Paused</p>
           <h2>Take a breath</h2>
-          <p class="lede">The city can wait. Resume, retry this checkpoint, or start the whole run over.</p>
+          <p class="lede">The pipes can wait. Resume, retry this checkpoint, or start the whole run over.</p>
           <div class="btn-row">
             <button id="btn-resume" type="button" class="primary">Resume</button>
             <button id="btn-retry" type="button" class="ghost">Checkpoint</button>
@@ -71,7 +71,7 @@
 
       <div id="win-screen" class="overlay panel-screen hidden">
         <div class="panel">
-          <p class="eyebrow">Antenna reached</p>
+          <p class="eyebrow">Drain reached</p>
           <h2>Run complete</h2>
           <p id="win-copy" class="lede"></p>
           <div id="win-stats" class="win-stats"></div>

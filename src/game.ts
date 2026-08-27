@@ -144,26 +144,26 @@ export class Game {
   private fx() {
     const p = this.player
     if (p.justJumped) {
-      this.particles.burstUp(p.cx, p.bottom, 8, '#9ad8ff')
+      this.particles.burstUp(p.cx, p.bottom, 8, '#c4a15a')
       if (p.jumpedFromWall) this.audio.wallJump()
       else this.audio.jump()
     }
     if (p.justDashed) {
-      this.particles.emit(p.cx, p.cy, 14, '#3ee0ff', 220, 4)
+      this.particles.emit(p.cx, p.cy, 14, '#6b4423', 220, 4)
       this.audio.dash()
       this.hitstop = 0.03
       this.camera.bump(0.25)
     }
     if (p.justLanded) {
-      this.particles.burstUp(p.cx, p.bottom, 10, '#c9d8ea')
+      this.particles.burstUp(p.cx, p.bottom, 10, '#8a6a48')
       this.audio.land(p.landSpeed > 700)
       if (p.landSpeed > 700) this.camera.bump(0.2)
     }
     if (p.sliding && p.onGround && Math.random() < 0.4) {
-      this.particles.emit(p.cx, p.bottom, 1, '#8aa0b8', 40, 2)
+      this.particles.emit(p.cx, p.bottom, 1, '#6b5344', 40, 2)
     }
     if (p.onGround && Math.abs(p.vx) > 220 && Math.random() < 0.35) {
-      this.particles.emit(p.x + (p.facing < 0 ? p.w : 0), p.bottom, 1, '#6d7f95', 30, 2)
+      this.particles.emit(p.x + (p.facing < 0 ? p.w : 0), p.bottom, 1, '#5a4634', 30, 2)
     }
   }
 
@@ -172,7 +172,7 @@ export class Game {
     for (const orb of this.world.orbs) {
       if (!orb.got && aabb(p, orb)) {
         orb.got = true
-        this.particles.emit(orb.x + 8, orb.y + 8, 16, '#ffd166', 160, 3)
+        this.particles.emit(orb.x + 8, orb.y + 8, 16, '#e0b15a', 160, 3)
         this.audio.orb()
       }
     }
@@ -181,7 +181,7 @@ export class Game {
         c.armed = true
         this.player.setSpawn(c.x, c.y - 8)
         this.audio.checkpoint()
-        this.particles.emit(c.x + 14, c.y + 16, 12, '#7dffce', 120, 3)
+        this.particles.emit(c.x + 14, c.y + 16, 12, '#d2b56a', 120, 3)
       }
     }
     if (aabb(p, this.world.goal)) this.finish()
@@ -206,7 +206,7 @@ export class Game {
   private die() {
     this.player.dead = true
     this.deaths += 1
-    this.particles.emit(this.player.cx, this.player.cy, 22, '#ff5c7a', 240, 4)
+    this.particles.emit(this.player.cx, this.player.cy, 22, '#c45a2a', 240, 4)
     this.audio.death()
     this.camera.bump(0.55)
     this.hitstop = 0.08
@@ -233,11 +233,11 @@ export class Game {
     const orbs = this.world.orbs.filter((o) => o.got).length
     this.ui.winCopy.textContent =
       orbs === this.world.orbs.length
-        ? 'Clean sweep. Every orb, one skyline, and the city still humming below.'
-        : 'You tagged the last antenna. Hunt the remaining orbs on the next pass if you want a perfect line.'
+        ? 'Every crumb, every pipe. You skittered the whole drain clean.'
+        : 'You reached the open drain. Grab the rest of the crumbs on the next pass if you want a perfect run.'
     this.ui.winStats.innerHTML = `
       <div><span class="k">Time</span><span class="v">${formatTime(this.elapsed)}</span></div>
-      <div><span class="k">Orbs</span><span class="v">${orbs} / ${this.world.orbs.length}</span></div>
+      <div><span class="k">Crumbs</span><span class="v">${orbs} / ${this.world.orbs.length}</span></div>
       <div><span class="k">Falls</span><span class="v">${this.deaths}</span></div>
     `
     this.setMode('win')

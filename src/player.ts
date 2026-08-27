@@ -18,6 +18,8 @@ import {
   PLAYER_W,
   RUN_SPEED,
   SLIDE_FRICTION,
+  WALL_CONTROL_LOCK,
+  WALL_COYOTE,
   WALL_JUMP_X,
   WALL_JUMP_Y,
   WALL_LOCK,
@@ -47,6 +49,10 @@ export class Player {
   jumpBuf = 0
   dashT = 0
   wallLock = 0
+  wallCoyote = 0
+  wallMemory = 0
+  lastWall = 0
+  controlLock = 0
   dropT = 0
   ghosts: Ghost[] = []
   scarf: { x: number; y: number }[] = []
@@ -83,6 +89,10 @@ export class Player {
     this.onWall = 0
     this.dashT = 0
     this.coyote = 0
+    this.wallCoyote = 0
+    this.wallMemory = 0
+    this.lastWall = 0
+    this.controlLock = 0
     this.jumpBuf = 0
     this.dead = false
     this.ghosts = []
@@ -107,7 +117,9 @@ export class Player {
     this.jumpedFromWall = false
     this.justDashed = false
     this.wallLock = Math.max(0, this.wallLock - dt)
+    this.controlLock = Math.max(0, this.controlLock - dt)
     this.dropT = Math.max(0, this.dropT - dt)
+    this.wallCoyote = Math.max(0, this.wallCoyote - dt)
     this.squish += (1 - this.squish) * Math.min(1, dt * 12)
 
     if (input.jumpPressed) this.jumpBuf = JUMP_BUFFER
@@ -116,7 +128,7 @@ export class Player {
     this.handleDash(input)
     this.handleSlide(input, world)
 
-    if (!this.dashing) this.accelerate(input, dt)
+    if (!this.dashing && this.controlLock <= 0) this.accelerate(input, dt)
 
     if (this.dashing) {
       this.dashT -= dt
@@ -196,7 +208,7 @@ export class Player {
   }
 
   private applyGravity(input: Input, dt: number) {
-    const clinging = this.onWall !== 0 && this.vy > 0 && input.x === this.onWall && this.wallLock <= 0
+    const clinging = this.onWall !== 0 && this.vy > 0 && this.wallLock <= 0
     if (clinging) {
       this.vy = Math.min(this.vy + GRAVITY * 0.25 * dt, WALL_SLIDE_SPEED)
       return
@@ -222,13 +234,17 @@ export class Player {
       }
     }
 
-    if (this.onWall !== 0 && !this.onGround && this.wallLock <= 0) {
-      this.vx = -this.onWall * WALL_JUMP_X
+    const wallDir = this.onWall !== 0 ? this.onWall : this.wallCoyote > 0 ? this.wallMemory : 0
+    if (wallDir !== 0 && !this.onGround && this.wallLock <= 0) {
+      this.vx = -wallDir * WALL_JUMP_X
       this.vy = WALL_JUMP_Y
-      this.facing = -this.onWall as 1 | -1
+      this.facing = -wallDir
       this.jumpBuf = 0
       this.coyote = 0
+      this.wallCoyote = 0
+      this.lastWall = wallDir
       this.wallLock = WALL_LOCK
+      this.controlLock = WALL_CONTROL_LOCK
       this.justJumped = true
       this.jumpedFromWall = true
       this.sliding = false
@@ -271,6 +287,27 @@ export class Player {
     this.onGround = false
     this.moveAxis(world, dx, 0)
     this.moveAxis(world, 0, dy)
+    this.detectWalls(world)
+    if (this.onWall !== 0) {
+      this.wallCoyote = WALL_COYOTE
+      this.wallMemory = this.onWall
+    }
+  }
+
+  private detectWalls(world: World) {
+    if (this.onGround) return
+    const y = this.y + 6
+    const h = Math.max(8, this.h - 12)
+    const right = { x: this.x + this.w, y, w: 5, h }
+    const left = { x: this.x - 5, y, w: 5, h }
+    const hitR = this.solidAt(world, right)
+    const hitL = this.solidAt(world, left)
+    let wall = 0
+    if (hitR && hitL) wall = this.vx >= 0 ? 1 : -1
+    else if (hitR) wall = 1
+    else if (hitL) wall = -1
+    if (this.wallLock > 0 && wall === this.lastWall) wall = 0
+    this.onWall = wall
   }
 
   private moveAxis(world: World, dx: number, dy: number) {

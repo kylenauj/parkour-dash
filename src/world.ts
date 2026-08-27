@@ -95,7 +95,7 @@ export function createWorld(): World {
   platforms.push(solid(820, 600, 190, 400))
   platforms.push(solid(1090, 640, 250, 360))
   platforms.push(solid(1420, 560, 210, 80))
-  signs.push({ x: 120, y: 560, text: 'Run and jump the ledges' })
+  signs.push({ x: 120, y: 560, text: 'Skitter and jump the pipes' })
   addOrb(620, 580)
   addOrb(900, 540)
   props.push({ kind: 'vent', x: 80, y: 640 })
@@ -110,16 +110,16 @@ export function createWorld(): World {
   addOrb(2010, 370)
   props.push({ kind: 'antenna', x: 2410, y: 360 })
 
-  // --- 3. Wall alley (doorway under left wall, climb out the top) ---
+  // --- 3. Pipe stack (doorway under left riser, climb out the top) ---
   platforms.push(solid(2540, 640, 220, 48))
   platforms.push(solid(2760, 180, 28, 400))
-  platforms.push(solid(2928, 168, 28, 500))
-  spikeRow(2788, 782, 140)
-  platforms.push(solid(2760, 800, 196, 70))
-  platforms.push(solid(2908, 168, 320, 32))
-  signs.push({ x: 2548, y: 580, text: 'Hold into the wall, then jump' })
-  addOrb(2860, 480)
-  addOrb(2860, 300)
+  platforms.push(solid(2898, 168, 28, 500))
+  spikeRow(2788, 782, 110)
+  platforms.push(solid(2760, 800, 166, 70))
+  platforms.push(solid(2878, 168, 350, 32))
+  signs.push({ x: 2548, y: 580, text: 'Touch a pipe, then jump — no need to hold in' })
+  addOrb(2840, 480)
+  addOrb(2840, 300)
 
   // --- 4. Girder hops + oneway ---
   platforms.push(oneway(3220, 280, 120))
@@ -145,7 +145,7 @@ export function createWorld(): World {
   spikeRow(5460, 780, 320)
   platforms.push(solid(4980, 798, 300, 40))
   platforms.push(solid(5460, 798, 320, 40))
-  signs.push({ x: 4770, y: 440, text: 'Dash (Shift / J) across the void' })
+  signs.push({ x: 4770, y: 440, text: 'Dash (Shift / J) across the drain' })
   addOrb(5160, 430)
   addOrb(5620, 390)
   addCheck(5900, 404)
@@ -155,11 +155,11 @@ export function createWorld(): World {
   platforms.push(oneway(6500, 340, 110))
   platforms.push(oneway(6500, 240, 110))
   platforms.push(solid(6680, 180, 32, 360))
-  platforms.push(solid(6860, 120, 32, 420))
-  platforms.push(solid(6680, 80, 212, 28))
-  spikeRow(6712, 548, 148)
-  platforms.push(solid(6680, 566, 212, 40))
-  signs.push({ x: 6180, y: 360, text: 'Ride, then wall-kick the shaft' })
+  platforms.push(solid(6820, 120, 32, 420))
+  platforms.push(solid(6680, 80, 172, 28))
+  spikeRow(6712, 548, 108)
+  platforms.push(solid(6680, 566, 172, 40))
+  signs.push({ x: 6180, y: 360, text: 'Ride, then kick up the pipe stack' })
   addOrb(6550, 200)
   addOrb(6780, 40)
 
@@ -171,7 +171,7 @@ export function createWorld(): World {
   props.push({ kind: 'antenna', x: 8120, y: 200 })
   addOrb(7440, 250)
   addCheck(7900, 144)
-  signs.push({ x: 7880, y: 140, text: 'The last antenna' })
+  signs.push({ x: 7880, y: 140, text: 'The open drain' })
 
   return {
     w: 8400,

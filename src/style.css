@@ -1,12 +1,12 @@
 :root {
-  --bg: #070b14;
-  --panel: rgba(8, 12, 24, 0.82);
-  --line: rgba(62, 224, 255, 0.28);
-  --cyan: #3ee0ff;
-  --mint: #7dffce;
-  --pink: #ff3d8a;
-  --text: #e8f4ff;
-  --muted: #8aa0b8;
+  --bg: #1a1410;
+  --panel: rgba(28, 20, 14, 0.86);
+  --line: rgba(196, 161, 90, 0.32);
+  --cyan: #c4a15a;
+  --mint: #e0c07a;
+  --pink: #c45a2a;
+  --text: #f2e6c8;
+  --muted: #b8a080;
 }
 
 * {
@@ -39,7 +39,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #070b14;
+  background: #1a1410;
   image-rendering: auto;
   display: block;
 }
@@ -55,7 +55,7 @@ body {
   display: grid;
   place-items: center;
   background:
-    radial-gradient(ellipse at 50% 10%, rgba(62, 224, 255, 0.14), transparent 50%),
+    radial-gradient(ellipse at 50% 10%, rgba(196, 161, 90, 0.16), transparent 50%),
     linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.62));
   padding: 24px;
 }
@@ -98,7 +98,7 @@ body {
   font-size: 28px;
   line-height: 1;
   color: var(--mint);
-  text-shadow: 0 0 16px rgba(125, 255, 206, 0.35);
+  text-shadow: 0 0 16px rgba(224, 192, 122, 0.35);
 }
 
 .hud-hint {
@@ -131,7 +131,7 @@ body {
   border: 1px solid var(--line);
   background: var(--panel);
   backdrop-filter: blur(12px);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), 0 0 40px rgba(62, 224, 255, 0.08);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), 0 0 40px rgba(196, 161, 90, 0.1);
 }
 
 .eyebrow {
@@ -153,8 +153,8 @@ h2 {
 h1 {
   font-size: clamp(64px, 12vw, 92px);
   letter-spacing: 0.06em;
-  color: #f4fbff;
-  text-shadow: 0 0 28px rgba(62, 224, 255, 0.35);
+  color: #f2e6c8;
+  text-shadow: 0 0 28px rgba(196, 161, 90, 0.35);
 }
 
 h2 {
@@ -185,7 +185,7 @@ kbd {
   padding: 1px 6px;
   margin-right: 4px;
   border: 1px solid var(--line);
-  background: rgba(62, 224, 255, 0.08);
+  background: rgba(196, 161, 90, 0.1);
   color: var(--cyan);
   font-family: Rajdhani, sans-serif;
   font-weight: 700;
@@ -205,8 +205,8 @@ button {
 
 .primary {
   background: var(--cyan);
-  color: #041018;
-  box-shadow: 0 0 24px rgba(62, 224, 255, 0.4);
+  color: #1a120c;
+  box-shadow: 0 0 24px rgba(196, 161, 90, 0.4);
 }
 
 .primary:hover {
@@ -280,7 +280,7 @@ button {
 .touch .jump {
   width: 88px;
   height: 88px;
-  background: rgba(62, 224, 255, 0.22);
+  background: rgba(196, 161, 90, 0.22);
   color: var(--cyan);
 }
 

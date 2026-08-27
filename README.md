@@ -1,6 +1,6 @@
-# Skyline
+# Pipe Roach
 
-A short rooftop parkour platformer you play in the browser. Sprint dusk-lit ledges, wall-jump a neon alley, slide under ducts, and dash the last gaps to the antenna.
+A short cockroach parkour game. Skitter through plumbing, wall-kick pipe stacks, slide under valves, and dash the open drains.
 
 ## Play
 
@@ -28,7 +28,7 @@ Open the printed local URL (default `http://localhost:43173`). Click **Start run
 
 ## How it feels
 
-The runner uses coyote time, jump buffering, short hops if you tap jump, wall slides, a single air dash, and a slide that fits under low ceilings. Falls send you back to the last lamp you tagged. Grab optional gold orbs for a cleaner score at the antenna.
+The roach uses coyote time, jump buffering, short hops if you tap jump, automatic wall cling, a single air dash, and a slide that fits under low pipes. Touch a vertical pipe and press jump to kick to the other side — you do not have to hold into the wall. Falls send you back to the last valve. Grab optional crumbs for a cleaner score at the drain.
 
 ## Build
 
