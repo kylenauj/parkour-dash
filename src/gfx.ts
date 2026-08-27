@@ -231,7 +231,7 @@ export function roots(
     const drift = (hash(i, y + 5) - 0.5) * 0.5
     for (let d = 0; d < len; d++) {
       rx += drift * (d / len) + (hash(i + d, y) > 0.82 ? 0.6 : 0)
-      const thick = d > len * 0.82 ? 1 : d > len * 0.45 ? 2 : 3
+      const thick = d > len * 0.5 ? 1 : 2
       prect(ctx, rx, y + d, thick, 1, d > len * 0.6 ? cols.shade : cols.root)
     }
     if (cols.leaf && seed > 0.7) {
@@ -254,13 +254,13 @@ export function boulders(
   for (let by = y + 10; by < y + h - 6; by += step) {
     for (let bx = x + 8; bx < x + w - 10; bx += step) {
       const seed = hash(bx, by)
-      if (seed < 0.55) continue
-      const r = 3 + Math.floor(seed * 9)
-      const ox = bx + seed * step * 0.6
-      const oy = by + hash(by, bx) * step * 0.5
+      if (seed < 0.6) continue
+      const r = 3 + Math.floor(seed * 10)
+      const ox = bx + (hash(bx, by + 3) - 0.2) * step * 1.4
+      const oy = by + (hash(by, bx + 5) - 0.2) * step * 1.2
       disk(ctx, ox, oy, r, cols.face)
-      disk(ctx, ox - 1, oy - 1, Math.max(1, r * 0.5), cols.lit)
-      prect(ctx, ox - r, oy + r - 1, r * 2, 2, cols.shade)
+      disk(ctx, ox - 1, oy - 1, Math.max(1, r * 0.42), cols.lit)
+      prect(ctx, ox - r + 1, oy + r - 1, r * 2 - 2, 2, cols.shade)
     }
   }
 }

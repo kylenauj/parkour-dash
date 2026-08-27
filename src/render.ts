@@ -6,7 +6,7 @@ import { bakeBabe, bakeBank, type SpriteBank } from './sprites'
 /** Baked sprites carry one padding cell (2px) below the feet. */
 const S_PAD = 2
 import { bakePack, type LayerPack } from './backdrop'
-import { boulders, disk, hash, pineTree, roots, stamp } from './gfx'
+import { boulders, disk, hash, noise, pineTree, roots, stamp } from './gfx'
 import { bakeGround, type GroundSkin } from './tiles'
 import type { Camera } from './camera'
 import type { Particles } from './particles'
@@ -265,21 +265,21 @@ export class Renderer {
     ctx.fillStyle = '#20180f'
     ctx.fillRect(x, y, w, 7)
     ctx.fillStyle = g.grass
-    ctx.fillRect(x, y - 3, w, 6)
+    ctx.fillRect(x, y - 4, w, 7)
     ctx.fillStyle = g.grass2
-    ctx.fillRect(x, y - 3, w, 2)
+    ctx.fillRect(x, y - 4, w, 2)
     for (let i = x + 1; i < x + w - 1; i += 2) {
       const seed = hash(i, y)
-      if (seed < 0.35) continue
-      const gh = 3 + Math.floor(seed * 10)
-      ctx.fillStyle = seed > 0.82 ? g.grassTip : seed > 0.55 ? g.grass2 : g.grass
-      ctx.fillRect(i, y - gh, 2, gh)
+      if (seed < 0.42) continue
+      const gh = 2 + Math.floor(seed * 5)
+      ctx.fillStyle = seed > 0.9 ? g.grassTip : seed > 0.62 ? g.grass2 : g.grass
+      ctx.fillRect(i, y - 3 - gh, 2, gh + 2)
     }
-    for (let i = x + 6; i < x + w - 6; i += 34) {
-      if (hash(i, y + 3) < 0.5) continue
-      ctx.fillStyle = g.grassTip
-      ctx.fillRect(i, y - 15, 1, 12)
-      ctx.fillRect(i + 4, y - 12, 1, 9)
+    for (let i = x + 6; i < x + w - 6; i += 26) {
+      if (noise(i, y, 70) < 0.5) continue
+      ctx.fillStyle = g.grass2
+      ctx.fillRect(i, y - 11, 1, 8)
+      ctx.fillRect(i + 3, y - 9, 1, 6)
     }
   }
 
