@@ -20,7 +20,6 @@ export class Renderer {
   private ctx: CanvasRenderingContext2D
   private theme: Theme = 'gutter'
   private look: Look = LOOKS[0]
-  private clock = 0
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx
@@ -53,7 +52,6 @@ export class Renderer {
     ctx.clearRect(0, 0, VIEW_W, VIEW_H)
     this.look = lookById(lookId)
     this.theme = world.theme
-    this.clock = time
     this.drawLayers(cam, time)
 
     ctx.save()
@@ -79,9 +77,7 @@ export class Renderer {
     ctx.restore()
 
     const pack = this.packs.get(this.theme)!
-    this.blit(pack.fore, -((cam.x * 1.12) % (VIEW_W + 200)), 0, 0.55)
-    if (player.dashing) this.speedLines(player)
-    this.scanlines()
+    this.blit(pack.fore, -((cam.x * 1.12) % (VIEW_W + 200)), 0, 0.85)
     this.vignette()
   }
 
@@ -90,11 +86,9 @@ export class Renderer {
     const sky = this.sky()
     if (this.theme === 'woods') {
       const dusk = ctx.createLinearGradient(0, 0, 0, VIEW_H)
-      dusk.addColorStop(0, '#152038')
-      dusk.addColorStop(0.32, '#3a5078')
-      dusk.addColorStop(0.5, '#e09070')
-      dusk.addColorStop(0.6, '#8a5868')
-      dusk.addColorStop(1, '#1c2838')
+      dusk.addColorStop(0, '#0a1220')
+      dusk.addColorStop(0.45, '#152038')
+      dusk.addColorStop(1, '#1a2430')
       ctx.fillStyle = dusk
       ctx.fillRect(0, 0, VIEW_W, VIEW_H)
     } else {
@@ -124,7 +118,7 @@ export class Renderer {
 
   private sky(): [string, string, string, string, string] {
     if (this.theme === 'woods') {
-      return ['#1a2438', '#3a4868', '#c87868', '#2a3848', 'rgba(20,24,40,0.18)']
+      return ['#0a1220', '#152038', '#1a2430', '#121820', 'rgba(8,12,20,0.2)']
     }
     if (this.theme === 'filter') {
       return ['#1a0804', '#2a1008', '#5a2010', '#3a1408', 'rgba(255,100,30,0.18)']
@@ -162,14 +156,10 @@ export class Renderer {
           : this.theme === 'street'
             ? '#c8b0ff'
             : '#7cff3a'
-    const halo = this.theme === 'woods' ? 'rgba(255, 220, 120, 0.16)' : `${core}33`
-    for (let i = 0; i < 22; i++) {
-      const x = snap(((i * 97 + time * 22 - cam.x * 0.22) % (VIEW_W + 20) + VIEW_W + 20) % (VIEW_W + 20))
-      const y = snap((i * 53 + Math.sin(time * 0.8 + i) * 28) % VIEW_H)
-      const pulse = 0.45 + Math.sin(time * 3 + i) * 0.25
-      ctx.globalAlpha = pulse
-      ctx.fillStyle = halo
-      ctx.fillRect(x - 3, y - 3, 8, 8)
+    for (let i = 0; i < 10; i++) {
+      const x = snap(((i * 97 + time * 14 - cam.x * 0.18) % (VIEW_W + 20) + VIEW_W + 20) % (VIEW_W + 20))
+      const y = snap((i * 61 + Math.sin(time * 0.7 + i) * 18) % VIEW_H)
+      ctx.globalAlpha = 0.28 + Math.sin(time * 2 + i) * 0.12
       ctx.fillStyle = core
       ctx.fillRect(x, y, 2, 2)
     }
@@ -250,20 +240,21 @@ export class Renderer {
 
     if (earth.grass) {
       ctx.fillStyle = g.grass
-      ctx.fillRect(x, y - 3, w, 4)
-      for (let i = x + 2; i < x + w - 1; i += 3) {
-        const gh = 5 + Math.floor(hash(i, y) * 11)
-        ctx.fillStyle = hash(i, y + 1) > 0.45 ? g.grass2 : g.grass
+      ctx.fillRect(x, y - 2, w, 3)
+      for (let i = x + 3; i < x + w - 1; i += 5) {
+        const gh = 4 + Math.floor(hash(i, y) * 6)
+        ctx.fillStyle = hash(i, y + 1) > 0.5 ? g.grass2 : g.grass
         ctx.fillRect(i, y - gh, 2, gh)
-        ctx.fillStyle = g.grassTip
-        ctx.fillRect(i, y - gh, 1, 2)
+        if (hash(i, y) > 0.7) {
+          ctx.fillStyle = g.grassTip
+          ctx.fillRect(i, y - gh, 1, 1)
+        }
       }
-      for (let i = x + 10; i < x + w - 8; i += 22) {
-        if (hash(i, y) < 0.4) continue
+      for (let i = x + 14; i < x + w - 8; i += 28) {
+        if (hash(i, y) < 0.45) continue
         ctx.fillStyle = g.moss
-        ctx.fillRect(i, y + h - 6, 10, 6)
-        ctx.fillRect(i + 2, y + h, 2, 6 + Math.floor(hash(i, 3) * 8))
-        ctx.fillRect(i + 6, y + h, 2, 4 + Math.floor(hash(i, 5) * 6))
+        ctx.fillRect(i, y + h - 5, 8, 5)
+        ctx.fillRect(i + 2, y + h, 2, 4 + Math.floor(hash(i, 3) * 5))
       }
     } else {
       for (let i = x + 16; i < x + w - 6; i += 28) {
@@ -625,12 +616,14 @@ export class Renderer {
 
   private drawSigns(world: World) {
     const ctx = this.ctx
-    ctx.font = '10px "Press Start 2P", monospace'
+    ctx.font = '8px "Press Start 2P", monospace'
     ctx.imageSmoothingEnabled = false
     for (const s of world.signs) {
       const w = ctx.measureText(s.text).width
-      prect(ctx, s.x - 8, s.y - 16, w + 16, 20, '#0c140c')
-      ctx.fillStyle = '#c8ff90'
+      ctx.globalAlpha = 0.78
+      prect(ctx, s.x - 6, s.y - 12, w + 12, 16, '#0a100c')
+      ctx.globalAlpha = 1
+      ctx.fillStyle = '#b8d898'
       ctx.fillText(s.text, snap(s.x), snap(s.y))
     }
   }
@@ -724,16 +717,12 @@ export class Renderer {
     }
 
     for (const g of player.ghosts) {
-      ctx.globalAlpha = Math.max(0, g.life * 1.6)
-      if (!player.slideDash) this.drawDashWingsAt(g.x + player.w / 2, g.y + g.h * 0.42, player, 0.45 + g.life)
+      ctx.globalAlpha = Math.max(0, g.life * 0.55)
       this.drawRoach(player.slideDash ? skin.slideDash : skin.dash, g.x + player.w / 2, g.y + g.h, player.facing, this.look, false)
     }
     ctx.globalAlpha = 1
 
-    if (player.dashing && !player.slideDash) {
-      this.drawDashWings(player)
-      this.drawDashAura(player)
-    }
+    if (player.dashing) this.drawDashAura(player)
     if (player.onGround && !player.dead) {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.38)'
       ctx.beginPath()
@@ -746,17 +735,16 @@ export class Renderer {
   private drawDashAura(player: Player) {
     const ctx = this.ctx
     const u = 1 - Math.max(0, player.dashT) / DASH_TIME
-    for (let i = 0; i < 18; i++) {
-      const a = this.clock * 14 + i * 0.4
-      const r = 18 + Math.sin(a * 2 + u * 8) * 16 + u * 22
-      ctx.globalAlpha = 0.22 + (i % 3) * 0.08
+    const col = player.slideDash ? '#ffe080' : '#7ef0ff'
+    ctx.globalAlpha = 0.7
+    for (let i = 0; i < 6; i++) {
       prect(
         ctx,
-        player.cx + Math.cos(a) * r,
-        player.cy + Math.sin(a * 1.3) * r * 0.55,
-        PX * (i % 3 === 0 ? 2 : 1),
-        PX,
-        i % 2 === 0 ? '#7ef0ff' : '#c090ff',
+        player.cx - player.facing * (10 + i * 7 + u * 8),
+        player.cy - 6 + (i % 3) * 5,
+        3,
+        2,
+        i % 2 === 0 ? col : '#c090ff',
       )
     }
     ctx.globalAlpha = 1
@@ -805,8 +793,7 @@ export class Renderer {
     ctx.imageSmoothingEnabled = false
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     const g = ctx.createLinearGradient(0, 0, 0, canvas.height)
-    g.addColorStop(0, 'rgba(58, 72, 104, 0.35)')
-    g.addColorStop(0.55, 'rgba(200, 120, 104, 0.18)')
+    g.addColorStop(0, 'rgba(18, 28, 48, 0.4)')
     g.addColorStop(1, 'rgba(8, 12, 18, 0.7)')
     ctx.fillStyle = g
     ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -830,94 +817,11 @@ export class Renderer {
     ctx.globalAlpha = 1
   }
 
-  private speedLines(player: Player) {
-    const ctx = this.ctx
-    const mag = Math.hypot(player.vx, player.vy) || 1
-    const ax = -player.vx / mag
-    const ay = -player.vy / mag
-    ctx.globalAlpha = 0.35
-    for (let i = 0; i < 12; i++) {
-      const x = VIEW_W * 0.35 + (i * 73) % 420
-      const y = 80 + ((i * 97) % (VIEW_H - 160))
-      prect(ctx, x, y, 18 + (i % 3) * 10, PX, this.look.wings[1])
-      prect(ctx, x + ax * 8, y + ay * 6, 10, PX, this.look.wings[0])
-    }
-    ctx.globalAlpha = 1
-  }
-
-  private drawDashWings(player: Player) {
-    this.drawDashWingsAt(player.cx, player.cy + 2, player, 1)
-  }
-
-  private drawDashWingsAt(x: number, y: number, player: Player, power: number) {
-    const u = 1 - Math.max(0, player.dashT) / DASH_TIME
-    const shoot = 1 - (1 - Math.min(1, u * 4.4)) ** 3
-    const flap = Math.sin(u * 62) * 0.14
-    const span = shoot * power
-    const mag = Math.hypot(player.vx, player.vy) || 1
-    const back = Math.atan2(player.vy / mag, player.vx / mag) + Math.PI
-
-    this.paintWing(x, y, back - 0.62 + flap, 28 + span * 70, 18 + span * 30, [this.look.wings[0], this.look.wings[1], this.look.wings[2]], span)
-    this.paintWing(x, y, back + 0.62 - flap, 28 + span * 70, 18 + span * 30, [this.look.wings[0], this.look.wings[1], this.look.wings[2]], span)
-    this.paintWing(x, y, back - 0.28 + flap * 0.4, 18 + span * 44, 12 + span * 16, [this.look.wings[1], this.look.wings[2], this.look.wings[3]], span)
-    this.paintWing(x, y, back + 0.28 - flap * 0.4, 18 + span * 44, 12 + span * 16, [this.look.wings[1], this.look.wings[2], this.look.wings[3]], span)
-
-    if (u < 0.34 && power >= 0.95) {
-      const burst = (1 - u / 0.34) * power
-      for (let i = 0; i < 6; i++) {
-        const a = back + (i - 2.5) * 0.28
-        const d = 10 + burst * 28
-        prect(
-          this.ctx,
-          x + Math.cos(a) * d,
-          y + Math.sin(a) * d,
-          PX * (i % 2 === 0 ? 2 : 1),
-          PX,
-          i % 2 === 0 ? this.look.wings[0] : this.look.wings[1],
-        )
-      }
-    }
-  }
-
-  private paintWing(
-    ox: number,
-    oy: number,
-    angle: number,
-    length: number,
-    chord: number,
-    colors: string[],
-    open: number,
-  ) {
-    const ctx = this.ctx
-    const segs = 8
-    const px = Math.cos(angle)
-    const py = Math.sin(angle)
-    const nx = Math.cos(angle + Math.PI / 2)
-    const ny = Math.sin(angle + Math.PI / 2)
-    for (let i = 0; i < segs; i++) {
-      const t = i / (segs - 1)
-      const dist = t * length
-      const fan = Math.sin(t * Math.PI) * chord * (0.35 + open * 0.65)
-      const w = Math.max(PX, (1 - t * 0.72) * fan)
-      const col = colors[Math.min(colors.length - 1, Math.floor(t * colors.length))]
-      prect(ctx, ox + px * dist + nx * fan * 0.15 - w / 2, oy + py * dist + ny * fan * 0.15 - PX, w, PX * (t < 0.18 ? 3 : 2), col)
-      if (i % 2 === 0) {
-        prect(ctx, ox + px * dist - PX / 2, oy + py * dist - PX / 2, PX, PX, this.look.wings[3])
-      }
-    }
-  }
-
-  private scanlines() {
-    const ctx = this.ctx
-    ctx.fillStyle = 'rgba(0,0,0,0.05)'
-    for (let y = 0; y < VIEW_H; y += 4) ctx.fillRect(0, y, VIEW_W, 1)
-  }
-
   private vignette() {
     const ctx = this.ctx
-    const g = ctx.createRadialGradient(VIEW_W / 2, VIEW_H * 0.42, 160, VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.92)
+    const g = ctx.createRadialGradient(VIEW_W / 2, VIEW_H * 0.45, 220, VIEW_W / 2, VIEW_H / 2, VIEW_H)
     g.addColorStop(0, 'rgba(0,0,0,0)')
-    g.addColorStop(1, 'rgba(0,0,0,0.32)')
+    g.addColorStop(1, 'rgba(0,0,0,0.22)')
     ctx.fillStyle = g
     ctx.fillRect(0, 0, VIEW_W, VIEW_H)
   }

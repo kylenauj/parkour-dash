@@ -1,5 +1,5 @@
 import { VIEW_H, VIEW_W } from './const'
-import { disk, diskShade, hash, mountainRange, pineTree } from './gfx'
+import { disk, hash, mountainRange, pineLayer, pineTree } from './gfx'
 import { crisp, prect } from './pixel'
 import type { Theme } from './world'
 
@@ -31,112 +31,83 @@ function woodsFar() {
   if (!ctx) return c
   const w = c.width
 
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < 70; i++) {
     const x = Math.floor(hash(i, 1) * w)
-    const y = Math.floor(hash(i, 2) * 280)
-    const s = hash(i, 3) > 0.88 ? 2 : 1
-    ctx.globalAlpha = 0.35 + hash(i, 4) * 0.55
-    prect(ctx, x, y, s, s, hash(i, 5) > 0.7 ? '#d8e8ff' : '#f4f0e0')
+    const y = 8 + Math.floor(hash(i, 2) * 220)
+    ctx.globalAlpha = 0.25 + hash(i, 4) * 0.45
+    prect(ctx, x, y, hash(i, 3) > 0.9 ? 2 : 1, 1, '#d8e4f4')
   }
   ctx.globalAlpha = 1
 
-  disk(ctx, 1040, 88, 52, 'rgba(255, 236, 200, 0.16)')
-  disk(ctx, 1040, 88, 38, 'rgba(255, 244, 220, 0.22)')
-  diskShade(ctx, 1040, 88, 28, '#fff6e0', '#e8d8b8', '#b0a088')
-  disk(ctx, 1032, 82, 5, '#d0c4a4')
-  disk(ctx, 1050, 96, 4, '#c8bc9c')
-  disk(ctx, 1044, 78, 3, '#d8ccb0')
-
-  ctx.save()
-  ctx.globalAlpha = 0.07
-  for (let i = 0; i < 7; i++) {
-    ctx.translate(1040, 88)
-    ctx.rotate(-0.18 - i * 0.08)
-    prect(ctx, 0, -6, 720, 10 + i, '#ffe8c8')
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-  }
-  ctx.restore()
+  disk(ctx, 1120, 72, 16, '#e4dcc4')
+  disk(ctx, 1116, 68, 6, '#f4eee0')
+  prect(ctx, 1126, 76, 3, 2, '#c8c0a8')
+  prect(ctx, 1114, 80, 2, 2, '#c0b89c')
 
   mountainRange(
     ctx,
-    430,
+    390,
     w,
     [
-      { x: 80, h: 110 },
-      { x: 220, h: 180 },
-      { x: 360, h: 130 },
-      { x: 520, h: 210 },
-      { x: 680, h: 150 },
-      { x: 860, h: 240 },
-      { x: 1040, h: 170 },
-      { x: 1220, h: 200 },
-      { x: 1400, h: 120 },
-      { x: 1560, h: 160 },
+      { x: 60, h: 70 },
+      { x: 210, h: 130 },
+      { x: 380, h: 90 },
+      { x: 560, h: 150 },
+      { x: 760, h: 100 },
+      { x: 960, h: 160 },
+      { x: 1180, h: 110 },
+      { x: 1400, h: 140 },
+      { x: 1580, h: 80 },
     ],
-    '#4a5c70',
-    '#d8e4f0',
-    '#6a7c90',
+    '#2a3848',
+    '#8a9aaa',
+    '#3a4c5c',
   )
+  ridgePines(ctx, 390, 0.22, '#1c2834')
   mountainRange(
     ctx,
-    490,
+    470,
     w,
     [
-      { x: 40, h: 90 },
-      { x: 180, h: 150 },
-      { x: 340, h: 100 },
-      { x: 500, h: 175 },
-      { x: 700, h: 120 },
-      { x: 900, h: 190 },
-      { x: 1100, h: 140 },
-      { x: 1300, h: 165 },
-      { x: 1500, h: 100 },
+      { x: 0, h: 60 },
+      { x: 160, h: 110 },
+      { x: 340, h: 70 },
+      { x: 540, h: 130 },
+      { x: 760, h: 85 },
+      { x: 980, h: 140 },
+      { x: 1200, h: 90 },
+      { x: 1420, h: 120 },
+      { x: 1600, h: 70 },
     ],
-    '#2e3e50',
-    '#9ab0aa',
-    '#465868',
-  )
-  mountainRange(
-    ctx,
-    560,
-    w,
-    [
-      { x: 0, h: 70 },
-      { x: 140, h: 130 },
-      { x: 280, h: 85 },
-      { x: 460, h: 155 },
-      { x: 640, h: 95 },
-      { x: 820, h: 145 },
-      { x: 1020, h: 110 },
-      { x: 1220, h: 160 },
-      { x: 1420, h: 90 },
-      { x: 1580, h: 120 },
-    ],
-    '#1a2836',
+    '#1a2634',
     undefined,
-    '#2a3a48',
+    '#283848',
   )
-
-  mist(ctx, 470, 70, 'rgba(220, 200, 180, 0.12)')
-  mist(ctx, 540, 80, 'rgba(30, 40, 55, 0.28)')
+  ridgePines(ctx, 470, 0.32, '#121c28')
   return c
+}
+
+function ridgePines(ctx: CanvasRenderingContext2D, yBase: number, scale: number, col: string) {
+  for (let i = 0; i < 40; i++) {
+    const x = 20 + i * 42
+    const h = (18 + (i % 5) * 10) * (0.8 + scale)
+    pineLayer(ctx, x, yBase - h - 8, 7 + (i % 3) * 3, h, col, col, '#0c1218')
+  }
 }
 
 function woodsMid() {
   const { c, ctx } = sheet()
   if (!ctx) return c
-  mist(ctx, 420, 140, 'rgba(18, 28, 38, 0.35)')
   const palettes = [
-    { trunk: '#1a1410', bark: '#3a2a20', mid: '#152018', lit: '#2a3a28', dark: '#0a100c' },
-    { trunk: '#181210', bark: '#2a2018', mid: '#101810', lit: '#243028', dark: '#080c08' },
-    { trunk: '#1c1612', bark: '#32281e', mid: '#18241c', lit: '#304838', dark: '#0c140e' },
+    { trunk: '#14100c', bark: '#2a2018', mid: '#152018', lit: '#243428', dark: '#0a100c' },
+    { trunk: '#12100c', bark: '#241c14', mid: '#101810', lit: '#1c2a1c', dark: '#080c08' },
+    { trunk: '#16120e', bark: '#2c2418', mid: '#18241c', lit: '#2a3a28', dark: '#0c140e' },
   ]
-  for (let i = 0; i < 28; i++) {
-    const x = 8 + i * 58 + (i % 3) * 10
-    const s = 0.38 + (i % 5) * 0.07
-    pineTree(ctx, x, 580 + (i % 2) * 8, s, palettes[i % 3])
+  for (let i = 0; i < 26; i++) {
+    const x = -10 + i * 64
+    const s = 1.15 + (i % 4) * 0.18
+    pineTree(ctx, x, VIEW_H + 20, s, palettes[i % 3])
   }
-  mist(ctx, 520, 60, 'rgba(40, 50, 60, 0.18)')
   return c
 }
 
@@ -144,24 +115,11 @@ function woodsNear() {
   const { c, ctx } = sheet(220)
   if (!ctx) return c
   const palettes = [
-    { trunk: '#14100c', bark: '#2a2018', mid: '#0e1810', lit: '#1c2c1c', dark: '#060a08' },
-    { trunk: '#12100c', bark: '#241c14', mid: '#0c1410', lit: '#182418', dark: '#040806' },
+    { trunk: '#0e0c0a', bark: '#1c1610', mid: '#0c1410', lit: '#182218', dark: '#060806' },
+    { trunk: '#0c0a08', bark: '#181410', mid: '#0a100c', lit: '#141c14', dark: '#040604' },
   ]
-  for (let i = 0; i < 14; i++) {
-    pineTree(ctx, 30 + i * 118, 610, 0.82 + (i % 3) * 0.12, palettes[i % 2])
-  }
-  for (let i = 0; i < 5; i++) {
-    const x = 90 + i * 300
-    prect(ctx, x + 12, 18, 7, 110, '#2a323c')
-    prect(ctx, x + 14, 18, 2, 110, '#8a9aaa')
-    prect(ctx, x + 12, 18, 7, 2, '#c8d4e0')
-    prect(ctx, x, 12, 32, 10, '#1a2028')
-    prect(ctx, x + 24, 30, 42, 5, '#1a2028')
-    prect(ctx, x + 58, 24, 14, 12, '#e8f4ff')
-    prect(ctx, x + 62, 28, 6, 4, '#fff')
-    ctx.globalAlpha = 0.12
-    prect(ctx, x + 20, 28, 90, 140, '#d0e4ff')
-    ctx.globalAlpha = 1
+  for (let i = 0; i < 12; i++) {
+    pineTree(ctx, -20 + i * 140, VIEW_H + 30, 1.55 + (i % 3) * 0.22, palettes[i % 2])
   }
   return c
 }
@@ -169,40 +127,13 @@ function woodsNear() {
 function woodsFore() {
   const { c, ctx } = sheet(220)
   if (!ctx) return c
-  for (let i = 0; i < 18; i++) {
-    const x = i * 92
-    const h = 48 + (i % 5) * 16
-    prect(ctx, x, VIEW_H - h, 100, h, '#05070a')
-    pineLayerSil(ctx, x + 28, VIEW_H - h - 70, 34, 78, '#05070a')
-    if (i % 2 === 0) prect(ctx, x + 40, VIEW_H - h - 28, 10, 28, '#080c10')
-  }
-  for (let i = 0; i < 20; i++) {
-    prect(ctx, 24 + i * 82, 0, 4, 22 + (i % 4) * 16, '#05070a')
-    if (i % 3 === 0) {
-      prect(ctx, 20 + i * 82, 18 + (i % 4) * 16, 18, 3, '#05070a')
-      prect(ctx, 28 + i * 82, 22 + (i % 4) * 16, 3, 14, '#05070a')
-    }
+  for (let i = 0; i < 16; i++) {
+    const x = i * 100
+    const h = 36 + (i % 4) * 14
+    prect(ctx, x, VIEW_H - h, 110, h, '#05070a')
+    pineLayer(ctx, x + 36, VIEW_H - h - 54, 28, 58, '#05070a', '#080c10', '#030406')
   }
   return c
-}
-
-function pineLayerSil(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  top: number,
-  half: number,
-  h: number,
-  col: string,
-) {
-  for (let r = 0; r < h; r++) {
-    const w = 1 + (r / h) * half
-    prect(ctx, cx - w, top + r, w * 2, 1, col)
-  }
-}
-
-function mist(ctx: CanvasRenderingContext2D, y: number, h: number, col: string) {
-  ctx.fillStyle = col
-  ctx.fillRect(0, y, VIEW_W + 360, h)
 }
 
 function pal(theme: Theme) {
@@ -244,23 +175,13 @@ function pipeFar(theme: Theme) {
       for (let col = 0; col < 3; col++) {
         const on = hash(i * 11 + row * 3 + col, 4) > 0.42
         prect(ctx, x + 14 + col * 24, top + 22 + row * 28, 12, 16, on ? p.glow : '#0a0c10')
-        if (on) {
-          ctx.globalAlpha = 0.16
-          prect(ctx, x + 12 + col * 24, top + 20 + row * 28, 16, 20, p.glow)
-          ctx.globalAlpha = 1
-        }
       }
     }
     if (i % 2 === 0) {
       prect(ctx, x + bw - 22, top - 70, 16, 70, p.pipe)
       prect(ctx, x + bw - 22, top - 70, 16, 3, p.hi)
-      ctx.globalAlpha = 0.2
-      disk(ctx, x + bw - 14, top - 86, 16, p.glow)
-      disk(ctx, x + bw - 8, top - 102, 12, p.glow)
-      ctx.globalAlpha = 1
     }
   }
-  mist(ctx, 500, 90, 'rgba(8, 10, 14, 0.4)')
   return c
 }
 
@@ -270,14 +191,12 @@ function pipeMid(theme: Theme) {
   const p = pal(theme)
   for (let i = 0; i < 14; i++) {
     const x = i * 118
-    prect(ctx, x + 22, 40, 18, 620, p.pipe)
-    prect(ctx, x + 25, 40, 5, 620, p.hi)
-    prect(ctx, x + 22, 40, 18, 3, p.skyWin)
-    prect(ctx, x, 220, 110, 12, p.pipe)
-    prect(ctx, x, 220, 110, 3, p.hi)
-    prect(ctx, x + 8, 380, 90, 10, p.pipe)
-    prect(ctx, x + 36, 220, 8, 12, '#1a1c18')
-    prect(ctx, x + 38, 223, 4, 6, p.glow)
+    prect(ctx, x + 22, 80, 18, 580, p.pipe)
+    prect(ctx, x + 25, 80, 5, 580, p.hi)
+    prect(ctx, x, 240, 110, 12, p.pipe)
+    prect(ctx, x, 240, 110, 3, p.hi)
+    prect(ctx, x + 8, 400, 90, 10, p.pipe)
+    prect(ctx, x + 38, 243, 4, 6, p.glow)
   }
   return c
 }
@@ -286,17 +205,12 @@ function pipeNear(theme: Theme) {
   const { c, ctx } = sheet(220)
   if (!ctx) return c
   const p = pal(theme)
-  for (let x = 0; x < c.width; x += 20) {
-    if ((x / 20) % 3 === 0) prect(ctx, x, 0, 3, 70 + (x % 40), '#0c1014')
-  }
-  for (let i = 0; i < 8; i++) {
-    const x = 50 + i * 190
-    prect(ctx, x + 6, 22, 8, 36, p.glow)
-    prect(ctx, x + 2, 16, 16, 10, '#1a2024')
-    prect(ctx, x + 8, 26, 4, 8, '#fff4d0')
-    ctx.globalAlpha = 0.14
-    prect(ctx, x - 16, 24, 60, 100, p.glow)
-    ctx.globalAlpha = 1
+  for (let i = 0; i < 6; i++) {
+    const x = 80 + i * 240
+    prect(ctx, x + 8, VIEW_H - 160, 6, 160, p.pipe)
+    prect(ctx, x + 10, VIEW_H - 160, 2, 160, p.hi)
+    prect(ctx, x + 4, VIEW_H - 168, 14, 8, '#1a2024')
+    prect(ctx, x + 8, VIEW_H - 164, 6, 6, p.glow)
   }
   return c
 }
@@ -305,11 +219,8 @@ function pipeFore(theme: Theme) {
   const { c, ctx } = sheet(220)
   if (!ctx) return c
   const col = theme === 'street' ? '#05040a' : '#06080a'
-  for (let i = 0; i < 18; i++) {
-    prect(ctx, i * 92, 0, 5, 36 + (i % 4) * 18, col)
-    if (i % 2 === 0) prect(ctx, i * 92 + 4, 28 + (i % 4) * 18, 22, 4, col)
-    prect(ctx, 16 + i * 92, VIEW_H - 56, 70, 56, col)
-    prect(ctx, 28 + i * 92, VIEW_H - 72, 18, 20, col)
+  for (let i = 0; i < 14; i++) {
+    prect(ctx, 20 + i * 110, VIEW_H - 44, 80, 44, col)
   }
   return c
 }

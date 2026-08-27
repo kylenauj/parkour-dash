@@ -51,12 +51,12 @@ export function pineLayer(
 ) {
   for (let r = 0; r < h; r++) {
     const t = r / Math.max(1, h - 1)
-    const w = 1 + t * half
+    const jag = Math.floor((hash(cx + r, top) - 0.5) * 7)
+    const w = Math.max(1, 1 + t * half + jag)
     const y = top + r
     prect(ctx, cx - w, y, w * 2, 1, mid)
-    prect(ctx, cx - w, y, Math.max(1, w * 0.32), 1, lit)
-    prect(ctx, cx + w * 0.42, y, Math.max(1, w * 0.58), 1, dark)
-    if (hash(cx + r, top) > 0.82) prect(ctx, cx - w + hash(r, cx) * w, y, 2, 1, lit)
+    if (r % 2 === 0) prect(ctx, cx - w, y, Math.max(1, w * 0.28), 1, lit)
+    prect(ctx, cx + w * 0.5, y, Math.max(1, w * 0.5), 1, dark)
   }
 }
 
@@ -102,7 +102,8 @@ export function mountainRange(
     const t = (x - a.x) / Math.max(1, b.x - a.x)
     const h = a.h + (b.h - a.h) * t
     prect(ctx, x, yBase - h, 1, h + 8, fill)
-    if (face && b.h > a.h) prect(ctx, x, yBase - h, 1, Math.min(28, h * 0.22), face)
+    if (hash(x, Math.floor(h)) > 0.72) prect(ctx, x, yBase - h * 0.45, 1, 3, face ?? fill)
+    if (face && b.h > a.h) prect(ctx, x, yBase - h, 1, Math.min(18, h * 0.16), face)
     if (snow && h > 90) {
       const cap = Math.min(18, (h - 90) * 0.35)
       prect(ctx, x, yBase - h, 1, cap, snow)
