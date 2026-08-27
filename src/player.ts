@@ -334,7 +334,8 @@ export class Player {
     }
 
     const wallDir = this.onWall !== 0 ? this.onWall : this.wallCoyote > 0 ? this.wallMemory : 0
-    if (wallDir !== 0 && !this.onGround && this.wallLock <= 0) {
+    const climbStart = this.onGround && wallDir !== 0 && input.x === wallDir
+    if (wallDir !== 0 && this.wallLock <= 0 && (!this.onGround || climbStart)) {
       this.vx = -wallDir * WALL_JUMP_X
       this.vy = WALL_JUMP_Y
       this.facing = -wallDir
@@ -395,7 +396,6 @@ export class Player {
   }
 
   private detectWalls(world: World) {
-    if (this.onGround) return
     const y = this.y + 6
     const h = Math.max(8, this.h - 12)
     const right = { x: this.x + this.w, y, w: 5, h }

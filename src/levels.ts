@@ -28,26 +28,40 @@ export function createWorld(id: LevelId = 0): World {
   return gutters()
 }
 
-/** Two pipes, a jump-through grate on top, a side ledge to walk off. */
+/** Walk in under the left pipe, stand on a stoop, kick up, jump through the grate. */
 function shaft(
   b: ReturnType<typeof kit>,
   left: number,
+  floorY: number,
   grateY: number,
-  pipeH: number,
   exit: 'right' | 'left' = 'right',
-  exitW = 260,
+  exitW = 280,
 ) {
-  const gap = 110
-  const pw = 28
+  const gap = 128
+  const pw = 26
   const right = left + pw + gap
   const span = pw * 2 + gap
-  b.s(left, grateY + 16, pw, pipeH)
-  b.s(right, grateY + 16, pw, pipeH + 40)
-  b.k(left + pw, grateY + 16 + pipeH + 2, gap)
-  b.s(left, grateY + 16 + pipeH + 20, span, 48)
+  const top = grateY + 16
+  const hang = floorY - 56
+  const pipeH = Math.max(90, hang - top)
+
+  b.s(left, top, pw, pipeH)
+  b.s(right, top, pw, pipeH)
+  b.s(right, hang, pw, floorY - hang + 190)
+
+  const stoopW = pw + 58
+  b.s(left - 12, floorY, stoopW, 26)
+
+  b.k(left + stoopW - 12, floorY + 148, Math.max(40, span - stoopW + 12))
+  b.s(left, floorY + 166, span, 48)
+
   b.o(left, grateY, span)
-  if (exit === 'right') b.s(right + pw, grateY + 6, exitW, 28)
-  else b.s(left - exitW, grateY + 6, exitW, 28)
+  if (exit === 'right') b.s(right + pw, grateY + 4, exitW, 28)
+  else b.s(left - exitW, grateY + 4, exitW, 28)
+
+  if (floorY - grateY > 320) {
+    b.o(left + pw + 8, grateY + Math.floor((floorY - grateY) * 0.48), gap - 16)
+  }
 }
 
 function kit() {
@@ -153,13 +167,13 @@ function gutters(): World {
   b.p('barrel', 2320, 360)
   b.p('web', 2284, 360)
 
-  b.s(2680, 640, 240, 48)
-  shaft(b, 2920, 168, 620, 'right', 320)
-  b.n(2688, 580, 'Touch a pipe, then jump. Kick up. The grate lets you through.')
-  b.r(3000, 480)
+  b.s(2680, 640, 260, 48)
+  shaft(b, 2920, 640, 180, 'right', 320)
+  b.n(2688, 580, 'Walk under the pipe. Hold into it, then jump. Kick up. Jump through the grate.')
+  b.r(3000, 500)
   b.r(3000, 300)
-  b.p('chain', 2920, 184)
-  b.p('lamp', 3180, 174)
+  b.p('chain', 2920, 196)
+  b.p('lamp', 3180, 184)
 
   b.o(3400, 280, 120)
   b.o(3590, 220, 120)
@@ -195,17 +209,11 @@ function gutters(): World {
   b.p('nest', 5600, 500)
 
   b.m(6460, 420, 140, 28, 'x', 180, 1.15)
-  b.o(6780, 340, 110)
-  b.o(6780, 240, 110)
-  b.s(6960, 180, 32, 360)
-  b.s(7100, 120, 32, 420)
-  b.k(6992, 548, 108)
-  b.s(6960, 566, 172, 40)
-  b.o(6960, 80, 172)
-  b.s(7132, 86, 240, 28)
-  b.n(6460, 360, 'Ride, then kick up. Jump through the grate.')
+  b.o(6780, 340, 200)
+  shaft(b, 6960, 340, 90, 'right', 240)
+  b.n(6460, 360, 'Ride, walk in, kick up. Jump through the grate.')
   b.r(6830, 200)
-  b.r(7220, 48)
+  b.r(7220, 50)
 
   b.s(7400, 220, 180, 40)
   b.c(7640, 300, 100)
@@ -284,40 +292,42 @@ function filterBeds(): World {
   b.r(70, 378)
   b.n(20, 390, 'A stash nobody claimed')
 
-  b.c(980, 640, 120)
-  b.c(1160, 640, 120)
-  b.c(1340, 640, 120)
+  b.c(980, 640, 170)
+  b.c(1135, 640, 170)
+  b.c(1290, 640, 180)
   b.k(980, 900, 500)
   b.s(980, 918, 500, 40)
-  b.s(1560, 640, 300, 48)
-  b.n(990, 580, 'Do not linger on the plates')
+  b.s(1460, 640, 360, 48)
+  b.n(990, 580, 'Run the plates. They dump if you linger.')
   b.v(1680, 584)
   b.r(1220, 580)
   b.p('grate', 1580, 640)
   b.p('nest', 1760, 640)
   b.p('web', 1564, 640)
 
-  b.s(1940, 640, 980, 48)
-  b.s(1940, 180, 980, 36)
-  b.x(2140, 216, 88, 44, 385, 0.72, 0)
-  b.x(2480, 216, 88, 44, 385, 0.72, 0.33)
-  b.x(2820, 216, 88, 44, 385, 0.72, 0.66)
-  b.n(1960, 580, 'Time the presses. Dash if you mistime.')
+  b.s(1940, 640, 1160, 48)
+  b.s(1940, 180, 1160, 36)
+  b.x(2140, 216, 80, 44, 350, 0.48, 0)
+  b.x(2500, 216, 80, 44, 350, 0.48, 0.34)
+  b.x(2860, 216, 80, 44, 350, 0.48, 0.68)
+  b.n(1960, 580, 'Wait for a press to lift. Walk the gap. Dash if you mistime.')
   b.r(2320, 580)
-  b.r(2660, 580)
+  b.r(2680, 580)
   b.p('chain', 2140, 180)
-  b.p('chain', 2480, 180)
-  b.p('chain', 2820, 180)
+  b.p('chain', 2500, 180)
+  b.p('chain', 2860, 180)
   b.p('lamp', 2000, 180)
+  b.v(3040, 504)
 
-  b.s(3000, 560, 180, 40)
-  b.s(3260, 470, 140, 40)
-  shaft(b, 3480, 120, 640, 'right', 240)
-  b.n(3008, 500, 'Kick the rust. Jump through the grate at the top.')
-  b.r(3568, 420)
-  b.r(3568, 240)
-  b.v(3688, 70)
-  b.p('antenna', 3720, 126)
+  b.s(3000, 560, 200, 40)
+  b.s(3180, 470, 330, 40)
+  shaft(b, 3480, 470, 150, 'right', 280)
+  b.n(3188, 410, 'Walk under the rust. Hold into a pipe, jump, kick the other. Grate at the top.')
+  b.r(3570, 400)
+  b.r(3570, 240)
+  b.v(3720, 98)
+  b.p('antenna', 3760, 154)
+  b.s(3660, 210, 180, 24)
 
   b.m(3820, 280, 140, 26, 'x', 220, 1.05)
   b.m(4220, 360, 140, 26, 'y', 90, 1.15, 0.4)
@@ -330,12 +340,12 @@ function filterBeds(): World {
   b.p('crane', 4900, 400)
   b.p('barrel', 4800, 400)
 
-  b.s(5120, 420, 180, 40)
-  b.k(5300, 820, 300)
-  b.s(5300, 838, 300, 40)
-  b.x(5400, 160, 90, 40, 210, 0.9, 0.2)
-  b.s(5600, 400, 240, 40)
-  b.n(5130, 360, 'Dash the pit. The press does not wait.')
+  b.s(5120, 420, 200, 40)
+  b.k(5320, 820, 220)
+  b.s(5320, 838, 220, 40)
+  b.x(5480, 160, 90, 40, 180, 0.7, 0.2)
+  b.s(5540, 400, 260, 40)
+  b.n(5130, 360, 'Jump the pit. Dash if you want extra.')
   b.r(5440, 270)
   b.p('shroom', 5140, 420)
   b.p('tank', 5840, 400)
@@ -427,12 +437,12 @@ function overflow(): World {
   b.p('web', 1984, 680)
 
   b.s(2320, 900, 280, 48)
-  b.s(2320, 80, 28, 820)
+  b.s(2320, 80, 28, 760)
   b.s(2572, 80, 28, 820)
   b.o(2320, 52, 280)
   b.f(2350, 160, 220, 720, 0, -2520)
   b.s(2600, 200, 180, 28)
-  b.n(2330, 840, 'Ride the updraft. Jump through the grate.')
+  b.n(2330, 840, 'Ride the updraft. Jump through the grate at the top.')
   b.r(2440, 500)
   b.r(2440, 260)
   b.v(2660, 144)
@@ -469,21 +479,23 @@ function overflow(): World {
   b.r(3520, 200)
   b.p('shroom', 2900, 240)
 
-  b.s(4000, 420, 200, 40)
-  b.s(4280, 140, 28, 420)
-  b.s(4430, 120, 28, 480)
-  b.s(4580, 100, 28, 540)
-  b.o(4280, 80, 328)
-  b.s(4608, 86, 220, 28)
-  b.k(4308, 702, 272)
-  b.s(4280, 720, 328, 40)
-  b.n(4010, 360, 'Three stacks. Kick through the grate.')
-  b.r(4370, 360)
-  b.r(4520, 280)
+  b.s(4000, 420, 300, 40)
+  b.s(4280, 120, 26, 244)
+  b.s(4434, 100, 26, 264)
+  b.s(4588, 80, 26, 284)
+  b.s(4588, 364, 26, 250)
+  b.s(4280 - 12, 420, 90, 26)
+  b.o(4280, 80, 334)
+  b.s(4614, 84, 220, 28)
+  b.k(4306, 702, 308)
+  b.s(4280, 720, 334, 40)
+  b.n(4010, 360, 'Walk in. Kick across the three stacks. Jump the grate.')
+  b.r(4370, 340)
+  b.r(4520, 260)
   b.r(4370, 160)
-  b.v(4660, 30)
+  b.v(4680, 28)
   b.p('chain', 4280, 80)
-  b.p('chain', 4580, 80)
+  b.p('chain', 4588, 80)
 
   b.s(4780, 200, 160, 40)
   b.c(5000, 240, 110)
@@ -572,9 +584,9 @@ function flues(): World {
   b.v(980, 584)
   b.p('lamp', 1040, 640)
 
-  b.k(1120, 780, 300)
-  b.s(1120, 798, 300, 40)
-  b.s(1420, 640, 180, 360)
+  b.k(1120, 780, 240)
+  b.s(1120, 798, 240, 40)
+  b.s(1360, 640, 180, 360)
   b.n(950, 560, 'Wings out over the pit, then drop low again.')
   b.r(1240, 560)
 
@@ -586,12 +598,12 @@ function flues(): World {
   b.s(2160, 640, 200, 360)
   b.v(2200, 584)
 
-  b.s(2360, 640, 220, 48)
-  shaft(b, 2580, 160, 480, 'right', 280)
-  b.n(2370, 580, 'Kick up. Jump through the grate.')
-  b.r(2660, 420)
-  b.r(2660, 240)
-  b.p('chain', 2580, 176)
+  b.s(2360, 640, 240, 48)
+  shaft(b, 2580, 640, 170, 'right', 300)
+  b.n(2370, 580, 'Walk under. Hold into the pipe, jump, kick up.')
+  b.r(2668, 420)
+  b.r(2668, 240)
+  b.p('chain', 2580, 186)
 
   b.s(3020, 166, 160, 28)
   lowPipe(b, 3180, 166, 520)
@@ -666,13 +678,13 @@ function grate(): World {
     ),
   )
 
-  b.s(520, 620, 180, 40)
-  shaft(b, 760, 180, 500, 'right', 220)
-  b.n(530, 560, 'Kick the stack. Grate on top.')
-  b.r(840, 420)
-  b.r(840, 240)
-  b.v(920, 130)
-  b.p('chain', 760, 196)
+  b.s(520, 620, 260, 40)
+  shaft(b, 760, 620, 190, 'right', 280)
+  b.n(530, 560, 'Walk under. Hold into the pipe, jump, kick up.')
+  b.r(848, 400)
+  b.r(848, 250)
+  b.v(1100, 138)
+  b.p('chain', 760, 206)
 
   b.s(1140, 186, 140, 28)
   lowPipe(b, 1280, 186, 440)
@@ -689,21 +701,23 @@ function grate(): World {
   b.v(2460, 244)
   b.p('shroom', 2420, 300)
 
-  b.s(2680, 280, 160, 40)
-  b.s(2920, 80, 28, 420)
-  b.s(3068, 60, 28, 480)
-  b.s(3216, 40, 28, 540)
-  b.o(2920, 40, 324)
-  b.s(3244, 46, 200, 28)
-  b.k(2948, 622, 268)
-  b.s(2920, 640, 324, 40)
-  b.n(2690, 220, 'Three kicks. Through the grate.')
-  b.r(3000, 360)
-  b.r(3148, 240)
-  b.r(3000, 120)
-  b.v(3280, 0)
+  b.s(2680, 280, 260, 40)
+  b.s(2920, 60, 26, 164)
+  b.s(3074, 50, 26, 174)
+  b.s(3228, 40, 26, 184)
+  b.s(3228, 224, 26, 220)
+  b.s(2920 - 12, 280, 90, 26)
+  b.o(2920, 40, 334)
+  b.s(3254, 44, 200, 28)
+  b.k(2948, 622, 308)
+  b.s(2920, 640, 334, 40)
+  b.n(2690, 220, 'Walk in. Three kicks. Through the grate.')
+  b.r(3010, 220)
+  b.r(3160, 160)
+  b.r(3010, 100)
+  b.v(3320, 0)
   b.p('chain', 2920, 40)
-  b.p('chain', 3216, 40)
+  b.p('chain', 3228, 40)
 
   b.c(3560, 200, 110)
   b.c(3740, 160, 110)

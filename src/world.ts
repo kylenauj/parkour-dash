@@ -313,7 +313,7 @@ function updateDrips(world: World, dt: number) {
 function updateCrumbles(world: World, dt: number, riding: Platform | null, body: Rect) {
   if (riding && riding.type === 'crumble' && riding.crumble === 'idle') {
     riding.crumble = 'shake'
-    riding.timer = 0.42
+    riding.timer = 0.62
   }
   for (const p of world.platforms) {
     if (p.type !== 'crumble') continue
