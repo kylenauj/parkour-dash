@@ -98,15 +98,14 @@ function ridgePines(ctx: CanvasRenderingContext2D, yBase: number, scale: number,
 function woodsMid() {
   const { c, ctx } = sheet()
   if (!ctx) return c
+  prect(ctx, 0, 540, c.width, 200, '#0c1412')
   const palettes = [
-    { trunk: '#14100c', bark: '#2a2018', mid: '#152018', lit: '#243428', dark: '#0a100c' },
-    { trunk: '#12100c', bark: '#241c14', mid: '#101810', lit: '#1c2a1c', dark: '#080c08' },
-    { trunk: '#16120e', bark: '#2c2418', mid: '#18241c', lit: '#2a3a28', dark: '#0c140e' },
+    { trunk: '#10140e', bark: '#1c2018', mid: '#121a14', lit: '#1c2818', dark: '#080c08' },
+    { trunk: '#0e120c', bark: '#181c14', mid: '#101610', lit: '#182214', dark: '#060806' },
   ]
-  for (let i = 0; i < 26; i++) {
-    const x = -10 + i * 64
-    const s = 1.15 + (i % 4) * 0.18
-    pineTree(ctx, x, VIEW_H + 20, s, palettes[i % 3])
+  for (let i = 0; i < 36; i++) {
+    const x = -8 + i * 48
+    pineTree(ctx, x, 548, 0.42 + (i % 5) * 0.08, palettes[i % 2])
   }
   return c
 }
@@ -115,11 +114,10 @@ function woodsNear() {
   const { c, ctx } = sheet(220)
   if (!ctx) return c
   const palettes = [
-    { trunk: '#0e0c0a', bark: '#1c1610', mid: '#0c1410', lit: '#182218', dark: '#060806' },
-    { trunk: '#0c0a08', bark: '#181410', mid: '#0a100c', lit: '#141c14', dark: '#040604' },
+    { trunk: '#0c0e0a', bark: '#16140e', mid: '#0c120e', lit: '#141c12', dark: '#050605' },
   ]
-  for (let i = 0; i < 12; i++) {
-    pineTree(ctx, -20 + i * 140, VIEW_H + 30, 1.55 + (i % 3) * 0.22, palettes[i % 2])
+  for (let i = 0; i < 10; i++) {
+    pineTree(ctx, 40 + i * 160, VIEW_H - 8, 0.7 + (i % 3) * 0.1, palettes[0])
   }
   return c
 }

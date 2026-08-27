@@ -129,10 +129,9 @@ function ridge(): World {
   b.p('barrel', 360, 620)
   b.p('barrelTip', 430, 620)
   b.p('pole', 520, 620)
-  b.p('pine', 10, 620)
-  b.p('pine', 150, 620)
-  b.p('pine', 540, 620)
-  b.p('pine', 610, 620)
+  b.p('pine', 18, 620)
+  b.p('pine', 118, 620)
+  b.p('pine', 560, 620)
   b.p('grass', 160, 620)
   b.p('grass', 250, 620)
   b.p('grass', 480, 620)
@@ -158,7 +157,6 @@ function ridge(): World {
   b.s(1120, 560, 180, 40)
   b.r(940, 460)
   b.n(690, 500, 'Jump the rocks.')
-  b.p('pine', 700, 560)
   b.p('rock', 980, 500)
   b.p('grass', 1160, 560)
 
@@ -191,7 +189,7 @@ function ridge(): World {
   b.n(3490, 240, 'Drop down toward the mouth.')
   b.r(3540, 260)
   b.r(4020, 420)
-  b.p('pine', 3760, 380)
+
 
   b.s(4240, 520, 720, 480)
   b.p('mouth', 4560, 520)

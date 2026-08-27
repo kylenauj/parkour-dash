@@ -69,8 +69,12 @@ export function pineTree(
 ) {
   const s = scale
   const trunkW = Math.max(4, 7 * s)
+  const plant = 12 * s
   const trunkH = 70 * s
-  prect(ctx, x - trunkW / 2, ground - trunkH, trunkW, trunkH, cols.trunk)
+  prect(ctx, x - trunkW / 2 - 6 * s, ground - 4, 12 * s + trunkW, 6, cols.dark)
+  prect(ctx, x - trunkW / 2 - 3 * s, ground - 2, 6 * s, 4, cols.trunk)
+  prect(ctx, x + 2, ground - 2, 6 * s, 4, cols.trunk)
+  prect(ctx, x - trunkW / 2, ground - trunkH, trunkW, trunkH + plant, cols.trunk)
   prect(ctx, x - trunkW / 2, ground - trunkH, 2, trunkH, cols.bark)
   for (let i = 0; i < 4; i++) {
     prect(ctx, x - trunkW / 2 + 1, ground - trunkH + 10 + i * 14 * s, trunkW - 2, 2, cols.dark)

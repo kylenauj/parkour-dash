@@ -218,6 +218,10 @@ export class Renderer {
   }
 
   private groundFace(p: Platform) {
+    if (p.h <= 64) {
+      this.rockIsland(p)
+      return
+    }
     const ctx = this.ctx
     const earth = this.earth()
     const g = earth.cols
@@ -226,42 +230,72 @@ export class Renderer {
     const w = Math.floor(p.w)
     const h = Math.floor(p.h)
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
-    ctx.fillRect(x + 8, y + h, w - 10, 12)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)'
+    ctx.fillRect(x + 10, y + h, w - 14, 14)
 
     stamp(ctx, earth.body, x, y, w, h)
 
-    ctx.fillStyle = g.hi
-    ctx.fillRect(x, y, w, 2)
-    ctx.fillStyle = g.rim
-    ctx.fillRect(x, y, 3, Math.min(h, 56))
     ctx.fillStyle = g.shade
-    ctx.fillRect(x + w - 4, y, 4, h)
+    ctx.fillRect(x + w - 5, y, 5, h)
+    ctx.fillStyle = '#d8c8a0'
+    ctx.fillRect(x, y, 3, Math.min(h, 70))
 
     if (earth.grass) {
       ctx.fillStyle = g.grass
-      ctx.fillRect(x, y - 2, w, 3)
-      for (let i = x + 3; i < x + w - 1; i += 5) {
-        const gh = 4 + Math.floor(hash(i, y) * 6)
-        ctx.fillStyle = hash(i, y + 1) > 0.5 ? g.grass2 : g.grass
+      ctx.fillRect(x, y - 2, w, 4)
+      for (let i = x + 2; i < x + w - 1; i += 4) {
+        const gh = 5 + Math.floor(hash(i, y) * 7)
+        ctx.fillStyle = hash(i, y + 1) > 0.45 ? g.grass2 : g.grass
         ctx.fillRect(i, y - gh, 2, gh)
-        if (hash(i, y) > 0.7) {
-          ctx.fillStyle = g.grassTip
-          ctx.fillRect(i, y - gh, 1, 1)
-        }
       }
-      for (let i = x + 14; i < x + w - 8; i += 28) {
-        if (hash(i, y) < 0.45) continue
-        ctx.fillStyle = g.moss
-        ctx.fillRect(i, y + h - 5, 8, 5)
-        ctx.fillRect(i + 2, y + h, 2, 4 + Math.floor(hash(i, 3) * 5))
+      for (let i = x + 18; i < x + w - 10; i += 26) {
+        ctx.fillStyle = '#3a2a18'
+        ctx.fillRect(i, y + 8, 2, 18 + Math.floor(hash(i, 2) * 24))
+        ctx.fillRect(i + 4, y + 20, 2, 12 + Math.floor(hash(i, 4) * 16))
       }
-    } else {
-      for (let i = x + 16; i < x + w - 6; i += 28) {
-        ctx.fillStyle = g.rivet
-        ctx.fillRect(i, y + 4, 4, 4)
-        ctx.fillStyle = g.hi
-        ctx.fillRect(i, y + 4, 1, 1)
+    }
+  }
+
+  private rockIsland(p: Platform) {
+    const ctx = this.ctx
+    const earth = this.earth()
+    const g = earth.cols
+    const x = Math.floor(p.x)
+    const y = Math.floor(p.y)
+    const w = Math.floor(p.w)
+    const h = Math.max(18, Math.floor(p.h))
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'
+    ctx.fillRect(x + 12, y + h + 2, w - 20, 8)
+
+    for (let row = 0; row < h; row++) {
+      const t = row / Math.max(1, h - 1)
+      const insetL = Math.floor(t * 12 + hash(x, y + row) * 5)
+      const insetR = Math.floor(t * 10 + hash(x + 9, y + row) * 5)
+      const sx = x + insetL
+      const sw = Math.max(8, w - insetL - insetR)
+      ctx.fillStyle = row < 6 ? '#3a3428' : row < h * 0.45 ? '#2a241c' : '#1c1814'
+      ctx.fillRect(sx, y + row, sw, 1)
+      if (row < 8) {
+        ctx.fillStyle = '#d8c8a0'
+        ctx.fillRect(sx, y + row, 2, 1)
+      }
+      ctx.fillStyle = '#0e0c0a'
+      ctx.fillRect(sx + sw - 3, y + row, 3, 1)
+    }
+
+    if (earth.grass) {
+      ctx.fillStyle = g.grass
+      ctx.fillRect(x + 2, y - 2, w - 4, 4)
+      for (let i = x + 4; i < x + w - 4; i += 4) {
+        const gh = 4 + Math.floor(hash(i, y) * 6)
+        ctx.fillStyle = hash(i, y) > 0.5 ? g.grass2 : g.grass
+        ctx.fillRect(i, y - gh, 2, gh)
+      }
+      for (let i = x + 14; i < x + w - 10; i += 18) {
+        ctx.fillStyle = '#2a2018'
+        ctx.fillRect(i, y + h - 2, 2, 8 + Math.floor(hash(i, 1) * 10))
+        ctx.fillRect(i + 3, y + h, 2, 5 + Math.floor(hash(i, 2) * 8))
       }
     }
   }
@@ -688,6 +722,10 @@ export class Renderer {
       const skin = this.skins.get(n.look) ?? this.skins.get('stock')!
       const idle = Math.abs(Math.sin(time * 2 + n.x)) < 0.12 ? skin.jump : skin.idle
       this.drawSmokeList(n.smoke, look.smoke)
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'
+      this.ctx.beginPath()
+      this.ctx.ellipse(n.x, n.y + 2, 16, 4, 0, 0, Math.PI * 2)
+      this.ctx.fill()
       this.drawRoach(idle, n.x, n.y, n.facing, look, true)
     }
   }
@@ -760,10 +798,10 @@ export class Renderer {
     squish = 1,
   ) {
     const ctx = this.ctx
-    const s = 1.42
+    const s = 1.08
     const ox = 0.48
     const dx = -Math.floor(spr.width * ox * s)
-    const dy = -Math.floor(spr.height * s) + 6
+    const dy = -Math.floor(spr.height * s) + 2
     ctx.save()
     ctx.translate(snap(x), snap(y))
     ctx.scale(facing, squish)

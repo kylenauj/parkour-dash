@@ -20,12 +20,14 @@ function rows(...lines: string[]) {
   return lines.map((line) => line.replace(/ /g, '.').padEnd(W, '.').slice(0, W))
 }
 
-function padBottom(art: string[]) {
-  while (art.length < H) art.push('.'.repeat(W))
-  return art.slice(0, H)
+function fit(art: string[]) {
+  const trimmed = [...art]
+  while (trimmed.length && /^\.+$/.test(trimmed[trimmed.length - 1] ?? '')) trimmed.pop()
+  while (trimmed.length < H) trimmed.unshift('.'.repeat(W))
+  return trimmed.slice(-H)
 }
 
-const IDLE = padBottom(
+const IDLE = fit(
   rows(
     '................................',
     '..........aa....................',
@@ -50,7 +52,7 @@ const IDLE = padBottom(
   ),
 )
 
-const HERO = padBottom(
+const HERO = fit(
   rows(
     '.............m..................',
     '..........aa.M..................',
@@ -76,7 +78,7 @@ const HERO = padBottom(
   ),
 )
 
-const RUN_A = padBottom(
+const RUN_A = fit(
   rows(
     '................................',
     '..........aa....................',
@@ -99,7 +101,7 @@ const RUN_A = padBottom(
   ),
 )
 
-const RUN_B = padBottom(
+const RUN_B = fit(
   rows(
     '................................',
     '..........aa....................',
@@ -122,7 +124,7 @@ const RUN_B = padBottom(
   ),
 )
 
-const RUN_C = padBottom(
+const RUN_C = fit(
   rows(
     '................................',
     '..........aa....................',
@@ -145,7 +147,7 @@ const RUN_C = padBottom(
   ),
 )
 
-const JUMP = padBottom(
+const JUMP = fit(
   rows(
     '.........aa.....................',
     '........a.Aa....................',
@@ -167,7 +169,7 @@ const JUMP = padBottom(
   ),
 )
 
-const WALL = padBottom(
+const WALL = fit(
   rows(
     '................................',
     '.............aa.................',
@@ -190,7 +192,7 @@ const WALL = padBottom(
   ),
 )
 
-const KICK = padBottom(
+const KICK = fit(
   rows(
     '.........aa.....................',
     '........a.Aa....................',
@@ -212,7 +214,7 @@ const KICK = padBottom(
   ),
 )
 
-const SLIDE = padBottom(
+const SLIDE = fit(
   rows(
     '................................',
     '................................',
@@ -237,7 +239,7 @@ const SLIDE = padBottom(
   ),
 )
 
-const DASH = padBottom(
+const DASH = fit(
   rows(
     '.........aa.....................',
     '........a.Aa....................',
@@ -259,7 +261,7 @@ const DASH = padBottom(
   ),
 )
 
-const SLIDE_DASH = padBottom(
+const SLIDE_DASH = fit(
   rows(
     '................................',
     '................................',
@@ -284,7 +286,7 @@ const SLIDE_DASH = padBottom(
   ),
 )
 
-const BABE = padBottom(
+const BABE = fit(
   rows(
     '...........mm...................',
     '.........aaMMa..................',
