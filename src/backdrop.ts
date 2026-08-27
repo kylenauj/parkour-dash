@@ -45,16 +45,19 @@ function woodsFar() {
     width: w,
     baseY: 452,
     peaks: [
-      { x: 40, h: 96 },
-      { x: 200, h: 150 },
-      { x: 360, h: 120 },
-      { x: 520, h: 205 },
-      { x: 700, h: 240 },
-      { x: 880, h: 165 },
-      { x: 1030, h: 205 },
-      { x: 1210, h: 150 },
-      { x: 1380, h: 190 },
-      { x: 1560, h: 130 },
+      { x: 30, h: 74 },
+      { x: 130, h: 150 },
+      { x: 230, h: 88 },
+      { x: 340, h: 178 },
+      { x: 470, h: 96 },
+      { x: 600, h: 232 },
+      { x: 740, h: 110 },
+      { x: 860, h: 196 },
+      { x: 1000, h: 104 },
+      { x: 1130, h: 214 },
+      { x: 1270, h: 98 },
+      { x: 1400, h: 172 },
+      { x: 1540, h: 92 },
     ],
     fill: '#3c5070',
     lit: '#4e6488',
@@ -70,15 +73,18 @@ function woodsFar() {
     width: w,
     baseY: 486,
     peaks: [
-      { x: 0, h: 74 },
-      { x: 170, h: 122 },
-      { x: 340, h: 92 },
-      { x: 520, h: 148 },
-      { x: 740, h: 108 },
-      { x: 950, h: 162 },
-      { x: 1150, h: 116 },
-      { x: 1350, h: 146 },
-      { x: 1560, h: 96 },
+      { x: 0, h: 58 },
+      { x: 120, h: 122 },
+      { x: 250, h: 70 },
+      { x: 390, h: 148 },
+      { x: 540, h: 78 },
+      { x: 690, h: 158 },
+      { x: 840, h: 84 },
+      { x: 990, h: 140 },
+      { x: 1140, h: 76 },
+      { x: 1300, h: 150 },
+      { x: 1460, h: 82 },
+      { x: 1600, h: 120 },
     ],
     fill: '#2c3e5c',
     lit: '#3a4e70',
@@ -107,12 +113,14 @@ function woodsMid() {
     { y: 714, scale: 0.82, step: 27, col: '#101822', dark: '#0a1018' },
   ]
   for (const row of rows) {
-    for (let i = 0; i * row.step < w + 40; i++) {
-      const x = -20 + i * row.step + (hash(i, row.y) - 0.5) * row.step * 0.9
-      const h = (30 + hash(i, row.y + 1) * 40) * (0.55 + row.scale)
-      pineLayer(ctx, x, row.y - h, 3 + row.scale * 8, h, row.col, row.col, row.dark)
+    for (let pass = 0; pass < 2; pass++) {
+      for (let i = 0; i * row.step < w + 40; i++) {
+        const x = -20 + i * row.step + pass * row.step * 0.5 + (hash(i + pass * 7, row.y) - 0.5) * row.step
+        const h = (30 + hash(i + pass * 3, row.y + 1) * 42) * (0.55 + row.scale)
+        pineLayer(ctx, x, row.y - h, 3 + row.scale * 8, h, pass ? row.dark : row.col, row.col, row.dark)
+      }
     }
-    fog(ctx, row.y - 20, 34, w, '#2a3f62')
+    fog(ctx, row.y - 26, 44, w, '#33496e')
   }
   return c
 }

@@ -178,33 +178,26 @@ export function mountains(
     const a = pts[seg - 1]
     const b = pts[seg]
     const t = (x - a.x) / Math.max(1, b.x - a.x)
-    const ease = t * t * (3 - 2 * t)
-    const base = a.h + (b.h - a.h) * ease
-    heights.push(base + (noise(x, 0, 40) - 0.5) * ridge + (noise(x, 9, 11) - 0.5) * ridge * 0.4)
+    const base = a.h + (b.h - a.h) * t
+    heights.push(base + (noise(x, 0, 34) - 0.5) * ridge + (noise(x, 9, 7) - 0.5) * ridge * 0.5)
   }
 
   for (let x = 0; x < width; x++) {
     const h = heights[x]
     const topY = Math.round(baseY - h)
-    const slope = (heights[Math.min(width - 1, x + 3)] ?? h) - (heights[Math.max(0, x - 3)] ?? h)
+    const slope = (heights[Math.min(width - 1, x + 4)] ?? h) - (heights[Math.max(0, x - 4)] ?? h)
     prect(ctx, x, topY, 1, baseY - topY + 10, fill)
 
-    if (slope < -0.4) prect(ctx, x, topY, 1, Math.min(60, h * 0.55), lit)
-    else if (slope > 0.4) prect(ctx, x, topY, 1, Math.min(70, h * 0.6), dark)
-
-    if (noise(x, 40, 26) > 0.66) {
-      const gy = topY + h * 0.35
-      prect(ctx, x, gy, 1, h * 0.3, dark)
-    }
+    /** Moon sits high on the right, so slopes falling to the right catch light. */
+    if (slope < -0.5) prect(ctx, x, topY, 1, Math.min(26, 8 + h * 0.12), lit)
+    else if (slope > 0.5) prect(ctx, x, topY, 1, Math.min(22, 6 + h * 0.1), dark)
 
     if (snow && snowLine !== undefined && topY < snowLine) {
       const above = snowLine - topY
-      const depth = Math.min(h * 0.26, above * (0.3 + noise(x, 3, 22) * 0.35))
+      const depth = Math.min(h * 0.2, above * (0.22 + noise(x, 3, 16) * 0.26))
       if (depth > 1) {
         prect(ctx, x, topY, 1, depth, snow)
-        if (snowShade && slope > 0.4) prect(ctx, x, topY, 1, depth * 0.7, snowShade)
-        const streak = noise(x, 71, 9)
-        if (streak > 0.74) prect(ctx, x, topY + depth, 1, depth * 0.45 * streak, snow)
+        if (snowShade && slope > 0.5) prect(ctx, x, topY, 1, depth * 0.6, snowShade)
       }
     }
   }
@@ -231,13 +224,14 @@ export function roots(
 ) {
   for (let i = x + 2; i < x + w - 2; i += density) {
     const seed = hash(i, y)
-    if (seed < 0.18) continue
-    const len = 18 + seed * maxLen
+    if (seed < 0.42) continue
+    const len = 24 + seed * maxLen
     let rx = i
+    const drift = (hash(i, y + 5) - 0.5) * 0.5
     for (let d = 0; d < len; d++) {
-      if (d % 7 === 0) rx += hash(i + d, y) > 0.5 ? 1 : -1
-      const thick = d > len * 0.78 ? 1 : d > len * 0.4 ? 2 : 3
-      prect(ctx, rx, y + d, thick, 1, d > len * 0.62 ? cols.shade : cols.root)
+      rx += drift * (d / len) + (hash(i + d, y) > 0.82 ? 0.6 : 0)
+      const thick = d > len * 0.82 ? 1 : d > len * 0.45 ? 2 : 3
+      prect(ctx, rx, y + d, thick, 1, d > len * 0.6 ? cols.shade : cols.root)
     }
     if (cols.leaf && seed > 0.7) {
       prect(ctx, rx - 2, y + len * 0.4, 3, 2, cols.leaf)
